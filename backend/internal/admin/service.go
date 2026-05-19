@@ -7,19 +7,22 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+
+	"github.com/koydensehire/backend/internal/audit"
 	apperrors "github.com/koydensehire/backend/pkg/errors"
 	"github.com/koydensehire/backend/pkg/storage"
 )
 
 type Service struct {
-	repo    *Repository
-	db      *sqlx.DB
-	storage storage.Provider
-	appEnv  string
+	repo      *Repository
+	db        *sqlx.DB
+	storage   storage.Provider
+	appEnv    string
+	auditRepo *audit.Repository
 }
 
-func NewService(repo *Repository, db *sqlx.DB, stor storage.Provider, appEnv string) *Service {
-	return &Service{repo: repo, db: db, storage: stor, appEnv: appEnv}
+func NewService(repo *Repository, db *sqlx.DB, stor storage.Provider, appEnv string, auditRepo *audit.Repository) *Service {
+	return &Service{repo: repo, db: db, storage: stor, appEnv: appEnv, auditRepo: auditRepo}
 }
 
 func (s *Service) GetDashboard() (*DashboardResponse, error) {
@@ -180,6 +183,21 @@ func (s *Service) ApproveApplication(appID, adminID string, req *ApproveApplicat
 		return nil, apperrors.ErrInternal
 	}
 
+	go func() {
+		reason := "Başvuru onaylandı"
+		_ = s.auditRepo.Create(context.Background(), audit.CreateParams{
+			AdminID:    adminID,
+			Action:     audit.ActionApplicationApproved,
+			TargetType: audit.TargetApplication,
+			TargetID:   appID,
+			TargetSnapshot: map[string]any{
+				"full_name": app.FullName,
+				"phone":     app.Phone,
+			},
+			Reason: &reason,
+		})
+	}()
+
 	return &ApproveResult{
 		UserID:     userID,
 		FarmerName: app.FullName,
@@ -187,7 +205,7 @@ func (s *Service) ApproveApplication(appID, adminID string, req *ApproveApplicat
 	}, nil
 }
 
-func (s *Service) GetApplicationWithVideoURL(appID string) (map[string]interface{}, error) {
+func (s *Service) GetApplicationWithVideoURL(appID string) (map[string]any, error) {
 	var app struct {
 		ID                  string  `db:"id"`
 		FullName            string  `db:"full_name"`
@@ -202,7 +220,7 @@ func (s *Service) GetApplicationWithVideoURL(appID string) (map[string]interface
 		return nil, apperrors.ErrNotFound
 	}
 
-	result := map[string]interface{}{
+	result := map[string]any{
 		"id":        app.ID,
 		"full_name": app.FullName,
 		"phone":     app.Phone,
@@ -221,7 +239,7 @@ func (s *Service) GetApplicationWithVideoURL(appID string) (map[string]interface
 
 func generateUniqueCode(db *sqlx.DB) (string, error) {
 	const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	for attempt := 0; attempt < 10; attempt++ {
+	for range 10 {
 		b := make([]byte, 6)
 		if _, err := rand.Read(b); err != nil {
 			return "", fmt.Errorf("generating random bytes: %w", err)

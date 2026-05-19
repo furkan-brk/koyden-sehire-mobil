@@ -21,12 +21,35 @@ All responses follow the format:
 ### Auth
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/auth/login` | Login with phone + password → JWT |
+| POST | `/auth/login` | Login with phone + password → JWT + refresh token |
+| POST | `/auth/refresh` | Rotate refresh token → new access + refresh token |
+| POST | `/auth/register/customer` | Create customer account (requires OTP verified) |
 
 **Login body:**
 ```json
 {"phone": "05XXXXXXXXX", "password": "..."}
 ```
+
+**Refresh body:**
+```json
+{"refresh_token": "<64-char-hex-token>"}
+```
+Response: same shape as login (`access_token`, `refresh_token`, `user`).  
+The old refresh token is invalidated on every call (token rotation).  
+Returns `401 INVALID_REFRESH_TOKEN` if token is missing or expired.
+
+**Register customer body:**
+```json
+{
+  "phone":     "05XXXXXXXXX",
+  "full_name": "Ad Soyad",
+  "email":     "ornek@email.com",
+  "password":  "min8karakter"
+}
+```
+Validation: `phone` exactly 11 chars starting with `05`; `full_name` 2–100 chars; `email` valid format max 255 chars; `password` 8–72 chars.  
+**Precondition:** `POST /otp/verify` must have been called for the same phone within the last 30 minutes — the OTP verified marker is consumed on success.  
+Returns `409 CONFLICT` if phone or email already registered; `400 OTP_NOT_VERIFIED` if OTP window expired.
 
 ### OTP
 | Method | Path | Rate Limit |
@@ -73,6 +96,7 @@ All responses follow the format:
 
 | Method | Path | Description |
 |--------|------|-------------|
+| GET | `/farmer/dashboard` | Welcome stub — returns greeting message (content will expand in future sprints) |
 | GET | `/farmer/profile` | Get own profile |
 | PUT | `/farmer/profile` | Update profile |
 | GET | `/farmer/products` | Own product list |
@@ -91,10 +115,51 @@ All responses follow the format:
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/admin/dashboard` | Stats (farmers, pending apps, products) |
-| GET | `/admin/applications` | List applications (filter: `?status=pending`) |
+| GET | `/admin/analytics/city-density` | Farmer count grouped by city |
+| GET | `/admin/analytics/invite-network` | Full invite tree (who invited whom) |
+| GET | `/admin/applications` | List applications |
 | GET | `/admin/applications/:id` | Application detail + video URL |
 | POST | `/admin/applications/:id/approve` | Approve → create user + farmer_profile |
 | POST | `/admin/applications/:id/reject` | Reject with reason |
+
+**`GET /admin/analytics/city-density` response:**
+```json
+{"success": true, "data": [{"city": "İzmir", "farmer_count": 42}, ...]}
+```
+
+**`GET /admin/analytics/invite-network` response** (nested tree):
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid", "name": "Ad Soyad", "invite_code": "KYS-7GHT92",
+    "used_count": 3, "max_uses": 5,
+    "children": [{"id": "...", "name": "...", "children": []}]
+  }
+}
+```
+
+**`GET /admin/applications` query params:**
+- `status`: `pending` | `needs_video` | `approved` | `rejected` (omit for all)
+- `page`, `limit` (default 20, max 100)
+
+**`POST /admin/applications/:id/approve` body:**
+```json
+{
+  "is_founding_farmer": false,
+  "invite_quota": 3
+}
+```
+`invite_quota` is optional — omit to use the system default (2).
+
+**`POST /admin/applications/:id/reject` body:**
+```json
+{
+  "rejection_reason": "incomplete_info",
+  "admin_note": "Opsiyonel açıklama"
+}
+```
+`rejection_reason` is **required**. `admin_note` is optional.
 | POST | `/admin/applications/:id/request-video` | Request video upload |
 | GET | `/admin/farmers` | All farmers |
 | GET | `/admin/farmers/:id` | Farmer detail |

@@ -1,12 +1,15 @@
 package admin
 
 import (
+	"context"
 	"math"
 	"strconv"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
+
+	"github.com/koydensehire/backend/internal/audit"
 	"github.com/koydensehire/backend/internal/middleware"
 	"github.com/koydensehire/backend/internal/notifications"
 	apperrors "github.com/koydensehire/backend/pkg/errors"
@@ -31,13 +34,14 @@ type ApplicationListItem struct {
 }
 
 type Handler struct {
-	svc      *Service
-	db       *sqlx.DB
-	notifSvc *notifications.Service
+	svc       *Service
+	db        *sqlx.DB
+	notifSvc  *notifications.Service
+	auditRepo *audit.Repository
 }
 
-func NewHandler(svc *Service, db *sqlx.DB, notifSvc *notifications.Service) *Handler {
-	return &Handler{svc: svc, db: db, notifSvc: notifSvc}
+func NewHandler(svc *Service, db *sqlx.DB, notifSvc *notifications.Service, auditRepo *audit.Repository) *Handler {
+	return &Handler{svc: svc, db: db, notifSvc: notifSvc, auditRepo: auditRepo}
 }
 
 func (h *Handler) Dashboard(c *fiber.Ctx) error {
@@ -214,6 +218,21 @@ func (h *Handler) RejectApplication(c *fiber.Ctx) error {
 
 	go h.notifSvc.ApplicationRejected(id, app.FullName, app.Phone, req.RejectionReason)
 
+	go func() {
+		reason := req.RejectionReason
+		_ = h.auditRepo.Create(context.Background(), audit.CreateParams{
+			AdminID:    adminID,
+			Action:     audit.ActionApplicationRejected,
+			TargetType: audit.TargetApplication,
+			TargetID:   id,
+			TargetSnapshot: map[string]any{
+				"full_name": app.FullName,
+				"phone":     app.Phone,
+			},
+			Reason: &reason,
+		})
+	}()
+
 	return response.Success(c, nil, "Başvuru reddedildi")
 }
 
@@ -239,5 +258,58 @@ func (h *Handler) RequestVideo(c *fiber.Ctx) error {
 		return response.Conflict(c, "Sadece bekleyen başvurular için video talep edilebilir")
 	}
 
+	go func() {
+		reason := "Video talep edildi"
+		_ = h.auditRepo.Create(context.Background(), audit.CreateParams{
+			AdminID:    adminID,
+			Action:     audit.ActionApplicationVideoRequested,
+			TargetType: audit.TargetApplication,
+			TargetID:   id,
+			Reason:     &reason,
+		})
+	}()
+
 	return response.Success(c, nil, "Video talep edildi")
+}
+
+func (h *Handler) ListAuditLogs(c *fiber.Ctx) error {
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+	limit, _ := strconv.Atoi(c.Query("limit", "20"))
+
+	f := audit.ListFilter{
+		AdminID:    c.Query("admin_id"),
+		Action:     audit.Action(c.Query("action")),
+		TargetType: audit.TargetType(c.Query("target_type")),
+		TargetID:   c.Query("target_id"),
+		Page:       page,
+		Limit:      limit,
+	}
+
+	if s := c.Query("date_from"); s != "" {
+		if t, err := time.Parse(time.RFC3339, s); err == nil {
+			f.DateFrom = &t
+		}
+	}
+	if s := c.Query("date_to"); s != "" {
+		if t, err := time.Parse(time.RFC3339, s); err == nil {
+			f.DateTo = &t
+		}
+	}
+
+	entries, total, err := h.auditRepo.List(c.Context(), f)
+	if err != nil {
+		return response.Error(c, apperrors.ErrInternal)
+	}
+
+	totalPages := int(math.Ceil(float64(total) / float64(f.Limit)))
+	return c.JSON(fiber.Map{
+		"success": true,
+		"data":    entries,
+		"pagination": fiber.Map{
+			"page":        f.Page,
+			"limit":       f.Limit,
+			"total":       total,
+			"total_pages": totalPages,
+		},
+	})
 }

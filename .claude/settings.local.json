@@ -74,7 +74,10 @@
       "PowerShell(cmd /c \"dir C:\\\\Projeler\\\\koyden-sehire-mobil\\\\flutter-mobile\\\\assets\\\\fonts\")",
       "mcp__stitch__list_projects",
       "mcp__stitch__get_screen",
-      "WebFetch(domain:contribution.usercontent.google.com)"
+      "WebFetch(domain:contribution.usercontent.google.com)",
+      "Bash(winget install *)",
+      "Bash(cloudflared tunnel *)",
+      "PowerShell(Get-Command *)"
     ]
   }
 }

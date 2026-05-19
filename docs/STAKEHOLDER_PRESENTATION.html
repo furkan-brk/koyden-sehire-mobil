@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Köyden Şehire — Teknik Sunum</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --g900:#1B3A2E;--g700:#2D6A4F;--g500:#40916C;--g300:#52B788;--g100:#D8F3DC;--g050:#F0FAF4;
+  --amber:#D4A853;--amber-lt:#FFF3CD;
+  --red:#EF4444;--indigo:#6366F1;--blue:#3B82F6;--purple:#8B5CF6;--cyan:#06B6D4;--orange:#F97316;
+  --gray9:#1A1A1A;--gray6:#4A4A4A;--gray3:#C8C8C8;--gray1:#F4F4F4;--white:#FFFFFF;
+  --r:14px;--sh:0 4px 24px rgba(0,0,0,.10);--sh-lg:0 12px 48px rgba(0,0,0,.18);
+}
+html,body{width:100%;height:100%;overflow:hidden;background:#080c0a;font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:var(--gray9);-webkit-font-smoothing:antialiased}
+
+/* DECK */
+#deck{width:100%;height:100%;position:relative}
+
+/* SLIDES */
+.slide{
+  position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;
+  padding:44px 60px;opacity:0;pointer-events:none;transform:translateX(60px);
+  transition:opacity .38s ease,transform .38s ease;overflow:hidden;
+}
+.slide.active{opacity:1;pointer-events:all;transform:translateX(0)}
+.slide.prev{opacity:0;transform:translateX(-60px)}
+
+/* BG VARIANTS */
+.bg-hero  {background:linear-gradient(135deg,var(--g900) 0%,var(--g700) 55%,var(--g500) 100%);color:var(--white)}
+.bg-light {background:var(--g050)}
+.bg-dark  {background:#0f1f17;color:var(--white)}
+.bg-white {background:var(--white)}
+.bg-amber {background:linear-gradient(135deg,#3D2000,#7B4500);color:var(--white)}
+.bg-navy  {background:linear-gradient(135deg,#0f172a,#1e293b);color:var(--white)}
+.bg-purple{background:linear-gradient(135deg,#1e1b4b,#312e81);color:var(--white)}
+.bg-code  {background:#0d1117;color:var(--white)}
+
+/* DOT OVERLAY */
+.bg-hero::before,.bg-dark::before,.bg-amber::before,.bg-navy::before,.bg-purple::before,.bg-code::before{
+  content:'';position:absolute;inset:0;
+  background-image:radial-gradient(circle,rgba(255,255,255,.05) 1px,transparent 1px);
+  background-size:30px 30px;pointer-events:none;
+}
+
+/* INNER */
+.slide-inner{position:relative;z-index:1;width:100%;max-width:1060px}
+.slide-inner.center{text-align:center;display:flex;flex-direction:column;align-items:center}
+
+/* TYPOGRAPHY */
+.badge{display:inline-block;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:5px 16px;font-size:12px;letter-spacing:1px;text-transform:uppercase;margin-bottom:22px}
+.badge.green{background:var(--g100);color:var(--g700);border:none}
+.badge.amber{background:var(--amber-lt);color:#7c4a00;border:none}
+.slide-label{font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:10px;opacity:.6}
+h1{font-size:clamp(42px,5.5vw,68px);font-weight:900;line-height:1.05;letter-spacing:-2px;margin-bottom:18px}
+h1 .accent{color:var(--amber)}
+h2{font-size:clamp(26px,3vw,40px);font-weight:800;line-height:1.1;letter-spacing:-1px;margin-bottom:10px}
+h3{font-size:clamp(16px,1.8vw,22px);font-weight:700;margin-bottom:6px}
+.lead{font-size:clamp(14px,1.6vw,18px);opacity:.82;max-width:640px;line-height:1.65;margin-bottom:28px}
+
+/* STATS */
+.stats{display:flex;gap:36px;flex-wrap:wrap;margin-top:10px}
+.stat{display:flex;flex-direction:column}
+.stat strong{font-size:34px;font-weight:900;color:var(--amber);letter-spacing:-1px}
+.stat span{font-size:12px;opacity:.7}
+
+/* GRID */
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:20px;width:100%}
+.cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;width:100%}
+.cols4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;width:100%}
+.cols5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;width:100%}
+
+/* CARDS */
+.card{background:var(--white);border-radius:var(--r);box-shadow:var(--sh);padding:24px}
+.card.ghost{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);box-shadow:none;color:var(--white)}
+.card.problem{background:#FFF5F5;border:1.5px solid #FECACA}
+.card.solution{background:var(--g100);border:1.5px solid var(--g300)}
+.card-icon{font-size:28px;margin-bottom:12px}
+.card h3{font-size:14px;margin-bottom:6px}
+.card p{font-size:12px;color:var(--gray6);line-height:1.6}
+
+/* PS */
+.ps-item{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;font-size:13px;line-height:1.5}
+.ps-item:last-child{margin-bottom:0}
+.ps-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.problem .ps-dot{background:var(--red)}.solution .ps-dot{background:var(--g500)}
+.card.problem h3{color:#B91C1C}.card.solution h3{color:var(--g700)}
+.problem .ps-item{color:#7f1d1d}.solution .ps-item{color:var(--g900)}
+
+/* FLOW */
+.flow{display:flex;align-items:flex-start;width:100%;gap:0}
+.flow-step{display:flex;flex-direction:column;align-items:center;flex:1;min-width:72px}
+.flow-icon{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:8px}
+.flow-title{font-size:11px;font-weight:700;text-align:center;margin-bottom:3px}
+.flow-desc{font-size:10px;text-align:center;color:var(--gray6);line-height:1.4;max-width:88px}
+.flow-arrow{flex-shrink:0;display:flex;align-items:flex-start;padding-top:18px;font-size:16px;color:var(--g300)}
+.fi-green{background:var(--g100)}.fi-amber{background:var(--amber-lt)}.fi-purple{background:#EDE9FE}
+.fi-blue{background:#DBEAFE}.fi-red{background:#FEE2E2}.fi-cyan{background:#CFFAFE}
+
+/* ROLE CARD */
+.role-card{background:var(--white);border-radius:var(--r);padding:24px;box-shadow:var(--sh);border-top:4px solid transparent}
+.role-card.customer{border-top-color:var(--indigo)}.role-card.farmer{border-top-color:var(--g500)}.role-card.admin{border-top-color:var(--amber)}
+.role-icon{font-size:32px;margin-bottom:10px}
+.role-name{font-size:17px;font-weight:800;margin-bottom:5px;color:var(--g900)}
+.role-desc{font-size:12px;color:var(--gray6);margin-bottom:14px;line-height:1.6}
+.tag{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600;margin-right:5px;margin-bottom:5px}
+.customer .tag{background:#EEF2FF;color:#4F46E5}.farmer .tag{background:var(--g100);color:var(--g700)}.admin .tag{background:var(--amber-lt);color:#92400E}
+
+/* INVITE */
+.inv-diagram{display:flex;flex-direction:column;align-items:center;gap:0;width:100%}
+.inv-node{border-radius:10px;padding:10px 20px;font-size:12px;font-weight:700;text-align:center;min-width:140px;color:var(--white)}
+.inv-node.root{background:var(--amber);color:var(--g900)}.inv-node.lvl1{background:var(--g500)}.inv-node.leaf{background:var(--g100);color:var(--g900);font-weight:600;font-size:11px}
+.inv-line{width:2px;height:22px;background:var(--g300)}
+.inv-row{display:flex;gap:32px;justify-content:center}
+.inv-col{display:flex;flex-direction:column;align-items:center}
+.inv-detail{font-size:9px;font-weight:400;opacity:.75;margin-top:2px}
+
+/* ARCH */
+.arch-label{text-align:center;font-size:10px;letter-spacing:2px;text-transform:uppercase;opacity:.4;margin-bottom:7px}
+.arch-row{display:flex;gap:10px;justify-content:center;margin-bottom:7px;flex-wrap:wrap}
+.arch-box{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:11px 18px;font-size:12px;font-weight:600;text-align:center;min-width:120px}
+.arch-box.hl{background:var(--g500);border-color:var(--g300)}.arch-box.amb{background:rgba(212,168,83,.22);border-color:var(--amber);color:var(--amber)}
+.arch-box.blu{background:rgba(59,130,246,.22);border-color:var(--blue);color:#93c5fd}
+.arch-box.prp{background:rgba(139,92,246,.22);border-color:var(--purple);color:#c4b5fd}
+.arch-box small{display:block;font-size:9px;opacity:.65;font-weight:400;margin-top:2px}
+.arch-line{width:1px;height:18px;background:rgba(255,255,255,.18);margin:0 auto 7px}
+
+/* API */
+.api-card{background:var(--white);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden}
+.api-head{padding:11px 16px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:7px}
+.api-head.pub{background:#EEF2FF;color:#4F46E5}.api-head.farm{background:var(--g100);color:var(--g700)}.api-head.adm{background:var(--amber-lt);color:#92400E}
+.api-ep{display:flex;align-items:center;gap:7px;padding:7px 16px;border-bottom:1px solid var(--gray1);font-size:11px;color:var(--gray6)}
+.api-ep:last-child{border-bottom:none}
+.method{font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;min-width:32px;text-align:center}
+.GET{background:#DCFCE7;color:#166534}.POST{background:#DBEAFE;color:#1E40AF}.PUT{background:#FEF3C7;color:#92400E}.PATCH{background:#F3E8FF;color:#6B21A8}.DELETE{background:#FEE2E2;color:#991B1B}
+
+/* DB SCHEMA */
+.db-table{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:10px;overflow:hidden;font-size:11px}
+.db-table-head{padding:8px 12px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px}
+.db-table-head.users{background:rgba(99,102,241,.25);color:#a5b4fc}
+.db-table-head.farmer{background:rgba(64,145,108,.25);color:#86efac}
+.db-table-head.product{background:rgba(245,158,11,.25);color:#fcd34d}
+.db-table-head.app{background:rgba(239,68,68,.2);color:#fca5a5}
+.db-table-head.invite{background:rgba(6,182,212,.2);color:#67e8f9}
+.db-table-head.cat{background:rgba(139,92,246,.2);color:#c4b5fd}
+.db-table-row{padding:5px 12px;border-top:1px solid rgba(255,255,255,.07);display:flex;justify-content:space-between;align-items:center;gap:6px}
+.db-col-name{color:#e6edf3;font-family:'Courier New',monospace;font-size:10px}
+.db-col-type{color:#79c0ff;font-size:9.5px;font-family:'Courier New',monospace}
+.db-col-note{color:#8b949e;font-size:9px;font-style:italic}
+.db-pk{color:#fcd34d;font-size:8px;font-weight:700;background:rgba(252,211,77,.12);padding:1px 4px;border-radius:3px}
+.db-fk{color:#93c5fd;font-size:8px;font-weight:700;background:rgba(147,197,253,.12);padding:1px 4px;border-radius:3px}
+.er-box{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:10px 14px;font-size:10.5px;font-family:'Courier New',monospace;color:#e6edf3;line-height:1.8;white-space:pre}
+/* PARAMS */
+.param-grid{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;font-size:11px}
+.param-key{font-family:'Courier New',monospace;color:#79c0ff;font-size:10.5px}
+.param-val{color:rgba(255,255,255,.75);line-height:1.5}
+.resp-tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;margin-bottom:6px}
+.resp-ok{background:rgba(82,183,136,.2);color:#86efac}.resp-err{background:rgba(239,68,68,.2);color:#fca5a5}.resp-page{background:rgba(99,102,241,.2);color:#a5b4fc}
+
+/* SEC */
+.sec-item{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:var(--r);padding:18px;display:flex;gap:12px;align-items:flex-start}
+.sec-icon{width:38px;height:38px;border-radius:9px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.sec-item h4{font-size:13px;font-weight:700;margin-bottom:3px}
+.sec-item p{font-size:11px;opacity:.7;line-height:1.5}
+
+/* ROADMAP */
+.roadmap{display:flex;flex-direction:column;gap:0;position:relative;padding-left:48px}
+.roadmap::before{content:'';position:absolute;left:17px;top:0;bottom:0;width:2px;background:rgba(255,255,255,.12)}
+.rm-item{display:flex;gap:16px;align-items:flex-start;padding-bottom:24px;position:relative}
+.rm-dot{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;position:absolute;left:-48px;top:0;border:3px solid rgba(255,255,255,.12);z-index:1}
+.rm-dot.done{background:var(--g500);border-color:var(--g300)}.rm-dot.active{background:var(--amber);border-color:#f5c842}.rm-dot.planned{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2)}
+.rm-content h4{font-size:14px;font-weight:700;margin-bottom:3px}
+.rm-content p{font-size:12px;opacity:.65;line-height:1.5}
+.rm-phase{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}
+.rm-phase.done{color:var(--g300)}.rm-phase.active{color:var(--amber)}.rm-phase.planned{opacity:.4}
+
+/* FEAT */
+.feat-item{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:7px}
+.feat-item .fi{font-size:24px}
+.feat-item h4{font-size:12px;font-weight:700}
+.feat-item p{font-size:11px;opacity:.65;line-height:1.5}
+
+/* OOS */
+.oos-item{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:var(--r);padding:18px}
+.oos-item .oi{font-size:26px;margin-bottom:7px}
+.oos-item h4{font-size:13px;font-weight:700;margin-bottom:5px}
+.oos-item p{font-size:11px;opacity:.75;line-height:1.5}
+
+/* DIVIDER */
+.hdivider{width:44px;height:4px;background:var(--amber);border-radius:2px;margin:0 auto 24px}
+.hdivider.left{margin:0 0 18px}
+.hdivider.green{background:var(--g500)}
+
+/* LIMIT TABLE */
+.limit-table{width:100%;border-collapse:collapse;font-size:12px}
+.limit-table th{background:rgba(255,255,255,.1);padding:7px 13px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.5px}
+.limit-table td{padding:7px 13px;border-bottom:1px solid rgba(255,255,255,.06);opacity:.8}
+.limit-table tr:last-child td{border-bottom:none}
+.limit-table code{background:rgba(255,255,255,.1);padding:1px 5px;border-radius:4px;font-size:10px}
+.bl-tight{background:rgba(239,68,68,.22);color:#FCA5A5;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:700}
+.bl-normal{background:rgba(82,183,136,.22);color:var(--g300);padding:2px 7px;border-radius:12px;font-size:10px;font-weight:700}
+
+/* CODE BLOCK */
+.code-block{background:#161b22;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:16px 20px;font-family:'Courier New',monospace;font-size:11.5px;line-height:1.7;color:#e6edf3;overflow-x:auto}
+.code-block .kw{color:#ff7b72}.code-block .str{color:#a5d6ff}.code-block .cmt{color:#8b949e;font-style:italic}
+.code-block .fn{color:#d2a8ff}.code-block .num{color:#79c0ff}.code-block .key{color:#79c0ff}
+
+/* TECH TAG */
+.tech-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;margin:4px}
+.tech-tag .dot{width:7px;height:7px;border-radius:50%}
+
+/* LIB ROW */
+.lib-row{display:flex;align-items:flex-start;gap:12px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.06)}
+.lib-row:last-child{border-bottom:none}
+.lib-name{font-size:12px;font-weight:700;min-width:200px;color:#79c0ff;font-family:'Courier New',monospace}
+.lib-ver{font-size:10px;opacity:.45;margin-left:4px}
+.lib-desc{font-size:12px;opacity:.75;line-height:1.5}
+
+/* REDIS KEY */
+.redis-key{display:flex;align-items:flex-start;gap:12px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.06)}
+.redis-key:last-child{border-bottom:none}
+.rk-key{font-family:'Courier New',monospace;font-size:11px;font-weight:700;min-width:200px;color:#f97316}
+.rk-type{font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700;margin-top:1px;margin-right:8px}
+.rk-type.str{background:rgba(59,130,246,.25);color:#93c5fd}
+.rk-type.ttl{background:rgba(239,68,68,.2);color:#fca5a5}
+.rk-desc{font-size:11px;opacity:.7;line-height:1.5}
+
+/* MIGRATION ROW */
+.mig-row{display:flex;align-items:flex-start;gap:10px;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.05)}
+.mig-row:last-child{border-bottom:none}
+.mig-num{font-size:10px;font-weight:700;color:var(--g300);font-family:'Courier New',monospace;min-width:80px}
+.mig-desc{font-size:12px;opacity:.8}
+
+/* NAV */
+#nav{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;z-index:100;background:rgba(0,0,0,.6);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.1);border-radius:40px;padding:9px 18px}
+.nav-btn{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:white;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s,transform .15s;user-select:none}
+.nav-btn:hover{background:rgba(255,255,255,.22);transform:scale(1.08)}.nav-btn:disabled{opacity:.28;cursor:default;transform:none}
+#counter{font-size:12px;font-weight:600;color:rgba(255,255,255,.75);min-width:44px;text-align:center;font-variant-numeric:tabular-nums}
+#progress{position:fixed;top:0;left:0;right:0;height:3px;z-index:200;background:rgba(255,255,255,.06)}
+#progress-fill{height:100%;background:var(--amber);transition:width .35s ease;border-radius:0 2px 2px 0}
+#dots{display:flex;gap:5px}
+.dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.28);cursor:pointer;transition:background .2s,transform .2s}
+.dot.active{background:var(--amber);transform:scale(1.4)}
+#hint{position:fixed;bottom:82px;left:50%;transform:translateX(-50%);font-size:10px;color:rgba(255,255,255,.3);letter-spacing:.5px;z-index:100;pointer-events:none;animation:fadeHint 5s ease forwards}
+@keyframes fadeHint{0%{opacity:1}70%{opacity:1}100%{opacity:0}}
+
+/* LABEL COLORS */
+.bg-hero .slide-label,.bg-dark .slide-label,.bg-amber .slide-label,.bg-navy .slide-label,.bg-purple .slide-label,.bg-code .slide-label{color:rgba(255,255,255,.45)}
+.bg-light .slide-label{color:var(--g500)}
+.bg-light h2{color:var(--g900)}
+.hdivider.green{background:var(--g500)}
+</style>
+</head>
+<body>
+<div id="progress"><div id="progress-fill"></div></div>
+<div id="hint">← → ok tuşları · Space ile ileri · Slayta tıkla</div>
+<div id="deck">
+
+<!-- ══ 1 KAPAK ════════════════════════════════════════════════════════════ -->
+<div class="slide bg-hero active" data-index="0">
+  <div class="slide-inner">
+    <div class="badge">🌿 Teknik Platform Sunumu · v2.0 · Mayıs 2026</div>
+    <h1>Köyden<br><span class="accent">Şehire</span></h1>
+    <p class="lead">Yerel üreticileri alıcılarla doğrudan buluşturan, komisyonsuz dijital listeme platformu.<br>Go backend · Flutter cross-platform · S3-uyumlu medya altyapısı.</p>
+    <div class="stats">
+      <div class="stat"><strong>%0</strong><span>Komisyon</span></div>
+      <div class="stat"><strong>Go 1.23</strong><span>Backend</span></div>
+      <div class="stat"><strong>Flutter 3.19</strong><span>Mobil + Web</span></div>
+      <div class="stat"><strong>16</strong><span>DB Migration</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 2 SORUN & ÇÖZÜM ════════════════════════════════════════════════════ -->
+<div class="slide bg-light" data-index="1">
+  <div class="slide-inner">
+    <div class="slide-label">Pazar Fırsatı</div>
+    <h2>Neden Köyden Şehire?</h2>
+    <div class="hdivider left green"></div>
+    <div class="cols2" style="margin-top:6px">
+      <div class="card problem">
+        <h3>⚠️ Mevcut Durum</h3>
+        <div class="ps-item"><div class="ps-dot"></div><div>Üreticiler aracısız pazara erişemiyor; her halka komisyon kesiyor</div></div>
+        <div class="ps-item"><div class="ps-dot"></div><div>Pazar yeri komisyonları <strong>%15–35</strong> kazancı eritiyor</div></div>
+        <div class="ps-item"><div class="ps-dot"></div><div>Güvenilir yerel üretici bulmak tüketici için zor</div></div>
+        <div class="ps-item"><div class="ps-dot"></div><div>Kalite kontrolü eksik; sahte profiller güven sorununa yol açıyor</div></div>
+      </div>
+      <div class="card solution">
+        <h3>✅ Köyden Şehire Çözümü</h3>
+        <div class="ps-item"><div class="ps-dot"></div><div>Doğrudan listeleme; platform komisyon almaz</div></div>
+        <div class="ps-item"><div class="ps-dot"></div><div>Davet sistemi — kalite güvencesi, referans zinciri</div></div>
+        <div class="ps-item"><div class="ps-dot"></div><div>Admin onay süreci; kalitesiz profiller sisteme giremez</div></div>
+        <div class="ps-item"><div class="ps-dot"></div><div>Alıcı üreticiyle doğrudan iletişim kurar; aracı yoktur</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 3 PLATFORM AKIŞI ═══════════════════════════════════════════════════ -->
+<div class="slide bg-white" data-index="2">
+  <div class="slide-inner">
+    <div class="slide-label">Platform Akışı</div>
+    <h2>Nasıl Çalışır?</h2>
+    <div class="hdivider left green"></div>
+    <div style="margin-bottom:28px">
+      <div style="font-size:12px;font-weight:700;color:var(--g700);margin-bottom:14px">🌱 Çiftçi Kabul Süreci</div>
+      <div class="flow">
+        <div class="flow-step"><div class="flow-icon fi-green">🔑</div><div class="flow-title">Davet Kodu</div><div class="flow-desc">KYS-XXXXXX kodu alınır</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><div class="flow-icon fi-green">📱</div><div class="flow-title">OTP Doğrulama</div><div class="flow-desc">SMS — 5 dk TTL, 3 deneme</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><div class="flow-icon fi-green">📋</div><div class="flow-title">Başvuru</div><div class="flow-desc">Konum, üretici tipi</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><div class="flow-icon fi-amber">🔍</div><div class="flow-title">Admin İnceleme</div><div class="flow-desc">Video talep, onay/ret</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><div class="flow-icon fi-green">✅</div><div class="flow-title">Hesap Aktif</div><div class="flow-desc">Ürün ekle, davet gönder</div></div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:12px;font-weight:700;color:#4F46E5;margin-bottom:14px">🛍️ Müşteri Keşif Akışı</div>
+      <div class="flow">
+        <div class="flow-step"><div class="flow-icon fi-purple">📲</div><div class="flow-title">Uygulamayı Aç</div><div class="flow-desc">Giriş zorunlu değil</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><div class="flow-icon fi-purple">🔎</div><div class="flow-title">Keşfet</div><div class="flow-desc">Kategori, şehir, fiyat</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><div class="flow-icon fi-purple">👤</div><div class="flow-title">Üretici Profili</div><div class="flow-desc">Konum, biyografi, ürünler</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><div class="flow-icon fi-purple">📞</div><div class="flow-title">Doğrudan İletişim</div><div class="flow-desc">Platform aracı değil</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 4 KULLANICI ROLLERİ ════════════════════════════════════════════════ -->
+<div class="slide bg-light" data-index="3">
+  <div class="slide-inner">
+    <div class="slide-label">Kullanıcı Yapısı</div>
+    <h2>Üç Kullanıcı Rolü</h2>
+    <div class="hdivider left green"></div>
+    <div class="cols3" style="margin-top:6px">
+      <div class="role-card customer">
+        <div class="role-icon">🛍️</div>
+        <div class="role-name">Müşteri</div>
+        <div class="role-desc">Mobil uygulama üzerinden ürün keşfeder, üretici profillerini inceler ve doğrudan iletişim kurar.</div>
+        <span class="tag">OTP + şifre kaydı</span><span class="tag">Giriş zorunlu değil</span><span class="tag">Ücretsiz</span>
+      </div>
+      <div class="role-card farmer">
+        <div class="role-icon">🌾</div>
+        <div class="role-name">Çiftçi / Üretici</div>
+        <div class="role-desc">Davet + admin onayıyla sisteme girer. Ürün listeler, profil düzenler, kendi davet ağını büyütür.</div>
+        <span class="tag">Davet kodu gerekli</span><span class="tag">Admin onayı</span><span class="tag">Komisyonsuz</span>
+      </div>
+      <div class="role-card admin">
+        <div class="role-icon">⚙️</div>
+        <div class="role-name">Admin</div>
+        <div class="role-desc">Web paneli üzerinden başvuruları inceler, ürünleri modere eder, analitik ve audit log'a erişir.</div>
+        <span class="tag">Web only (kIsWeb)</span><span class="tag">JWT role=admin</span><span class="tag">Audit log</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 5 FLUTTER KÜTÜPHANELERİ ═══════════════════════════════════════════ -->
+<div class="slide bg-navy" data-index="4">
+  <div class="slide-inner">
+    <div class="slide-label">Flutter Ekosistemi</div>
+    <h2>Flutter Kütüphaneleri</h2>
+    <div class="hdivider" style="margin:0 0 20px"></div>
+    <div class="cols2" style="gap:16px">
+      <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:var(--r);overflow:hidden">
+        <div style="padding:10px 14px;background:rgba(255,255,255,.08);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;opacity:.6">Temel Bağımlılıklar</div>
+        <div class="lib-row"><span class="lib-name">get <span class="lib-ver">^4.6.6</span></span><span class="lib-desc">State yönetimi, DI container, lifecycle. GetxService (permanent), GetxController (fenix:true)</span></div>
+        <div class="lib-row"><span class="lib-name">go_router <span class="lib-ver">^14.0.0</span></span><span class="lib-desc">Tip-güvenli navigasyon, deep link, ShellRoute (AdminShell), redirect guard</span></div>
+        <div class="lib-row"><span class="lib-name">dio <span class="lib-ver">^5.4.0</span></span><span class="lib-desc">HTTP istemcisi. _AuthInterceptor: 401 → token yenile → isteği tekrarla</span></div>
+        <div class="lib-row"><span class="lib-name">flutter_secure_storage <span class="lib-ver">^9.0.0</span></span><span class="lib-desc">iOS Keychain / Android Keystore. Access + refresh token saklanır</span></div>
+        <div class="lib-row"><span class="lib-name">cached_network_image <span class="lib-ver">^3.3.1</span></span><span class="lib-desc">Ürün / profil görselleri için disk önbellekli ağ görüntüsü</span></div>
+        <div class="lib-row"><span class="lib-name">shimmer <span class="lib-ver">^3.0.0</span></span><span class="lib-desc">Yükleme iskelet animasyonu — ShimmerProductCard bileşeni</span></div>
+      </div>
+      <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:var(--r);overflow:hidden">
+        <div style="padding:10px 14px;background:rgba(255,255,255,.08);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;opacity:.6">Medya & Yardımcı</div>
+        <div class="lib-row"><span class="lib-name">image_picker <span class="lib-ver">^1.0.7</span></span><span class="lib-desc">Galeriden / kameradan görsel seçme. Ürün ve profil fotoğrafı yükleme</span></div>
+        <div class="lib-row"><span class="lib-name">video_compress <span class="lib-ver">^3.1.2</span></span><span class="lib-desc">Başvuru videosu sıkıştırma — presigned URL'e yüklemeden önce</span></div>
+        <div class="lib-row"><span class="lib-name">fl_chart <span class="lib-ver">^0.69.0</span></span><span class="lib-desc">Admin dashboard grafikleri — şehir yoğunluğu, istatistik</span></div>
+        <div class="lib-row"><span class="lib-name">connectivity_plus <span class="lib-ver">^6.0.3</span></span><span class="lib-desc">Çevrimdışı algılama ve bağlantı durumu izleme</span></div>
+        <div class="lib-row"><span class="lib-name">url_launcher <span class="lib-ver">^6.2.5</span></span><span class="lib-desc">Üretici telefon numarasını doğrudan arama / web URL açma</span></div>
+        <div class="lib-row"><span class="lib-name">share_plus <span class="lib-ver">^9.0.0</span></span><span class="lib-desc">Ürün ve üretici profili paylaşım özelliği</span></div>
+        <div class="lib-row"><span class="lib-name">permission_handler <span class="lib-ver">^11.3.0</span></span><span class="lib-desc">Kamera, galeri, depolama izin yönetimi</span></div>
+      </div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <div class="tech-tag"><div class="dot" style="background:#54C5F8"></div>Flutter 3.19 / Dart 3.3</div>
+      <div class="tech-tag"><div class="dot" style="background:#F5A623"></div>PlusJakartaSans font</div>
+      <div class="tech-tag"><div class="dot" style="background:#A78BFA"></div>Material 3 theming</div>
+      <div class="tech-tag"><div class="dot" style="background:#34D399"></div>Android · iOS · Web</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 6 FLUTTER MİMARİSİ ════════════════════════════════════════════════ -->
+<div class="slide bg-dark" data-index="5">
+  <div class="slide-inner">
+    <div class="slide-label">Flutter Mimarisi</div>
+    <h2>GetX + GoRouter Köprüsü</h2>
+    <div class="hdivider" style="margin:0 0 20px"></div>
+    <div class="cols2" style="gap:20px;align-items:start">
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--g300);margin-bottom:10px">AppBinding — Global DI</div>
+        <div class="code-block"><span class="cmt">// lib/core/bindings/app_binding.dart</span>
+<span class="kw">class</span> <span class="fn">AppBinding</span> <span class="kw">extends</span> Bindings {
+  <span class="fn">dependencies</span>() {
+    <span class="cmt">// Servisler (permanent)</span>
+    Get.put(AuthService(), permanent: <span class="kw">true</span>);
+    Get.put(SecureStorageService(), permanent: <span class="kw">true</span>);
+    <span class="cmt">// Repolar — lazy, fenix: yeniden oluşturulabilir</span>
+    Get.lazyPut(() => ProductRepository(), fenix: <span class="kw">true</span>);
+    Get.lazyPut(() => HomeController(), fenix: <span class="kw">true</span>);
+    <span class="cmt">// Tüm controller'lar bu şekilde kaydedilir</span>
+  }
+}</div>
+        <div style="font-size:12px;font-weight:700;color:var(--g300);margin-top:16px;margin-bottom:10px">Katmanlı Yapı</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 14px;font-size:12px"><strong style="color:#79c0ff">views/</strong> → Ekran widget'ları (admin/, farmer/, public/, customer/)</div>
+          <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 14px;font-size:12px"><strong style="color:#a5d6ff">controllers/</strong> → GetxController; Obx() ile reaktif UI</div>
+          <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 14px;font-size:12px"><strong style="color:#ffa657">services/*_repository.dart</strong> → ApiClient üzerinden HTTP çağrısı</div>
+          <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 14px;font-size:12px"><strong style="color:#56d364">models/</strong> → fromJson Dart sınıfları</div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--g300);margin-bottom:10px">GoRouter ↔ GetX Köprüsü</div>
+        <div class="code-block"><span class="cmt">// lib/app/router.dart</span>
+<span class="kw">class</span> _RouterRefreshListenable
+    <span class="kw">extends</span> ChangeNotifier {
+  <span class="kw">late final</span> Worker _worker;
+
+  _RouterRefreshListenable() {
+    <span class="cmt">// GetX ever() → GoRouter redirect tetikler</span>
+    _worker = <span class="fn">ever</span>(
+      Get.find&lt;AuthService&gt;().status,
+      (_) => <span class="fn">notifyListeners</span>(),
+    );
+  }
+}
+<span class="cmt">// AuthStatus değişimi → redirect yeniden değerlenir</span>
+<span class="cmt">// admin → /admin/dashboard</span>
+<span class="cmt">// farmerActive → /farmer/dashboard</span>
+<span class="cmt">// loggedOut → /login</span></div>
+        <div style="font-size:12px;font-weight:700;color:var(--g300);margin-top:14px;margin-bottom:10px">Auth Interceptor — 401 Akışı</div>
+        <div class="code-block"><span class="cmt">// Dio interceptor — otomatik token yenileme</span>
+<span class="num">1.</span> İstek → <span class="str">Authorization: Bearer &lt;access&gt;</span>
+<span class="num">2.</span> <span class="str">401</span> alınırsa → <span class="fn">POST /auth/refresh</span>
+<span class="num">3.</span> Yeni access token SecureStorage'a yaz
+<span class="num">4.</span> Başarısız → <span class="fn">AuthService.handleUnauthorized()</span>
+<span class="num">5.</span> Başarılı → orijinal isteği tekrarla</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 7 BACKEND GO STACK ════════════════════════════════════════════════ -->
+<div class="slide bg-code" data-index="6">
+  <div class="slide-inner">
+    <div class="slide-label">Backend Stack</div>
+    <h2>Go 1.23 — Kütüphane Detayları</h2>
+    <div class="hdivider" style="margin:0 0 18px"></div>
+    <div class="cols2" style="gap:16px">
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:var(--r);overflow:hidden">
+        <div style="padding:9px 14px;background:rgba(255,255,255,.07);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;opacity:.55">go.mod — Temel Bağımlılıklar</div>
+        <div class="lib-row"><span class="lib-name">gofiber/fiber/v2 <span class="lib-ver">v2.52.1</span></span><span class="lib-desc">HTTP framework. fasthttp tabanlı, düşük allocation. Middleware zinciri: recover → logger → CORS → auth</span></div>
+        <div class="lib-row"><span class="lib-name">golang-jwt/jwt/v5 <span class="lib-ver">v5.2.1</span></span><span class="lib-desc">HS256 JWT. Claims: user_id, role, exp, iat. WithExpirationRequired() zorunlu</span></div>
+        <div class="lib-row"><span class="lib-name">jmoiron/sqlx <span class="lib-ver">v1.3.5</span></span><span class="lib-desc">PostgreSQL query builder. StructScan, db: tag eşleşmesi. SELECT * kullanılmaz</span></div>
+        <div class="lib-row"><span class="lib-name">lib/pq <span class="lib-ver">v1.10.9</span></span><span class="lib-desc">PostgreSQL sürücüsü. sqlx altında çalışır, doğrudan kullanılmaz</span></div>
+        <div class="lib-row"><span class="lib-name">redis/go-redis/v9 <span class="lib-ver">v9.5.1</span></span><span class="lib-desc">OTP, rate limit, refresh token. Context-aware API, pipeline desteği</span></div>
+        <div class="lib-row"><span class="lib-name">golang-migrate/migrate/v4 <span class="lib-ver">v4.17.0</span></span><span class="lib-desc">SQL migration yönetimi. APP_AUTO_MIGRATE=true ile başlangıçta otomatik çalışır</span></div>
+        <div class="lib-row"><span class="lib-name">golang.org/x/crypto <span class="lib-ver">v0.21.0</span></span><span class="lib-desc">bcrypt cost=12 ile şifre hash. ~300ms/hash — brute-force engeli</span></div>
+        <div class="lib-row"><span class="lib-name">go-playground/validator/v10 <span class="lib-ver">v10.19.0</span></span><span class="lib-desc">Struct tag tabanlı validasyon. required, min, max, e164 vb.</span></div>
+      </div>
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:var(--r);overflow:hidden">
+        <div style="padding:9px 14px;background:rgba(255,255,255,.07);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;opacity:.55">go.mod — Depolama SDK</div>
+        <div class="lib-row"><span class="lib-name">aws-sdk-go-v2 <span class="lib-ver">v1.25.3</span></span><span class="lib-desc">Cloudflare R2 ve MinIO ile S3-uyumlu konuşmak için AWS SDK v2. Custom endpoint resolver ile yönlendirme</span></div>
+        <div class="lib-row"><span class="lib-name">aws-sdk-go-v2/service/s3 <span class="lib-ver">v1.51.4</span></span><span class="lib-desc">PutObject, PresignPutObject, PresignGetObject, DeleteObject. UsePathStyle=true (MinIO uyumu)</span></div>
+        <div class="lib-row" style="margin-top:12px"><span class="lib-name">Mimari Kararlar</span><span class="lib-desc"></span></div>
+        <div class="code-block" style="margin:0 0 0;font-size:10.5px"><span class="cmt">// Domain-per-folder yapısı</span>
+internal/
+  &lt;domain&gt;/
+    model.go      <span class="cmt">← DB struct (db: tags)</span>
+    repository.go <span class="cmt">← Ham SQL (sqlx)</span>
+    service.go    <span class="cmt">← İş mantığı</span>
+    handler.go    <span class="cmt">← Fiber HTTP</span>
+    dto.go        <span class="cmt">← Request/Response</span>
+<span class="cmt">// DI: manuel wire — container yok</span>
+<span class="cmt">// cmd/api/main.go tüm bağımlılıkları kurar</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 8 MİNIO & DEPOLAMA ════════════════════════════════════════════════ -->
+<div class="slide bg-dark" data-index="7">
+  <div class="slide-inner">
+    <div class="slide-label">Medya Altyapısı</div>
+    <h2>MinIO / Cloudflare R2 + Presigned URL</h2>
+    <div class="hdivider" style="margin:0 0 18px"></div>
+    <div class="cols2" style="gap:20px;align-items:start">
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:10px">Presigned URL Upload Akışı</div>
+        <div class="flow" style="flex-direction:column;gap:0;align-items:stretch">
+          <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 14px;font-size:12px;margin-bottom:6px"><span style="color:var(--g300);font-weight:700">① Flutter</span> → <code style="color:#79c0ff;font-size:11px">POST /farmer/uploads/product-image</code></div>
+          <div style="text-align:center;color:rgba(255,255,255,.3);font-size:18px;margin:2px 0">↓</div>
+          <div style="background:rgba(64,145,108,.15);border:1px solid var(--g500);border-radius:8px;padding:10px 14px;font-size:12px;margin-bottom:6px"><span style="color:var(--g300);font-weight:700">② Go API</span> → aws-sdk-go-v2 PresignPutObject → presigned URL üretir (15 dk)</div>
+          <div style="text-align:center;color:rgba(255,255,255,.3);font-size:18px;margin:2px 0">↓</div>
+          <div style="background:rgba(212,168,83,.12);border:1px solid var(--amber);border-radius:8px;padding:10px 14px;font-size:12px;margin-bottom:6px"><span style="color:var(--amber);font-weight:700">③ Flutter</span> → <code style="color:#f97316;font-size:11px">PUT &lt;presigned_url&gt;</code> → MinIO/R2'ye <strong>doğrudan</strong> yükler</div>
+          <div style="text-align:center;color:rgba(255,255,255,.3);font-size:18px;margin:2px 0">↓</div>
+          <div style="background:rgba(59,130,246,.12);border:1px solid var(--blue);border-radius:8px;padding:10px 14px;font-size:12px"><span style="color:#93c5fd;font-weight:700">④ CDN URL</span> → PUBLIC_URL/product-images/&lt;uuid&gt;.jpg kaydedilir</div>
+        </div>
+        <div style="margin-top:10px;background:rgba(255,255,255,.05);border-radius:8px;padding:10px 14px;font-size:11px;color:rgba(255,255,255,.6)">
+          ⚡ API sunucusu upload data path'inde <strong>değil</strong> — sunucu yükü sıfır
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:10px">MinIO (Geliştirme) vs R2 (Prod)</div>
+        <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:var(--r);overflow:hidden;margin-bottom:12px">
+          <div style="padding:8px 14px;background:rgba(255,255,255,.07);font-size:10px;font-weight:700;opacity:.55;letter-spacing:1px;text-transform:uppercase">Docker Compose — MinIO</div>
+          <div class="code-block" style="border-radius:0;border:none;font-size:10.5px">minio:
+  image: minio/minio
+  command: server /data <span class="str">--console-address ":9001"</span>
+  ports:
+    - <span class="str">"9000:9000"</span>  <span class="cmt"># S3 API</span>
+    - <span class="str">"9001:9001"</span>  <span class="cmt"># Web konsol</span>
+  environment:
+    MINIO_ROOT_USER: minioadmin
+    MINIO_ROOT_PASSWORD: minioadmin123</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="sec-item">
+            <div class="sec-icon">🖼️</div>
+            <div><h4>Public Medya</h4><p>Ürün görseli (max 5MB) ve profil fotoğrafı (max 2MB) CDN üzerinden public erişim. isPublicKey() kontrolü: product-images/ veya profile-images/ prefix</p></div>
+          </div>
+          <div class="sec-item">
+            <div class="sec-icon">🎥</div>
+            <div><h4>Private Video</h4><p>Başvuru videosu (max 100MB) public değil. Admin izlemek istediğinde <strong>PresignGetObject (1 saat TTL)</strong> ile geçici URL üretilir</p></div>
+          </div>
+          <div class="sec-item">
+            <div class="sec-icon">☁️</div>
+            <div><h4>DevProvider Fallback</h4><p>Storage credentials yoksa DevProvider devreye girer. Upload işlemleri sessizce başarılı görünür — geliştirme ortamını bozmaz</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 9 REDİS KULLANIM ALANLARI ════════════════════════════════════════ -->
+<div class="slide bg-code" data-index="8">
+  <div class="slide-inner">
+    <div class="slide-label">Önbellekleme & Durum</div>
+    <h2>Redis 7 — Kullanım Alanları</h2>
+    <div class="hdivider" style="margin:0 0 18px"></div>
+    <div class="cols2" style="gap:16px">
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#f97316;margin-bottom:10px">Redis Key Şemaları</div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:var(--r);overflow:hidden">
+          <div class="redis-key">
+            <div><div class="rk-key">otp:{phone}</div><span class="rk-type str">STRING</span></div>
+            <div class="rk-desc">Format: <code style="color:#f97316">{6-digit-code}:{attempts}</code><br>TTL: 5 dakika · Max 3 yanlış deneme</div>
+          </div>
+          <div class="redis-key">
+            <div><div class="rk-key">otp_verified:{phone}</div><span class="rk-type str">STRING</span></div>
+            <div class="rk-desc">OTP başarılı doğrulama işareti<br>TTL: 30 dakika · Kayıt tamamlandığında tüketilir (DEL)</div>
+          </div>
+          <div class="redis-key">
+            <div><div class="rk-key">otp_cooldown:{phone}</div><span class="rk-type ttl">TTL</span></div>
+            <div class="rk-desc">SMS yeniden gönderme bekleme süresi<br>Cooldown geçmeden ikinci OTP isteği reddedilir</div>
+          </div>
+          <div class="redis-key">
+            <div><div class="rk-key">refresh_token:{token}</div><span class="rk-type str">STRING</span></div>
+            <div class="rk-desc">Value: user_id · TTL: 7 gün (yapılandırılabilir)<br>Kullanımda eski silinir, yeni yazılır (rotation)</div>
+          </div>
+          <div class="redis-key">
+            <div><div class="rk-key">rl:login_phone:{phone}</div><span class="rk-type ttl">INCR</span></div>
+            <div class="rk-desc">Login rate limit — telefon başına<br>Max 5 istek / 15 dakika</div>
+          </div>
+          <div class="redis-key">
+            <div><div class="rk-key">rl:login_ip:{ip}</div><span class="rk-type ttl">INCR</span></div>
+            <div class="rk-desc">Login rate limit — IP başına<br>Max 30 istek / 15 dakika (NAT koruması)</div>
+          </div>
+          <div class="redis-key">
+            <div><div class="rk-key">rl:otp:{phone}</div><span class="rk-type ttl">INCR</span></div>
+            <div class="rk-desc">OTP gönderme limiti<br>Max 3 istek / saat</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#f97316;margin-bottom:10px">Rate Limit Mimarisi</div>
+        <div class="code-block" style="margin-bottom:12px;font-size:10.5px"><span class="kw">func</span> <span class="fn">RateLimit</span>(rdb *redis.Client, cfg Config) Handler {
+  <span class="kw">return func</span>(c *fiber.Ctx) error {
+    key := <span class="str">"rl:"</span> + cfg.KeyFunc(c)
+    <span class="cmt">// Atomik sayaç artırma</span>
+    count, _ := rdb.<span class="fn">Incr</span>(ctx, key).Result()
+    <span class="kw">if</span> count == <span class="num">1</span> {
+      <span class="cmt">// İlk istek → TTL başlat</span>
+      rdb.<span class="fn">Expire</span>(ctx, key, cfg.Window)
+    }
+    <span class="kw">if</span> count > int64(cfg.Max) {
+      <span class="kw">return</span> response.<span class="fn">TooManyRequests</span>(c, ...)
+    }
+    <span class="kw">return</span> c.<span class="fn">Next</span>()
+  }
+}</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="sec-item">
+            <div class="sec-icon">🔑</div>
+            <div><h4>OTP Attempt Tracking</h4><p>Redis value: <code style="font-size:10px;background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px">code:attempts</code> formatı. Her yanlış denemede INCR yerine TTL korunarak string güncellenir</p></div>
+          </div>
+          <div class="sec-item">
+            <div class="sec-icon">🔄</div>
+            <div><h4>Token Rotasyonu</h4><p>Refresh → eski token DEL, yeni token SET. Aynı refresh token iki kez kullanılamaz. Token çalınırsa geçersiz hale gelir</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 10 POSTGRESQL & MİGRASYON ════════════════════════════════════════ -->
+<div class="slide bg-navy" data-index="9">
+  <div class="slide-inner">
+    <div class="slide-label">Veri Katmanı</div>
+    <h2>PostgreSQL 16 + Migration'lar</h2>
+    <div class="hdivider" style="margin:0 0 18px"></div>
+    <div class="cols2" style="gap:20px;align-items:start">
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--g300);margin-bottom:10px">Connection Pool Konfigürasyonu</div>
+        <div class="code-block" style="margin-bottom:14px;font-size:10.5px"><span class="kw">func</span> <span class="fn">NewPostgres</span>(url string, maxConn, maxIdle int) {
+  db, _ := sqlx.<span class="fn">Connect</span>(<span class="str">"postgres"</span>, url)
+  <span class="cmt">// .env: DB_MAX_CONNECTIONS, DB_MAX_IDLE</span>
+  db.<span class="fn">SetMaxOpenConns</span>(maxConn)
+  db.<span class="fn">SetMaxIdleConns</span>(maxIdle)
+  db.<span class="fn">SetConnMaxLifetime</span>(<span class="num">5</span> * time.Minute)
+  <span class="cmt">// lib/pq sürücüsü, sqlx üzerinden</span>
+}
+<span class="cmt">// Sorgu kuralları:</span>
+<span class="cmt">// SELECT * KULLANILMAZ — sütunlar explicit</span>
+<span class="cmt">// db: tag → StructScan ile doğrudan eşleme</span></div>
+        <div style="font-size:12px;font-weight:700;color:var(--g300);margin-bottom:10px">Docker PostgreSQL 16</div>
+        <div class="code-block" style="font-size:10.5px">postgres:
+  image: postgres:<span class="num">16</span>-alpine
+  ports: [<span class="str">"5433:5432"</span>]  <span class="cmt"># Dış port 5433!</span>
+  healthcheck:
+    test: pg_isready -U admin
+    interval: <span class="num">5s</span> · retries: <span class="num">5</span>
+  volumes: postgres_data:/var/lib/postgresql/data</div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--g300);margin-bottom:10px">Migration Listesi (000001 → 000016)</div>
+        <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:var(--r);overflow:hidden">
+          <div class="mig-row"><span class="mig-num">000001-003</span><span class="mig-desc">users, farmer_profiles, invitations tabloları</span></div>
+          <div class="mig-row"><span class="mig-num">000004-005</span><span class="mig-desc">categories (hiyerarşik), products tabloları</span></div>
+          <div class="mig-row"><span class="mig-num">000006-007</span><span class="mig-desc">farmer_applications, otp_verifications tabloları</span></div>
+          <div class="mig-row"><span class="mig-num">000008-011</span><span class="mig-desc">Temel şema tamamlama, indexler, constraints</span></div>
+          <div class="mig-row"><span class="mig-num">000012</span><span class="mig-desc">Seed: admin kullanıcısı (05000000000 / admin123)</span></div>
+          <div class="mig-row"><span class="mig-num">000013</span><span class="mig-desc">Seed: kategori ağacı (sebze, meyve, süt, bal…)</span></div>
+          <div class="mig-row"><span class="mig-num">000014</span><span class="mig-desc">Seed: KYS-FOUNDER kodu (50 kullanım, admin sahipli)</span></div>
+          <div class="mig-row"><span class="mig-num">000015</span><span class="mig-desc">Müşteri rolü desteği eklendi</span></div>
+          <div class="mig-row" style="background:rgba(64,145,108,.1)"><span class="mig-num" style="color:var(--g300)">000016 ✓</span><span class="mig-desc"><strong>admin_audit_logs</strong>: audit_action enum (14 aksiyon), audit_target_type enum, 5 index</span></div>
+        </div>
+        <div style="margin-top:10px;background:rgba(255,255,255,.05);border-radius:8px;padding:10px 14px;font-size:11px;color:rgba(255,255,255,.6)">
+          <code style="color:#79c0ff">APP_AUTO_MIGRATE=true</code> → uygulama başında otomatik çalışır<br>Manuel: <code style="color:#a5d6ff;font-size:10px">migrate -path backend/migrations -database postgres://... up</code>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 11 JWT & OTP AUTH AKIŞI ══════════════════════════════════════════ -->
+<div class="slide bg-purple" data-index="10">
+  <div class="slide-inner">
+    <div class="slide-label">Kimlik Doğrulama</div>
+    <h2>JWT HS256 + OTP Mekanizması</h2>
+    <div class="hdivider" style="margin:0 0 18px"></div>
+    <div class="cols2" style="gap:20px;align-items:start">
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#c4b5fd;margin-bottom:10px">JWT Token Yapısı</div>
+        <div class="code-block" style="margin-bottom:12px;font-size:10.5px"><span class="cmt">// generateToken() — HS256 imzalı</span>
+claims := jwt.MapClaims{
+  <span class="str">"user_id"</span>: user.ID,   <span class="cmt">// UUID</span>
+  <span class="str">"role"</span>:    user.Role,  <span class="cmt">// admin|farmer|customer</span>
+  <span class="str">"exp"</span>:     now + jwtExpiry,
+  <span class="str">"iat"</span>:     now,
+}
+<span class="cmt">// Middleware: RequireAuth → RequireRole → RequireActiveUser</span>
+<span class="cmt">// Defense in depth: exp claim explicit doğrulanır</span>
+<span class="cmt">// Refresh token: 32-byte crypto/rand → hex string</span>
+<span class="cmt">// Redis'te: refresh_token:{hex} → user_id</span></div>
+        <div style="font-size:12px;font-weight:700;color:#c4b5fd;margin-bottom:10px">Middleware Zinciri</div>
+        <div class="flow" style="flex-direction:column;gap:6px;align-items:stretch">
+          <div style="background:rgba(255,255,255,.1);border-radius:8px;padding:9px 14px;font-size:12px;display:flex;justify-content:space-between"><span>RequireAuth</span><span style="opacity:.6;font-size:11px">JWT parse + DB user doğrulama</span></div>
+          <div style="background:rgba(255,255,255,.08);border-radius:8px;padding:9px 14px;font-size:12px;display:flex;justify-content:space-between"><span>RequireRole("farmer")</span><span style="opacity:.6;font-size:11px">Locals'tan rol kontrolü</span></div>
+          <div style="background:rgba(255,255,255,.06);border-radius:8px;padding:9px 14px;font-size:12px;display:flex;justify-content:space-between"><span>RequireActiveUser</span><span style="opacity:.6;font-size:11px">status == "active" kontrolü</span></div>
+        </div>
+        <div style="margin-top:10px;background:rgba(255,255,255,.08);border-radius:8px;padding:10px 14px;font-size:11px;color:rgba(255,255,255,.7)">
+          🔐 bcrypt maliyet <strong>12</strong> (~300ms/hash). Şifre asla plain text saklanmaz. Login'de <code style="font-size:10px;background:rgba(255,255,255,.15);padding:1px 5px;border-radius:3px">CompareHashAndPassword</code>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#c4b5fd;margin-bottom:10px">OTP Akışı — Detay</div>
+        <div class="flow" style="flex-direction:column;gap:0;align-items:stretch">
+          <div style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 14px;font-size:12px;margin-bottom:6px">
+            <strong>① Send</strong> — crypto/rand ile 6 haneli kod üret<br>
+            <span style="opacity:.65;font-size:11px">Redis: <code style="color:#f97316">otp:{phone}</code> = <code style="color:#a5d6ff">"123456:0"</code> (TTL 5 dk)<br>Dev ortamda SMS yerine stdout'a yaz</span>
+          </div>
+          <div style="text-align:center;opacity:.3;margin:2px 0">↓</div>
+          <div style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 14px;font-size:12px;margin-bottom:6px">
+            <strong>② Verify</strong> — Redis'ten kodu oku, karşılaştır<br>
+            <span style="opacity:.65;font-size:11px">Yanlış → attempts++ → TTL korunarak güncelle<br>3. yanlış → key DEL (geçersiz)</span>
+          </div>
+          <div style="text-align:center;opacity:.3;margin:2px 0">↓</div>
+          <div style="background:rgba(64,145,108,.15);border:1px solid var(--g500);border-radius:8px;padding:10px 14px;font-size:12px;margin-bottom:6px">
+            <strong>③ Başarı</strong> — otp:{phone} DEL, otp_verified:{phone} SET<br>
+            <span style="opacity:.65;font-size:11px">30 dakika pencere — müşteri kaydı veya çiftçi başvurusu için</span>
+          </div>
+          <div style="text-align:center;opacity:.3;margin:2px 0">↓</div>
+          <div style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 14px;font-size:12px">
+            <strong>④ Müşteri Kaydı</strong> — otp_verified kontrol → <strong>tüket (DEL)</strong><br>
+            <span style="opacity:.65;font-size:11px">Aynı OTP doğrulaması başka kayıt için kullanılamaz</span>
+          </div>
+        </div>
+        <div style="margin-top:10px;background:rgba(255,255,255,.07);border-radius:8px;padding:10px 14px;font-size:11px;color:rgba(255,255,255,.65)">
+          📱 SMS: Netgsm (prod) · DevProvider stdout (dev)<br>Format doğrulama: <code style="font-size:10px;background:rgba(255,255,255,.15);padding:1px 4px;border-radius:3px">^05[0-9]{9}$</code> — 11 karakter
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 12 DOCKER COMPOSE ALTYAPI ════════════════════════════════════════ -->
+<div class="slide bg-code" data-index="11">
+  <div class="slide-inner">
+    <div class="slide-label">Geliştirme Ortamı</div>
+    <h2>Docker Compose — 5 Servis</h2>
+    <div class="hdivider" style="margin:0 0 18px"></div>
+    <div class="cols2" style="gap:16px">
+      <div class="code-block" style="font-size:10.5px;height:fit-content">services:
+  postgres:
+    image: postgres:<span class="num">16</span>-alpine
+    ports: [<span class="str">"5433:5432"</span>]   <span class="cmt"># Host 5433!</span>
+    healthcheck: pg_isready -U admin
+
+  redis:
+    image: redis:<span class="num">7</span>-alpine
+    ports: [<span class="str">"6379:6379"</span>]
+    healthcheck: redis-cli ping
+
+  minio:
+    image: minio/minio
+    command: server /data <span class="str">--console-address ":9001"</span>
+    ports:
+      - <span class="str">"9000:9000"</span>   <span class="cmt"># S3 API</span>
+      - <span class="str">"9001:9001"</span>   <span class="cmt"># Web console</span>
+
+  api:
+    build: ./backend      <span class="cmt"># Dockerfile</span>
+    ports: [<span class="str">"8080:8080"</span>]
+    env_file: .env
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis:    {condition: service_healthy}
+
+  n8n:
+    image: n8nio/n8n
+    ports: [<span class="str">"5678:5678"</span>]
+    volumes: n8n_data:/home/node/.n8n</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:12px;font-weight:700;color:#79c0ff;margin-bottom:2px">Servis Adresleri</div>
+        <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:var(--r);overflow:hidden">
+          <div class="redis-key" style="border-bottom:1px solid rgba(255,255,255,.06)"><div class="rk-key" style="min-width:150px">localhost:8080</div><div class="rk-desc">Go REST API · /api/v1/*</div></div>
+          <div class="redis-key" style="border-bottom:1px solid rgba(255,255,255,.06)"><div class="rk-key" style="min-width:150px">localhost:5433</div><div class="rk-desc">PostgreSQL (dış 5433 → iç 5432)</div></div>
+          <div class="redis-key" style="border-bottom:1px solid rgba(255,255,255,.06)"><div class="rk-key" style="min-width:150px">localhost:6379</div><div class="rk-desc">Redis 7</div></div>
+          <div class="redis-key" style="border-bottom:1px solid rgba(255,255,255,.06)"><div class="rk-key" style="min-width:150px">localhost:9000</div><div class="rk-desc">MinIO S3 API</div></div>
+          <div class="redis-key" style="border-bottom:1px solid rgba(255,255,255,.06)"><div class="rk-key" style="min-width:150px">localhost:9001</div><div class="rk-desc">MinIO Web Konsol</div></div>
+          <div class="redis-key"><div class="rk-key" style="min-width:150px">localhost:5678</div><div class="rk-desc">n8n Workflow Otomasyonu</div></div>
+        </div>
+        <div style="font-size:12px;font-weight:700;color:#79c0ff;margin-top:4px;margin-bottom:4px">n8n — Webhook Bildirimleri</div>
+        <div class="sec-item">
+          <div class="sec-icon">🔗</div>
+          <div><h4>Olay Tabanlı Bildirimler</h4><p>Başvuru onay/ret, ürün moderasyon olaylarında Go → n8n webhook. N8N_WEBHOOK_URL + N8N_WEBHOOK_SECRET ile güvenli bağlantı. Goroutine içinde non-blocking</p></div>
+        </div>
+        <div style="background:rgba(255,255,255,.05);border-radius:8px;padding:10px 14px;font-size:11px;color:rgba(255,255,255,.6)">
+          <strong>Dev ortamı notları:</strong><br>
+          • <code style="color:#79c0ff">APP_ENV=development</code> → OTP stdout'a<br>
+          • Storage credentials yoksa → DevProvider (sessiz)<br>
+          • SMS credentials yoksa → DevProvider (stdout)
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 13 ÖZELLİKLER ════════════════════════════════════════════════════ -->
+<div class="slide bg-dark" data-index="12">
+  <div class="slide-inner">
+    <div class="slide-label">Platform Kapasitesi</div>
+    <h2>Temel Özellikler</h2>
+    <div class="hdivider" style="margin:0 0 20px"></div>
+    <div class="cols4">
+      <div class="feat-item"><div class="fi">🗺️</div><h4>Coğrafi Filtreleme</h4><p>Şehir, ilçe, köy bazında ürün ve üretici arama.</p></div>
+      <div class="feat-item"><div class="fi">📂</div><h4>Kategori Ağacı</h4><p>Hiyerarşik yapı; kök seçiminde alt kategoriler otomatik dahil.</p></div>
+      <div class="feat-item"><div class="fi">🖼️</div><h4>Medya Yönetimi</h4><p>Ürün başına 5 görsel, profil fotoğrafı, başvuru videosu.</p></div>
+      <div class="feat-item"><div class="fi">🔔</div><h4>n8n Bildirimleri</h4><p>Başvuru ve ürün olaylarında webhook tabanlı bildirim.</p></div>
+      <div class="feat-item"><div class="fi">📊</div><h4>Admin Analitik</h4><p>Şehir yoğunluk haritası, davet ağacı, dashboard.</p></div>
+      <div class="feat-item"><div class="fi">📋</div><h4>Audit Log</h4><p>14 aksiyon tipi, JSONB snapshot, 5 DB index.</p></div>
+      <div class="feat-item"><div class="fi">🌐</div><h4>Web + Mobil</h4><p>Tek Flutter kod tabanı: Android, iOS, web admin.</p></div>
+      <div class="feat-item"><div class="fi">🏅</div><h4>Davet Sistemi</h4><p>KYS-XXXXXX format, kurucu rozeti, kota yönetimi.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 14 SİSTEM MİMARİSİ ════════════════════════════════════════════════ -->
+<div class="slide bg-dark" data-index="13">
+  <div class="slide-inner">
+    <div class="slide-label">Teknik Altyapı</div>
+    <h2>Sistem Mimarisi</h2>
+    <div class="hdivider" style="margin:0 0 18px"></div>
+    <div class="cols2" style="gap:24px;align-items:start">
+      <div>
+        <div class="arch-label">İstemci Katmanı</div>
+        <div class="arch-row">
+          <div class="arch-box prp">📱 Flutter Mobil<small>Android · iOS · GetX · GoRouter</small></div>
+          <div class="arch-box prp">🌐 Flutter Web<small>Admin Paneli · kIsWeb guard</small></div>
+        </div>
+        <div class="arch-line"></div>
+        <div class="arch-label">HTTP Katmanı</div>
+        <div class="arch-row">
+          <div class="arch-box" style="font-size:11px;min-width:80px">Dio + _AuthInterceptor<small>401 → token refresh</small></div>
+          <div style="display:flex;align-items:center;opacity:.4;font-size:14px">→</div>
+          <div class="arch-box hl">⚙️ Go Fiber v2<small>REST API · /api/v1/*</small></div>
+        </div>
+        <div class="arch-line"></div>
+        <div class="arch-label">Middleware Zinciri</div>
+        <div class="arch-row">
+          <div class="arch-box" style="min-width:90px;font-size:11px">recover<small>panic guard</small></div>
+          <div class="arch-box" style="min-width:90px;font-size:11px">logger<small>request log</small></div>
+          <div class="arch-box" style="min-width:90px;font-size:11px">CORS<small>origin whitelist</small></div>
+          <div class="arch-box" style="min-width:90px;font-size:11px">RequireAuth<small>JWT verify</small></div>
+        </div>
+        <div class="arch-line"></div>
+        <div class="arch-label">Veri & Servis Katmanı</div>
+        <div class="arch-row">
+          <div class="arch-box">🐘 PostgreSQL 16<small>sqlx · lib/pq · port 5433</small></div>
+          <div class="arch-box">⚡ Redis 7<small>OTP · Token · Rate limit</small></div>
+        </div>
+        <div class="arch-row">
+          <div class="arch-box amb">☁️ MinIO / R2<small>S3 API · presigned URL</small></div>
+          <div class="arch-box blu">🔗 n8n<small>Webhook · Bildirimler</small></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="sec-item">
+          <div class="sec-icon">🚀</div>
+          <div><h4>Stateless API</h4><p>Oturum API'de tutulmaz. Yatay ölçekleme (multi-instance) için hazır. Load balancer arkasında çalışır.</p></div>
+        </div>
+        <div class="sec-item">
+          <div class="sec-icon">⚡</div>
+          <div><h4>CDN Bypass Upload</h4><p>Medya dosyaları API'yi atlar. Presigned URL ile Flutter → R2/MinIO doğrudan. Sunucu bandwidth tüketimi sıfır.</p></div>
+        </div>
+        <div class="sec-item">
+          <div class="sec-icon">🔄</div>
+          <div><h4>Auto Migration</h4><p>golang-migrate. APP_AUTO_MIGRATE=true ile başlangıçta çalışır. up/down SQL dosyaları versiyon kontrolünde.</p></div>
+        </div>
+        <div class="sec-item">
+          <div class="sec-icon">📋</div>
+          <div><h4>Non-Blocking Audit</h4><p>Admin işlemleri sonrası goroutine içinde audit log yazılır. tx.Commit() sonrası — ana isteği yavaşlatmaz.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 15 API YAPISI ════════════════════════════════════════════════════ -->
+<div class="slide bg-light" data-index="14">
+  <div class="slide-inner">
+    <div class="slide-label">Entegrasyon</div>
+    <h2>API Yapısı</h2>
+    <div class="hdivider left green"></div>
+    <p style="font-size:12px;color:var(--gray6);margin-bottom:16px">Base: <code style="background:var(--g100);padding:2px 7px;border-radius:4px;color:var(--g700)">https://api.koydensehire.com/api/v1</code> &nbsp;·&nbsp; Yanıt: <code style="background:var(--g100);padding:2px 7px;border-radius:4px;color:var(--g700)">{"success":true/false,"data"/{error}:{...}}</code></p>
+    <div class="cols3">
+      <div class="api-card">
+        <div class="api-head pub">🌐 Public — Auth Yok</div>
+        <div class="api-ep"><span class="method GET">GET</span><span>/categories</span></div>
+        <div class="api-ep"><span class="method GET">GET</span><span>/products (filtrelenebilir)</span></div>
+        <div class="api-ep"><span class="method GET">GET</span><span>/products/:id</span></div>
+        <div class="api-ep"><span class="method GET">GET</span><span>/farmers/:id</span></div>
+        <div class="api-ep"><span class="method GET">GET</span><span>/farmers/:id/products</span></div>
+        <div class="api-ep"><span class="method POST">POST</span><span>/auth/login</span></div>
+        <div class="api-ep"><span class="method POST">POST</span><span>/auth/refresh</span></div>
+        <div class="api-ep"><span class="method POST">POST</span><span>/auth/register/customer</span></div>
+        <div class="api-ep"><span class="method POST">POST</span><span>/otp/send · /otp/verify</span></div>
+        <div class="api-ep"><span class="method GET">GET</span><span>/invites/validate</span></div>
+        <div class="api-ep"><span class="method POST">POST</span><span>/farmer-applications</span></div>
+      </div>
+      <div class="api-card">
+        <div class="api-head farm">🌾 Çiftçi — JWT+role+active</div>
+        <div class="api-ep"><span class="method GET">GET</span><span>/farmer/profile</span></div>
+        <div class="api-ep"><span class="method PUT">PUT</span><span>/farmer/profile</span></div>
+        <div class="api-ep"><span class="method GET">GET</span><span>/farmer/products</span></div>
+        <div class="api-ep"><span class="method POST">POST</span><span>/farmer/products</span></div>
+        <div class="api-ep"><span class="method GET">GET</span><span>/farmer/products/:id</span></div>
+        <div class="api-ep"><span class="method PUT">PUT</span><span>/farmer/products/:id</span></div>
+        <div class="api-ep"><span class="method PATCH">PATCH</span><span>/farmer/products/:id/status</span></div>
+        <div class="api-ep"><span class="method GET">GET</span><span>/farmer/invites</span></div>
+        <div class="api-ep"><span class="method POST">POST</span><span>/farmer/uploads/product-image</span></div>
+        <div class="api-ep"><span class="method POST">POST</span><span>/farmer/uploads/profile-image</span></div>
+      </div>
+      <div class="api-card">
+        <div class="api-head adm">⚙️ Admin — JWT+role=admin</div>
+        <div class="api-ep"><span class="method GET">GET</span><span>/admin/dashboard</span></div>
+        <div class="api-ep"><span class="method GET">GET</span><span>/admin/applications</span></div>
+        <div class="api-ep"><span class="method GET">GET</span><span>/admin/applications/:id</span></div>
+        <div class="api-ep"><span class="method POST">POST</span><span>/admin/applications/:id/approve</span></div>
+        <div class="api-ep"><span class="method POST">POST</span><span>/admin/applications/:id/reject</span></div>
+        <div class="api-ep"><span class="method POST">POST</span><span>/admin/applications/:id/request-video</span></div>
+        <div class="api-ep"><span class="method GET">GET</span><span>/admin/farmers · /admin/products</span></div>
+        <div class="api-ep"><span class="method GET">GET</span><span>/admin/analytics/city-density</span></div>
+        <div class="api-ep"><span class="method GET">GET</span><span>/admin/analytics/invite-network</span></div>
+        <div class="api-ep"><span class="method GET">GET</span><span>/admin/audit-logs</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 15 VERİTABANI ŞEMASI ═══════════════════════════════════════════ -->
+<div class="slide bg-code" data-index="15">
+  <div class="slide-inner">
+    <div class="slide-label">Veri Katmanı</div>
+    <h2>Veritabanı Şeması</h2>
+    <div class="hdivider" style="margin:0 0 14px"></div>
+    <p style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:14px">PostgreSQL 16 · UUID primary keys (<code style="font-size:10px;background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px">gen_random_uuid()</code>) · Tüm timestamp'ler UTC · <strong style="color:rgba(252,211,77,.9)">8 tablo</strong> · migration 000001–000016</p>
+    <div class="cols2" style="gap:16px;align-items:start">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+
+        <div class="db-table">
+          <div class="db-table-head users">👤 users</div>
+          <div class="db-row db-table-row"><span class="db-col-name">id</span><span class="db-col-type">uuid</span><span class="db-pk">PK</span></div>
+          <div class="db-table-row"><span class="db-col-name">phone</span><span class="db-col-type">varchar(20)</span><span class="db-col-note">UNIQUE 05X…</span></div>
+          <div class="db-table-row"><span class="db-col-name">password_hash</span><span class="db-col-type">text</span><span class="db-col-note">bcrypt cost 12</span></div>
+          <div class="db-table-row"><span class="db-col-name">role</span><span class="db-col-type">varchar</span><span class="db-col-note">admin|farmer</span></div>
+          <div class="db-table-row"><span class="db-col-name">status</span><span class="db-col-type">varchar</span><span class="db-col-note">active|suspended</span></div>
+          <div class="db-table-row"><span class="db-col-name">phone_verified</span><span class="db-col-type">bool</span><span class="db-col-note">default false</span></div>
+        </div>
+
+        <div class="db-table">
+          <div class="db-table-head farmer">🌾 farmer_profiles</div>
+          <div class="db-table-row"><span class="db-col-name">id</span><span class="db-col-type">uuid</span><span class="db-pk">PK</span></div>
+          <div class="db-table-row"><span class="db-col-name">user_id</span><span class="db-col-type">uuid</span><span class="db-fk">FK→users</span></div>
+          <div class="db-table-row"><span class="db-col-name">display_name</span><span class="db-col-type">varchar(255)</span><span class="db-col-note">İşletme adı</span></div>
+          <div class="db-table-row"><span class="db-col-name">producer_type</span><span class="db-col-type">varchar(50)</span><span class="db-col-note">8 enum değer</span></div>
+          <div class="db-table-row"><span class="db-col-name">city/district/village</span><span class="db-col-type">varchar</span><span class="db-col-note">Lokasyon</span></div>
+          <div class="db-table-row"><span class="db-col-name">invite_quota</span><span class="db-col-type">int</span><span class="db-col-note">default 2</span></div>
+        </div>
+
+        <div class="db-table">
+          <div class="db-table-head product">📦 products</div>
+          <div class="db-table-row"><span class="db-col-name">id</span><span class="db-col-type">uuid</span><span class="db-pk">PK</span></div>
+          <div class="db-table-row"><span class="db-col-name">farmer_id</span><span class="db-col-type">uuid</span><span class="db-fk">FK→users</span></div>
+          <div class="db-table-row"><span class="db-col-name">category_id</span><span class="db-col-type">uuid</span><span class="db-fk">FK→categories</span></div>
+          <div class="db-table-row"><span class="db-col-name">price</span><span class="db-col-type">numeric(10,2)</span></div>
+          <div class="db-table-row"><span class="db-col-name">status</span><span class="db-col-type">varchar</span><span class="db-col-note">pending|active|rejected|hidden</span></div>
+          <div class="db-table-row"><span class="db-col-name">stock_status</span><span class="db-col-type">varchar</span><span class="db-col-note">available|limited|out</span></div>
+        </div>
+
+        <div class="db-table">
+          <div class="db-table-head app">📋 farmer_applications</div>
+          <div class="db-table-row"><span class="db-col-name">id</span><span class="db-col-type">uuid</span><span class="db-pk">PK</span></div>
+          <div class="db-table-row"><span class="db-col-name">phone</span><span class="db-col-type">varchar(20)</span><span class="db-col-note">UNIQUE pending</span></div>
+          <div class="db-table-row"><span class="db-col-name">status</span><span class="db-col-type">varchar</span><span class="db-col-note">pending|approved|rejected|needs_video</span></div>
+          <div class="db-table-row"><span class="db-col-name">video_key</span><span class="db-col-type">text nullable</span><span class="db-col-note">S3 object key</span></div>
+          <div class="db-table-row"><span class="db-col-name">product_categories</span><span class="db-col-type">jsonb</span><span class="db-col-note">Slug dizisi</span></div>
+          <div class="db-table-row"><span class="db-col-name">invite_code_id</span><span class="db-col-type">uuid</span><span class="db-fk">FK→invite_codes</span></div>
+        </div>
+
+        <div class="db-table">
+          <div class="db-table-head invite">🔗 invite_codes</div>
+          <div class="db-table-row"><span class="db-col-name">code</span><span class="db-col-type">varchar(20)</span><span class="db-col-note">UNIQUE KYS-XXXXXX</span></div>
+          <div class="db-table-row"><span class="db-col-name">owner_user_id</span><span class="db-col-type">uuid</span><span class="db-fk">FK→users</span></div>
+          <div class="db-table-row"><span class="db-col-name">owner_type</span><span class="db-col-type">varchar</span><span class="db-col-note">admin|farmer</span></div>
+          <div class="db-table-row"><span class="db-col-name">max_uses / used_count</span><span class="db-col-type">int</span></div>
+          <div class="db-table-row"><span class="db-col-name">expires_at</span><span class="db-col-type">timestamp nullable</span><span class="db-col-note">NULL=süresiz</span></div>
+        </div>
+
+        <div class="db-table">
+          <div class="db-table-head cat">🗂 categories</div>
+          <div class="db-table-row"><span class="db-col-name">id</span><span class="db-col-type">uuid</span><span class="db-pk">PK</span></div>
+          <div class="db-table-row"><span class="db-col-name">slug</span><span class="db-col-type">varchar(100)</span><span class="db-col-note">UNIQUE</span></div>
+          <div class="db-table-row"><span class="db-col-name">parent_id</span><span class="db-col-type">uuid nullable</span><span class="db-fk">self-ref</span></div>
+          <div class="db-table-row"><span class="db-col-name">sort_order</span><span class="db-col-type">int</span><span class="db-col-note">default 0</span></div>
+          <div class="db-table-row"><span class="db-col-name">is_active</span><span class="db-col-type">bool</span><span class="db-col-note">soft delete</span></div>
+        </div>
+
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="er-box">users
+  ├── farmer_profiles  (1:1)
+  ├── products         (1:N, farmer_id)
+  ├── invite_codes     (1:N)
+  └── invitations      (1:N, inviter_id)
+
+farmer_applications
+  ├── invite_codes     (N:1)
+  └── users            (N:1, reviewed_by)
+
+products
+  ├── categories       (N:1)
+  └── product_images   (1:N)
+
+categories
+  └── categories       (self-ref, parent_id)</div>
+        <div style="background:rgba(252,211,77,.08);border:1px solid rgba(252,211,77,.2);border-radius:10px;padding:14px 16px">
+          <p style="font-size:11px;color:#fcd34d;font-weight:700;margin-bottom:8px">producer_type enum (8 değer)</p>
+          <div style="display:flex;flex-wrap:wrap;gap:5px">
+            <code style="font-size:9.5px;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:4px;color:#e6edf3">individual_farmer</code>
+            <code style="font-size:9.5px;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:4px;color:#e6edf3">family_producer</code>
+            <code style="font-size:9.5px;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:4px;color:#e6edf3">cooperative</code>
+            <code style="font-size:9.5px;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:4px;color:#e6edf3">small_producer</code>
+            <code style="font-size:9.5px;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:4px;color:#e6edf3">dairy_producer</code>
+            <code style="font-size:9.5px;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:4px;color:#e6edf3">beekeeper</code>
+            <code style="font-size:9.5px;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:4px;color:#e6edf3">olive_producer</code>
+            <code style="font-size:9.5px;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:4px;color:#e6edf3">other</code>
+          </div>
+        </div>
+        <div style="background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:10px;padding:14px 16px">
+          <p style="font-size:11px;color:#a5b4fc;font-weight:700;margin-bottom:6px">admin_audit_logs (migration 000016)</p>
+          <p style="font-size:10px;color:rgba(255,255,255,.6);line-height:1.6"><code style="font-size:9.5px;background:rgba(255,255,255,.08);padding:1px 5px;border-radius:3px;color:#fcd34d">audit_action</code> enum 14 aksiyon &nbsp;·&nbsp; <code style="font-size:9.5px;background:rgba(255,255,255,.08);padding:1px 5px;border-radius:3px;color:#fcd34d">audit_target_type</code> 4 tip<br><code style="font-size:9.5px;background:rgba(255,255,255,.08);padding:1px 5px;border-radius:3px;color:#67e8f9">target_snapshot JSONB</code> — silinmiş kaynağı korur &nbsp;·&nbsp; 5 index &nbsp;·&nbsp; immutable</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 16 API REFERANS DETAYLARI ═══════════════════════════════════════ -->
+<div class="slide bg-navy" data-index="16">
+  <div class="slide-inner">
+    <div class="slide-label">API Referansı</div>
+    <h2>API Detayları</h2>
+    <div class="hdivider" style="margin:0 0 16px"></div>
+    <div class="cols2" style="gap:20px;align-items:start">
+
+      <!-- SOL: Yanıt Formatları + Filtreler -->
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div>
+          <p style="font-size:11px;font-weight:700;color:rgba(255,255,255,.7);margin-bottom:8px;letter-spacing:.5px">YANIT FORMATLARI</p>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div>
+              <div class="resp-tag resp-ok">✓ Başarılı</div>
+              <div class="code-block" style="font-size:10.5px;padding:10px 14px">{ <span class="key">"success"</span>: <span class="num">true</span>, <span class="key">"data"</span>: <span class="str">{...}</span>, <span class="key">"message"</span>: <span class="str">""</span> }</div>
+            </div>
+            <div>
+              <div class="resp-tag resp-err">✗ Hata</div>
+              <div class="code-block" style="font-size:10.5px;padding:10px 14px">{ <span class="key">"success"</span>: <span class="num">false</span>, <span class="key">"error"</span>: { <span class="key">"code"</span>: <span class="str">"SNAKE_CASE"</span>, <span class="key">"message"</span>: <span class="str">"..."</span> } }</div>
+            </div>
+            <div>
+              <div class="resp-tag resp-page">≡ Sayfalı</div>
+              <div class="code-block" style="font-size:10.5px;padding:10px 14px">{ <span class="key">"success"</span>: <span class="num">true</span>, <span class="key">"data"</span>: [...],
+  <span class="key">"pagination"</span>: { <span class="key">"page"</span>: <span class="num">1</span>, <span class="key">"limit"</span>: <span class="num">20</span>, <span class="key">"total"</span>: <span class="num">42</span>, <span class="key">"total_pages"</span>: <span class="num">3</span> } }</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <p style="font-size:11px;font-weight:700;color:rgba(255,255,255,.7);margin-bottom:8px;letter-spacing:.5px">GET /products — FİLTRE PARAMETRELERİ</p>
+          <div class="code-block" style="font-size:10px;padding:10px 14px">
+<span class="cmt">// Metin arama</span>
+<span class="key">search</span>=<span class="str">domates</span>  &amp;  <span class="key">category_id</span>=<span class="str">uuid</span>
+
+<span class="cmt">// Lokasyon (üçü birlikte veya tekil)</span>
+<span class="key">city</span>=<span class="str">Ankara</span>  &amp;  <span class="key">district</span>=<span class="str">Polatlı</span>  &amp;  <span class="key">village</span>=<span class="str">...</span>
+
+<span class="cmt">// Fiyat aralığı</span>
+<span class="key">min_price</span>=<span class="num">10</span>  &amp;  <span class="key">max_price</span>=<span class="num">200</span>
+
+<span class="cmt">// Stok durumu</span>
+<span class="key">stock_status</span>=<span class="str">available</span> | <span class="str">limited</span> | <span class="str">out_of_stock</span>
+
+<span class="cmt">// Sıralama</span>
+<span class="key">sort</span>=<span class="str">price_asc</span> | <span class="str">price_desc</span> | <span class="cmt">(varsayılan: en yeni)</span>
+
+<span class="cmt">// Sayfalama (max limit=100)</span>
+<span class="key">page</span>=<span class="num">1</span>  &amp;  <span class="key">limit</span>=<span class="num">20</span></div>
+        </div>
+      </div>
+
+      <!-- SAĞ: Admin Body Örnekleri + Admin Alt Gruplar -->
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div>
+          <p style="font-size:11px;font-weight:700;color:rgba(255,255,255,.7);margin-bottom:8px;letter-spacing:.5px">ADMIN — REQUEST BODY ÖRNEKLERİ</p>
+          <div class="code-block" style="font-size:10px;padding:10px 14px">
+<span class="cmt">// POST /admin/applications/:id/approve</span>
+{
+  <span class="key">"is_founding_farmer"</span>: <span class="num">false</span>,
+  <span class="key">"invite_quota"</span>: <span class="num">3</span>
+}
+
+<span class="cmt">// POST /admin/applications/:id/reject</span>
+{
+  <span class="key">"rejection_reason"</span>: <span class="str">"incomplete_info"</span>,
+  <span class="key">"admin_note"</span>: <span class="str">"Opsiyonel açıklama"</span>  <span class="cmt">// nullable</span>
+}</div>
+        </div>
+        <div>
+          <p style="font-size:11px;font-weight:700;color:rgba(255,255,255,.7);margin-bottom:8px;letter-spacing:.5px">ADMIN — TAM ENDPOINT GRUPLARI</p>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 14px">
+              <p style="font-size:10.5px;font-weight:700;color:#fcd34d;margin-bottom:5px">📊 Dashboard & Analitik</p>
+              <p style="font-size:10px;color:rgba(255,255,255,.6)"><code style="background:rgba(255,255,255,.08);padding:1px 4px;border-radius:3px;color:#79c0ff">GET /admin/dashboard</code> &nbsp;·&nbsp; <code style="background:rgba(255,255,255,.08);padding:1px 4px;border-radius:3px;color:#79c0ff">GET /admin/analytics/city-density</code> &nbsp;·&nbsp; <code style="background:rgba(255,255,255,.08);padding:1px 4px;border-radius:3px;color:#79c0ff">GET /admin/analytics/invite-network</code></p>
+            </div>
+            <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 14px">
+              <p style="font-size:10.5px;font-weight:700;color:#86efac;margin-bottom:5px">🌾 Çiftçi Yönetimi</p>
+              <p style="font-size:10px;color:rgba(255,255,255,.6)">suspend · reactivate · founding flag · invite-quota PATCH</p>
+            </div>
+            <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 14px">
+              <p style="font-size:10.5px;font-weight:700;color:#a5b4fc;margin-bottom:5px">🗂 Kategori Yönetimi</p>
+              <p style="font-size:10px;color:rgba(255,255,255,.6)"><code style="background:rgba(255,255,255,.08);padding:1px 4px;border-radius:3px;color:#79c0ff">GET · POST · PUT · DELETE /admin/categories</code> &nbsp;·&nbsp; soft-delete</p>
+            </div>
+            <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 14px">
+              <p style="font-size:10.5px;font-weight:700;color:#fca5a5;margin-bottom:5px">📋 Ürün Moderasyonu</p>
+              <p style="font-size:10px;color:rgba(255,255,255,.6)">approve · reject · hide · delete &nbsp;·&nbsp; <code style="background:rgba(255,255,255,.08);padding:1px 4px;border-radius:3px;color:#67e8f9">GET /admin/audit-logs</code> izlenebilirlik</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 17 GÜVENLİK ══════════════════════════════════════════════════════ -->
+<div class="slide bg-dark" data-index="17">
+  <div class="slide-inner">
+    <div class="slide-label">Güvenlik</div>
+    <h2>Güvenlik Mimarisi</h2>
+    <div class="hdivider" style="margin:0 0 18px"></div>
+    <div class="cols2" style="gap:18px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="sec-item"><div class="sec-icon">🔐</div><div><h4>JWT HS256 + Token Rotasyonu</h4><p>golang-jwt/jwt v5. Her refresh'te eski token Redis'ten silinir. Flutter _AuthInterceptor 401'de otomatik yeniler.</p></div></div>
+        <div class="sec-item"><div class="sec-icon">🔑</div><div><h4>bcrypt cost=12</h4><p>~300ms/hash. Brute-force hesaplama maliyeti yüksek. go-playground/validator ile şifre min/max validasyonu.</p></div></div>
+        <div class="sec-item"><div class="sec-icon">📱</div><div><h4>OTP — crypto/rand</h4><p>math/rand yerine <code style="font-size:10px;background:rgba(255,255,255,.15);padding:1px 4px;border-radius:3px">crypto/rand</code> ile kriptografik olarak güvenli 6 haneli kod.</p></div></div>
+        <div class="sec-item"><div class="sec-icon">📦</div><div><h4>flutter_secure_storage</h4><p>iOS: Keychain. Android: EncryptedSharedPreferences / Keystore. Token'lar hiçbir zaman SharedPreferences'da değil.</p></div></div>
+      </div>
+      <div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px">
+          <div class="sec-item"><div class="sec-icon">🛡️</div><div><h4>Çift Kapsam Rate Limit</h4><p>Login: hem telefon (5/15dk) hem IP (30/15dk). NAT arkasındaki kullanıcılar IP limitinden etkilenmiyor.</p></div></div>
+          <div class="sec-item"><div class="sec-icon">🎥</div><div><h4>Private Video Erişimi</h4><p>Başvuru videoları public değil. Admin izlerken <code style="font-size:10px;background:rgba(255,255,255,.15);padding:1px 4px;border-radius:3px">PresignGetObject(1h)</code> — geçici URL.</p></div></div>
+        </div>
+        <table class="limit-table">
+          <thead><tr><th>Endpoint</th><th>Kapsam</th><th>Limit</th><th></th></tr></thead>
+          <tbody>
+            <tr><td><code>POST /otp/send</code></td><td>Telefon</td><td>3 / saat</td><td><span class="bl-tight">Sıkı</span></td></tr>
+            <tr><td><code>POST /auth/login</code></td><td>Telefon</td><td>5 / 15 dk</td><td><span class="bl-tight">Sıkı</span></td></tr>
+            <tr><td><code>POST /auth/login</code></td><td>IP</td><td>30 / 15 dk</td><td><span class="bl-normal">Normal</span></td></tr>
+            <tr><td><code>POST /auth/register</code></td><td>Telefon</td><td>3 / saat</td><td><span class="bl-tight">Sıkı</span></td></tr>
+            <tr><td><code>GET /invites/validate</code></td><td>IP</td><td>20 / saat</td><td><span class="bl-normal">Normal</span></td></tr>
+            <tr><td><code>POST /uploads/video</code></td><td>Telefon + IP</td><td>5 / saat</td><td><span class="bl-tight">Sıkı</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 18 YOL HARİTASI ══════════════════════════════════════════════════ -->
+<div class="slide bg-amber" data-index="18">
+  <div class="slide-inner">
+    <div class="slide-label">Gelişim Planı</div>
+    <h2>Yol Haritası</h2>
+    <div class="hdivider" style="margin:0 0 24px"></div>
+    <div class="cols2" style="align-items:start;gap:48px">
+      <div class="roadmap">
+        <div class="rm-item"><div class="rm-dot done">✓</div><div class="rm-content"><div class="rm-phase done">✓ Tamamlandı</div><h4>MVP — Temel Platform</h4><p>Çiftçi başvurusu, ürün listeleme, müşteri OTP kaydı, davet sistemi, admin paneli, JWT auth, presigned URL medya.</p></div></div>
+        <div class="rm-item"><div class="rm-dot done">✓</div><div class="rm-content"><div class="rm-phase done">✓ Tamamlandı</div><h4>Güvenlik & İzleme</h4><p>Admin audit log (migration 000016, 14 aksiyon), rate limiting (6 endpoint), token rotasyonu, video presign.</p></div></div>
+        <div class="rm-item"><div class="rm-dot active">◉</div><div class="rm-content"><div class="rm-phase active">● Devam Ediyor</div><h4>UX İyileştirme Sprinti</h4><p>Arama debounce (450ms), aktif filtre göstergesi, lokasyon filtresi UI, stok durumu filtresi, enum refactor.</p></div></div>
+      </div>
+      <div class="roadmap">
+        <div class="rm-item"><div class="rm-dot planned">○</div><div class="rm-content"><div class="rm-phase planned">○ Planlandı</div><h4>iOS TestFlight & Play Store</h4><p>Üretim build'i, BASE_URL override, mağaza listelemeleri, deep link yapılandırması.</p></div></div>
+        <div class="rm-item"><div class="rm-dot planned">○</div><div class="rm-content"><div class="rm-phase planned">○ Backlog</div><h4>Gelişmiş Arama</h4><p>PostgreSQL pg_trgm tam metin arama, Redis kategori önbelleği, ürün favori sistemi.</p></div></div>
+        <div class="rm-item"><div class="rm-dot planned">○</div><div class="rm-content"><div class="rm-phase planned">○ Backlog</div><h4>Push Bildirimleri</h4><p>FCM / APNs entegrasyonu — n8n üzerinden tetikleme. Başvuru ve ürün durum bildirimleri.</p></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 20 KAPSAM DIŞI ════════════════════════════════════════════════════ -->
+<div class="slide bg-white" data-index="19">
+  <div class="slide-inner">
+    <div class="slide-label">Tasarım Kararları</div>
+    <h2>Kasıtlı Olarak Kapsam Dışı</h2>
+    <div class="hdivider left green"></div>
+    <p style="font-size:13px;color:var(--gray6);margin-bottom:24px">Platform odağını ve teknik basitliği korumak için bilinçli olarak dahil edilmeyen özellikler.</p>
+    <div class="cols3">
+      <div class="oos-item"><div class="oi">💳</div><h4>Ödeme Altyapısı</h4><p>Platform komisyon almaz. Ödeme alıcı–üretici arasında doğrudan gerçekleşir. PCI DSS yükümlülüğü yok.</p></div>
+      <div class="oos-item"><div class="oi">💬</div><h4>Uygulama İçi Mesajlaşma</h4><p>Üretici telefon profilde görünür. WebSocket, mesaj depolama, bildirim altyapısı gerektirmez.</p></div>
+      <div class="oos-item"><div class="oi">📦</div><h4>Sipariş & Kargo</h4><p>Lojistik platforma dahil değil. Platform yalnızca keşif ve bağlantı sağlar — operasyonel yük yok.</p></div>
+    </div>
+    <div style="margin-top:24px;background:var(--g100);border-left:4px solid var(--g500);border-radius:0 var(--r) var(--r) 0;padding:16px 20px;font-size:13px;color:var(--g900)">
+      <strong>Neden bu yaklaşım?</strong> — Ödeme, mesajlaşma ve lojistik her biri ciddi yasal, güvenlik ve operasyonel yük getirir. Kapsam dışında tutmak; hızlı geliştirme, düşük teknik borç ve net bir değer önerisi sağlar.
+    </div>
+  </div>
+</div>
+
+<!-- ══ 21 KAPANIŞ ════════════════════════════════════════════════════════ -->
+<div class="slide bg-hero" data-index="20">
+  <div class="slide-inner center">
+    <div class="badge">🌿 Köyden Şehire · Mayıs 2026</div>
+    <h1 style="text-align:center">Birlikte <span class="accent">Büyüyelim</span></h1>
+    <p class="lead" style="text-align:center">Türkiye'nin yerel üreticileri için aracısız, komisyonsuz, teknik olarak olgun bir platform.<br>Go + Flutter + S3 + Redis — production-ready.</p>
+    <div style="display:flex;gap:32px;margin-bottom:36px;flex-wrap:wrap;justify-content:center">
+      <div class="stat"><strong>Go 1.23</strong><span>Fiber v2 · sqlx · migrate</span></div>
+      <div class="stat"><strong>Flutter 3.19</strong><span>GetX · GoRouter · Dio</span></div>
+      <div class="stat"><strong>16</strong><span>DB Migration</span></div>
+      <div class="stat"><strong>5</strong><span>Docker Servisi</span></div>
+    </div>
+    <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:var(--r);padding:24px 32px;max-width:600px;backdrop-filter:blur(8px)">
+      <div style="font-size:10px;opacity:.55;margin-bottom:10px;text-transform:uppercase;letter-spacing:2px;font-weight:700">Teknik Dökümanlar</div>
+      <div style="font-size:13px;opacity:.85;line-height:2.2">
+        📄 <code style="background:rgba(255,255,255,.12);padding:2px 7px;border-radius:4px">backend/docs/SYSTEM_OVERVIEW.md</code><br>
+        🔌 <code style="background:rgba(255,255,255,.12);padding:2px 7px;border-radius:4px">backend/docs/API_REFERENCE.md</code><br>
+        🔐 <code style="background:rgba(255,255,255,.12);padding:2px 7px;border-radius:4px">backend/docs/AUTH_FLOW.md</code><br>
+        🗄️ <code style="background:rgba(255,255,255,.12);padding:2px 7px;border-radius:4px">backend/docs/DATABASE_SCHEMA.md</code><br>
+        📋 <code style="background:rgba(255,255,255,.12);padding:2px 7px;border-radius:4px">backend/docs/AUDIT_LOG_SPEC.md</code>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /deck -->
+
+<nav id="nav">
+  <button class="nav-btn" id="btn-prev">‹</button>
+  <div id="dots"></div>
+  <span id="counter">1 / 21</span>
+  <button class="nav-btn" id="btn-next">›</button>
+</nav>
+
+<script>
+(function(){
+  const slides=Array.from(document.querySelectorAll('.slide'));
+  const total=slides.length;
+  let cur=0,anim=false;
+  const fill=document.getElementById('progress-fill');
+  const counter=document.getElementById('counter');
+  const dotsEl=document.getElementById('dots');
+  const bp=document.getElementById('btn-prev');
+  const bn=document.getElementById('btn-next');
+  slides.forEach((_,i)=>{
+    const d=document.createElement('button');
+    d.className='dot'+(i===0?' active':'');
+    d.onclick=()=>goTo(i);
+    dotsEl.appendChild(d);
+  });
+  function update(){
+    dotsEl.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===cur));
+    counter.textContent=(cur+1)+' / '+total;
+    fill.style.width=((cur+1)/total*100)+'%';
+    bp.disabled=cur===0; bn.disabled=cur===total-1;
+  }
+  function goTo(idx){
+    if(anim||idx===cur||idx<0||idx>=total)return;
+    anim=true;
+    const dir=idx>cur?1:-1;
+    slides[cur].classList.remove('active');
+    if(dir>0)slides[cur].classList.add('prev');
+    const prev=cur; cur=idx;
+    slides[cur].style.transform='translateX('+(dir>0?60:-60)+'px)';
+    slides[cur].style.opacity='0';
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      slides[cur].style.transform='';
+      slides[cur].style.opacity='';
+      slides[cur].classList.add('active');
+    }));
+    update();
+    setTimeout(()=>{slides[prev].classList.remove('prev');slides[prev].style.transform='';slides[prev].style.opacity='';anim=false;},420);
+  }
+  bn.onclick=()=>goTo(cur+1);
+  bp.onclick=()=>goTo(cur-1);
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();goTo(cur+1);}
+    if(e.key==='ArrowLeft'){e.preventDefault();goTo(cur-1);}
+    if(e.key==='Escape'){e.preventDefault();goTo(0);}
+    if(e.key==='End'){e.preventDefault();goTo(total-1);}
+  });
+  document.getElementById('deck').addEventListener('click',e=>{
+    if(e.target.closest('#nav'))return;
+    goTo(cur+1);
+  });
+  let tx=null;
+  document.addEventListener('touchstart',e=>{tx=e.changedTouches[0].clientX;},{passive:true});
+  document.addEventListener('touchend',e=>{
+    if(tx===null)return;
+    const dx=e.changedTouches[0].clientX-tx;
+    if(Math.abs(dx)>50)dx<0?goTo(cur+1):goTo(cur-1);
+    tx=null;
+  },{passive:true});
+  update();
+})();
+</script>
+</body>
+</html>

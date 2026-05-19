@@ -1,133 +1,276 @@
-# Köyden Şehre Backend
+# Köyden Şehire
 
-Mobile-first farmer/producer listing platform API.
+Yerel üreticileri alıcılarla doğrudan buluşturan, komisyonsuz listeme platformu.  
+Platform üzerinden ödeme, sipariş, kargo veya uygulama içi mesajlaşma yapılmaz.
 
-## Prerequisites
+---
 
-- Docker & Docker Compose
-- Go 1.23+ (for local development)
+## Repo Yapısı
 
-## Setup
-
-```bash
-git clone https://github.com/koydensehire/backend.git
-cd backend
-cp .env.example .env
-# Edit .env with your values
-docker compose up -d
+```
+/
+├── backend/          # Go 1.23 REST API (Fiber v2)
+├── flutter-mobile/   # Flutter mobil uygulama + web admin paneli
+├── docker-compose.yml          # Yerel geliştirme ortamı
+└── docker-compose.prod.yml     # Üretim ortamı
 ```
 
-The API will be available at `http://localhost:8080`.
+---
 
-## Default Admin Credentials
+## Hızlı Başlangıç
 
-- **Phone:** `05000000000`
-- **Password:** `admin123`
+### 1. Backend (Docker)
 
-## Services
+```bash
+cp .env.example .env       # değerleri düzenle
+docker compose up -d       # postgres, redis, minio, n8n, api başlar
+```
 
-| Service       | URL                        | Credentials                  |
-|---------------|----------------------------|------------------------------|
-| API           | http://localhost:8080      | —                            |
-| MinIO         | http://localhost:9000      | minioadmin / minioadmin123   |
-| MinIO Console | http://localhost:9001      | minioadmin / minioadmin123   |
-| n8n           | http://localhost:5678      | —                            |
-| PostgreSQL    | localhost:5432             | admin / localpass            |
-| Redis         | localhost:6379             | —                            |
-
-## Health Check
+API hazır olduğunu doğrula:
 
 ```bash
 curl http://localhost:8080/api/v1/health
+# {"status":"ok","database":"ok","redis":"ok","version":"1.0.0"}
 ```
 
----
-
-## 📚 Documentation
-
-| Document | Description |
-|----------|-------------|
-| [TESTING.md](TESTING.md) | All curl commands for manual end-to-end testing |
-| [docs/API_REFERENCE.md](docs/API_REFERENCE.md) | Full endpoint reference |
-| [docs/AUTH_FLOW.md](docs/AUTH_FLOW.md) | OTP + JWT auth flow, invite codes |
-| [docs/DATABASE_SCHEMA.md](docs/DATABASE_SCHEMA.md) | All tables, columns, constraints |
-| [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md) | All environment variables + prod checklist |
-| [docs/ERROR_FORMAT.md](docs/ERROR_FORMAT.md) | Error codes and HTTP status mapping |
-| [docs/UPLOADS_AND_STORAGE.md](docs/UPLOADS_AND_STORAGE.md) | Presigned URL upload flow (R2/S3) |
-| [docs/MOBILE_INTEGRATION_GUIDE.md](docs/MOBILE_INTEGRATION_GUIDE.md) | React Native / Flutter integration |
-| [docs/NEXTJS_INTEGRATION_GUIDE.md](docs/NEXTJS_INTEGRATION_GUIDE.md) | Next.js 14 App Router integration |
-| [docs/openapi.yaml](docs/openapi.yaml) | OpenAPI 3.0 spec |
-| [docs/POSTMAN_COLLECTION.json](docs/POSTMAN_COLLECTION.json) | Postman collection with auto-token capture |
-
----
-
-## API Overview
-
-All routes are prefixed with `/api/v1`.
-
-### Public Routes
-- `GET /health` — health check
-- `POST /otp/send` — send OTP to phone
-- `POST /otp/verify` — verify OTP code
-- `POST /auth/login` — login with phone + password
-- `GET /categories` — list active categories (with children tree)
-- `GET /products` — list products (filterable by city, category, price, etc.)
-- `GET /products/:id` — get single product
-- `GET /farmers/:id` — get farmer profile
-- `GET /farmers/:id/products` — get farmer's products
-- `GET /invites/validate?code=KYS-XXXXXX` — validate invite code
-
-### Farmer Application
-- `POST /farmer-applications` — submit farmer application (requires OTP verified)
-- `POST /uploads/application-video/presigned-url` — get video upload URL
-
-### Farmer (authenticated, role=farmer, status=active)
-- `GET /farmer/profile` / `PUT /farmer/profile`
-- `GET /farmer/products` / `POST /farmer/products`
-- `GET /farmer/products/:id` / `PUT /farmer/products/:id`
-- `PATCH /farmer/products/:id/status`
-- `GET /farmer/invites`
-- `POST /farmer/uploads/product-image`
-- `POST /farmer/uploads/profile-image`
-
-### Admin (authenticated, role=admin)
-- `GET /admin/dashboard`
-- `GET /admin/applications` / `GET /admin/applications/:id`
-- `POST /admin/applications/:id/approve`
-- `POST /admin/applications/:id/reject`
-- `POST /admin/applications/:id/request-video`
-- `GET /admin/farmers` / `GET /admin/farmers/:id`
-- `POST /admin/farmers/:id/suspend` / `reactivate`
-- `PATCH /admin/farmers/:id/founding` / `invite-quota`
-- `GET /admin/products` / `GET /admin/products/:id`
-- `POST /admin/products/:id/approve` / `reject` / `hide`
-- `DELETE /admin/products/:id`
-- `GET /admin/categories` / `POST /admin/categories`
-- `PUT /admin/categories/:id` / `DELETE /admin/categories/:id`
-
----
-
-## Invite Code Format
-
-Valid codes: `KYS-{6 uppercase alphanumeric}` (e.g. `KYS-7GHT92`)  
-Special code: `KYS-FOUNDER` (50 uses, owned by admin)
-
----
-
-## Manual Migrations
+### 2. Flutter (Mobil)
 
 ```bash
-migrate -path migrations -database "postgres://admin:localpass@localhost:5432/koydensehire?sslmode=disable" up
+cd flutter-mobile
+flutter pub get
+flutter run                # Android emülatör — varsayılan BASE_URL 10.0.2.2:8080
+```
+
+Fiziksel cihaz veya farklı ortam:
+
+```bash
+flutter run --dart-define=BASE_URL=http://<ip>:8080/api/v1
+```
+
+### 3. Flutter (Web — Admin Paneli)
+
+```bash
+cd flutter-mobile
+flutter run -d chrome --dart-define=BASE_URL=http://localhost:8080/api/v1
 ```
 
 ---
 
-## Development Notes
+## Servisler
 
-- In `APP_ENV=development`, OTP codes are logged to stdout (masked phone), debug logs are enabled
-- In `APP_ENV=production`, no sensitive data is logged; SMS sent via Netgsm
-- Videos are private: served via presigned GET URLs (1h expiry)
-- Product/profile images are public via `STORAGE_PUBLIC_URL`
-- All `SELECT *` queries scan into fully-matched structs — no silent field loss
+| Servis | Adres | Kimlik Bilgisi |
+|--------|-------|----------------|
+| **API** | http://localhost:8080 | — |
+| **PostgreSQL** | localhost:**5433** | admin / localpass |
+| **Redis** | localhost:6379 | — |
+| **MinIO** (S3) | http://localhost:9000 | minioadmin / minioadmin123 |
+| **MinIO Konsol** | http://localhost:9001 | minioadmin / minioadmin123 |
+| **n8n** | http://localhost:5678 | — |
 
-See [TESTING.md](TESTING.md) for a complete testing walkthrough.
+> ⚠️ PostgreSQL host portu **5433**'tür (container içi 5432 → dış 5433).
+
+### Varsayılan Yönetici Hesabı
+
+| Alan | Değer |
+|------|-------|
+| Telefon | `05000000000` |
+| Şifre | `admin123` |
+| Rol | admin (yalnızca web paneli) |
+
+---
+
+## Kullanıcı Rolleri
+
+| Rol | Erişim | Hesap Oluşturma |
+|-----|--------|-----------------|
+| **Müşteri** | Mobil — ürün keşfet, üretici profili gör | Telefon + OTP ile kayıt |
+| **Çiftçi** | Mobil — ürün ekle/yönet, davet gönder | Davet kodu + başvuru + admin onayı |
+| **Admin** | Web paneli — başvuru/ürün/çiftçi yönetimi | Sistem tarafından oluşturulur |
+
+---
+
+## API Özeti
+
+Tüm route'lar `/api/v1` önekiyle başlar.
+
+### Public (auth gerektirmez)
+| Method | Endpoint | Açıklama |
+|--------|----------|----------|
+| GET | `/health` | Sağlık kontrolü |
+| POST | `/otp/send` | Telefona OTP gönder |
+| POST | `/otp/verify` | OTP doğrula |
+| POST | `/auth/login` | Giriş → access + refresh token |
+| POST | `/auth/refresh` | Token yenile (rotasyon) |
+| POST | `/auth/register/customer` | Müşteri kaydı (OTP zorunlu) |
+| GET | `/categories` | Kategori ağacı |
+| GET | `/products` | Ürün listesi (filtrelenebilir) |
+| GET | `/products/:id` | Ürün detayı |
+| GET | `/farmers/:id` | Üretici profili |
+| GET | `/farmers/:id/products` | Üreticinin ürünleri |
+| GET | `/invites/validate?code=KYS-XXX` | Davet kodu doğrulama |
+
+### Çiftçi Başvurusu
+| Method | Endpoint | Açıklama |
+|--------|----------|----------|
+| POST | `/farmer-applications` | Başvuru gönder |
+| POST | `/uploads/application-video/presigned-url` | Video yükleme URL'i al |
+
+### Çiftçi Paneli (`/farmer/*` — JWT, role=farmer, status=active)
+| Method | Endpoint | Açıklama |
+|--------|----------|----------|
+| GET/PUT | `/farmer/profile` | Profil oku / güncelle |
+| GET/POST | `/farmer/products` | Ürünleri listele / yeni ekle |
+| GET/PUT | `/farmer/products/:id` | Ürün detay / güncelle |
+| PATCH | `/farmer/products/:id/status` | Stok durumu güncelle |
+| GET | `/farmer/invites` | Davet kodlarım |
+| POST | `/farmer/uploads/product-image` | Ürün görseli yükle |
+| POST | `/farmer/uploads/profile-image` | Profil görseli yükle |
+
+### Admin Paneli (`/admin/*` — JWT, role=admin)
+| Method | Endpoint | Açıklama |
+|--------|----------|----------|
+| GET | `/admin/dashboard` | İstatistikler |
+| GET | `/admin/analytics/city-density` | Şehir bazlı çiftçi yoğunluğu |
+| GET | `/admin/analytics/invite-network` | Davet ağacı |
+| GET/POST | `/admin/applications` | Başvuru listesi |
+| POST | `/admin/applications/:id/approve` | Başvuru onayla |
+| POST | `/admin/applications/:id/reject` | Başvuru reddet |
+| GET | `/admin/farmers` | Çiftçi yönetimi |
+| GET | `/admin/products` | Ürün moderasyonu |
+| GET/POST/PUT/DELETE | `/admin/categories` | Kategori yönetimi |
+| GET | `/admin/audit-logs` | Admin işlem geçmişi |
+
+---
+
+## Davet Kodu Sistemi
+
+- Format: `KYS-XXXXXX` (6 karakterli büyük harf + rakam)
+- Özel kod: `KYS-FOUNDER` (50 kullanım hakkı, admin sahipli)
+- Onaylanan her çiftçiye varsayılan 2 davet kotası verilir
+- Kurucu çiftçiler (Founding Farmer) rozet alır
+
+---
+
+## Flutter Mimarisi
+
+| Katman | Konum | Teknoloji |
+|--------|-------|-----------|
+| Routing | `lib/app/router.dart` | `go_router` + GoRouter; redirect guard GetX `AuthService.status`'ı izler |
+| Auth state | `lib/core/services/auth_service.dart` | `GetxService`; `flutter_secure_storage`'da kalıcı |
+| HTTP | `lib/core/api/api_client.dart` | `Dio` + `_AuthInterceptor`; 401 alınca token otomatik yenilenir |
+| State / DI | GetX (`Get.lazyPut`, `fenix: true`) | `AppBinding` tüm bağımlılıkları başlangıçta kaydeder |
+| Views | `lib/views/` | `admin/`, `auth/`, `farmer/`, `public/`, `customer/` |
+| Controllers | `lib/controllers/` | GetxController; rol bazlı alt klasörler |
+| Repositories | `lib/services/*_repository.dart` | ApiClient üzerinden HTTP; typed model döner |
+| Shared | `lib/shared/widgets/` | AppButton, ProductCard, OtpInput, ShimmerCard… |
+
+**Admin paneli** yalnızca web'de (`kIsWeb == true`) çalışır. Mobil build'de `/admin/*` rotaları kayıtlı değildir.
+
+**API base URL** derleme zamanında `--dart-define=BASE_URL=...` ile enjekte edilir.  
+Varsayılan `http://10.0.2.2:8080/api/v1` yalnızca Android emülatörde çalışır.
+
+---
+
+## Backend Mimarisi
+
+```
+backend/
+├── cmd/api/main.go              ← DI wiring, route kaydı, graceful shutdown
+├── internal/
+│   ├── admin/                   ← Admin panel; audit log entegrasyonu
+│   ├── audit/                   ← Admin işlem geçmişi (immutable log)
+│   ├── auth/                    ← JWT, refresh token rotasyonu, müşteri kaydı
+│   ├── categories/              ← Hiyerarşik kategori ağacı
+│   ├── config/                  ← Env var → Config struct
+│   ├── database/                ← PostgreSQL (sqlx) + Redis fabrikaları
+│   ├── farmer_applications/     ← Başvuru akışı
+│   ├── farmers/                 ← Çiftçi profil operasyonları
+│   ├── invites/                 ← Davet kodu sistemi
+│   ├── middleware/              ← Auth (JWT), CORS, rate limit
+│   ├── notifications/           ← n8n webhook
+│   ├── otp/                     ← OTP gönder / doğrula
+│   ├── products/                ← Ürün CRUD, dinamik filtreleme
+│   ├── uploads/                 ← Presigned URL üretimi
+│   └── users/                   ← Profil okuma / güncelleme
+├── pkg/
+│   ├── errors/                  ← Uygulama hata tipleri
+│   ├── response/                ← Fiber yanıt yardımcıları
+│   ├── sms/                     ← Netgsm + DevProvider (dev'de stdout)
+│   └── storage/                 ← Cloudflare R2/S3 + DevProvider
+└── migrations/                  ← 000001…000016 golang-migrate SQL
+```
+
+**Her domain:** `model.go` → `repository.go` (ham SQL) → `service.go` (iş mantığı) → `handler.go` (HTTP)
+
+### Rate Limiting
+
+| Endpoint | Kapsam | Limit |
+|----------|--------|-------|
+| `POST /otp/send` | telefon | 3 istek / saat |
+| `POST /auth/login` | telefon | 5 istek / 15 dk |
+| `POST /auth/login` | IP | 30 istek / 15 dk |
+| `POST /auth/register/customer` | telefon | 3 istek / saat |
+| `GET /invites/validate` | IP | 20 istek / saat |
+
+### Medya Depolama
+
+Dosyalar API sunucusundan geçmez — presigned URL ile doğrudan R2/MinIO'ya yüklenir:
+
+```
+İstemci → POST /uploads/…  → API (presigned URL üretir)
+İstemci → PUT <presigned_url>  → R2/MinIO (doğrudan)
+```
+
+| Tip | Erişim | Max Boyut |
+|-----|--------|-----------|
+| Ürün görseli | Public CDN | 5 MB |
+| Profil görseli | Public CDN | 2 MB |
+| Başvuru videosu | Presigned GET (1 saat) | 100 MB |
+
+---
+
+## Migration'lar
+
+Uygulama başlarken `APP_AUTO_MIGRATE=true` ile otomatik çalışır.  
+Manuel çalıştırmak için:
+
+```bash
+migrate -path backend/migrations \
+  -database "postgres://admin:localpass@localhost:5433/koydensehire?sslmode=disable" up
+```
+
+Mevcut migration'lar (000001–000016):
+- 000001–000011: Temel şema (users, profiles, products, OTP, raporlar)
+- 000012–000014: Seed verisi (admin, kategoriler, kurucu davet kodu)
+- 000015: Müşteri rolü
+- 000016: Admin audit log tablosu
+
+---
+
+## Geliştirme Notları
+
+- `APP_ENV=development` → OTP kodları SMS yerine terminal'e yazılır
+- Storage yapılandırılmamışsa `DevProvider` devreye girer; yükleme işlemleri sessizce başarısız olur
+- `SELECT *` kullanılmaz; tüm sorgular sütunları açıkça listeler
+- Videolar private: admin izlerken 1 saatlik presigned GET URL üretilir
+- Görseller public CDN üzerinden sunulur
+
+---
+
+## Dokümantasyon
+
+| Doküman | İçerik |
+|---------|--------|
+| [`backend/docs/SYSTEM_OVERVIEW.md`](backend/docs/SYSTEM_OVERVIEW.md) | Sistem mimarisi ve teknik spec (stakeholder odaklı) |
+| [`backend/docs/API_REFERENCE.md`](backend/docs/API_REFERENCE.md) | Tüm endpoint listesi, request/response şemaları |
+| [`backend/docs/AUTH_FLOW.md`](backend/docs/AUTH_FLOW.md) | OTP + JWT akışı teknik detay |
+| [`backend/docs/DATABASE_SCHEMA.md`](backend/docs/DATABASE_SCHEMA.md) | Tablo yapıları ve kısıtlamalar |
+| [`backend/docs/AUDIT_LOG_SPEC.md`](backend/docs/AUDIT_LOG_SPEC.md) | Admin audit log teknik tasarımı |
+| [`backend/docs/ENVIRONMENT.md`](backend/docs/ENVIRONMENT.md) | Ortam değişkenleri ve production kontrol listesi |
+| [`backend/docs/ERROR_FORMAT.md`](backend/docs/ERROR_FORMAT.md) | Hata kodları ve HTTP durum eşleşmesi |
+| [`backend/docs/UPLOADS_AND_STORAGE.md`](backend/docs/UPLOADS_AND_STORAGE.md) | Presigned URL yükleme akışı |
+| [`backend/docs/MOBILE_INTEGRATION_GUIDE.md`](backend/docs/MOBILE_INTEGRATION_GUIDE.md) | Flutter entegrasyon rehberi |
+| [`backend/docs/openapi.yaml`](backend/docs/openapi.yaml) | OpenAPI 3.0 spesifikasyonu |
+| [`backend/docs/POSTMAN_COLLECTION.json`](backend/docs/POSTMAN_COLLECTION.json) | Postman koleksiyonu (otomatik token) |
+| [`backend/TESTING.md`](backend/TESTING.md) | Uçtan uca curl test rehberi |
+| [`CLAUDE.md`](CLAUDE.md) | Claude Code geliştirici rehberi |

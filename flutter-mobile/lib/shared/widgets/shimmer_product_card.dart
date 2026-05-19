@@ -10,8 +10,8 @@ class ShimmerProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final base = cs.surfaceContainerHigh;
-    final highlight = cs.surfaceContainerLow;
+    final base = cs.surfaceContainerLow;
+    final highlight = cs.surfaceContainerHigh;
     return Container(
       width: width,
       decoration: BoxDecoration(

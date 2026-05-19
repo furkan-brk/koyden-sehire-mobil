@@ -37,6 +37,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   void initState() {
     super.initState();
     _searchController.text = widget.initialSearch ?? '';
+    _searchController.addListener(() => setState(() {}));
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _ctrl.applyFilter(

@@ -18,6 +18,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 
 	"github.com/koydensehire/backend/internal/admin"
+	"github.com/koydensehire/backend/internal/audit"
 	"github.com/koydensehire/backend/internal/auth"
 	"github.com/koydensehire/backend/internal/categories"
 	"github.com/koydensehire/backend/internal/config"
@@ -147,9 +148,10 @@ func main() {
 	uploadSvc := uploads.NewService(storageProvider)
 	uploadHandler := uploads.NewHandler(uploadSvc)
 
+	auditRepo := audit.NewRepository(db)
 	adminRepo := admin.NewRepository(db)
-	adminSvc := admin.NewService(adminRepo, db, storageProvider, cfg.App.Env)
-	adminHandler := admin.NewHandler(adminSvc, db, notifSvc)
+	adminSvc := admin.NewService(adminRepo, db, storageProvider, cfg.App.Env, auditRepo)
+	adminHandler := admin.NewHandler(adminSvc, db, notifSvc, auditRepo)
 
 	app := fiber.New(fiber.Config{
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
@@ -258,6 +260,7 @@ func main() {
 	adminGroup.Post("/categories", catHandler.Create)
 	adminGroup.Put("/categories/:id", catHandler.Update)
 	adminGroup.Delete("/categories/:id", catHandler.Delete)
+	adminGroup.Get("/audit-logs", adminHandler.ListAuditLogs)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
