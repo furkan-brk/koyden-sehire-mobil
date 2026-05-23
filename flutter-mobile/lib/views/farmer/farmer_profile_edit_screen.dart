@@ -85,7 +85,7 @@ class _FarmerProfileEditScreenState extends State<FarmerProfileEditScreen> {
         automaticallyImplyLeading: false,
         title: const Text('Profil'),
       ),
-      bottomNavigationBar: const FarmerBottomNav(currentIndex: 3),
+      bottomNavigationBar: const FarmerBottomNav(current: FarmerTab.profile),
       body: Obx(() {
         final ctrl = _ctrl;
         if (ctrl.isLoading.value && ctrl.profile.value == null) {

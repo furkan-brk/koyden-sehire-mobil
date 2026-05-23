@@ -12,6 +12,10 @@ func (s *Service) GetPublic(id string) (*PublicFarmerDetail, error) {
 	return s.repo.GetPublicByID(id)
 }
 
+func (s *Service) ListPublic(page, limit int, city, search string) ([]PublicFarmerSummary, int, error) {
+	return s.repo.ListPublic(page, limit, city, search)
+}
+
 func (s *Service) GetAdminDetail(id string) (*FarmerDetail, error) {
 	return s.repo.GetAdminDetail(id)
 }

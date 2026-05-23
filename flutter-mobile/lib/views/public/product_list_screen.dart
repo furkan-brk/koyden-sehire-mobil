@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/category_chip.dart';
 import 'package:koyden_sehire/shared/widgets/product_card.dart';
+import 'package:koyden_sehire/shared/widgets/customer_bottom_nav.dart';
 import 'package:koyden_sehire/shared/widgets/shimmer_product_card.dart';
 import 'package:koyden_sehire/models/category_model.dart';
 import 'package:koyden_sehire/controllers/public/category_controller.dart';
@@ -113,6 +115,159 @@ class _ProductListScreenState extends State<ProductListScreen> {
     );
   }
 
+  void _showLocationFilterSheet() {
+    final current = _ctrl.filter.value;
+    String? tempCity = current.city;
+    String? tempDistrict = current.district;
+    final districtCtrl = TextEditingController(text: tempDistrict ?? '');
+    final searchCtrl = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) => DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.75,
+          maxChildSize: 0.92,
+          builder: (_, scrollCtrl) => Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 10, bottom: 4),
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.outlineVariant,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+                  child: Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Konuma Göre Filtrele',
+                          style: TextStyle(
+                            fontFamily: 'PlusJakartaSans',
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      if (tempCity != null)
+                        TextButton(
+                          onPressed: () {
+                            setSheet(() {
+                              tempCity = null;
+                              tempDistrict = null;
+                              districtCtrl.clear();
+                            });
+                          },
+                          child: const Text('Temizle'),
+                        ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                  child: TextField(
+                    controller: searchCtrl,
+                    decoration: InputDecoration(
+                      hintText: 'İl ara...',
+                      prefixIcon: const Icon(Icons.search, size: 18),
+                      filled: true,
+                      fillColor: AppColors.surfaceContainerLow,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                    onChanged: (_) => setSheet(() {}),
+                  ),
+                ),
+                Expanded(
+                  child: ListView(
+                    controller: scrollCtrl,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    children: [
+                      ...AppConstants.turkishCities
+                          .where((c) => searchCtrl.text.isEmpty ||
+                              c.toLowerCase().contains(searchCtrl.text.toLowerCase()))
+                          .map(
+                            (city) => RadioListTile<String>(
+                              title: Text(city),
+                              value: city,
+                              groupValue: tempCity,
+                              onChanged: (v) => setSheet(() {
+                                tempCity = v;
+                                tempDistrict = null;
+                                districtCtrl.clear();
+                              }),
+                              dense: true,
+                              activeColor: AppColors.primary,
+                            ),
+                          ),
+                    ],
+                  ),
+                ),
+                if (tempCity != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+                    child: TextField(
+                      controller: districtCtrl,
+                      decoration: InputDecoration(
+                        labelText: 'İlçe (opsiyonel)',
+                        hintText: 'Tüm ilçeler',
+                        filled: true,
+                        fillColor: AppColors.surfaceContainerLow,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          borderSide: BorderSide.none,
+                        ),
+                        prefixIcon: const Icon(Icons.location_city_outlined, size: 18),
+                      ),
+                      onChanged: (v) => tempDistrict = v.trim().isEmpty ? null : v.trim(),
+                    ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        final f = _ctrl.filter.value;
+                        _ctrl.applyFilter(
+                          tempCity == null
+                              ? f.copyWith(clearCity: true, clearDistrict: true)
+                              : f.copyWith(
+                                  city: tempCity,
+                                  district: tempDistrict ?? '',
+                                  clearDistrict: tempDistrict == null,
+                                ),
+                        );
+                      },
+                      child: const Text('Uygula'),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   void _selectCategory(String? id) {
     final filter = _ctrl.filter.value;
     _ctrl.applyFilter(
@@ -124,6 +279,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Ürünler')),
+      bottomNavigationBar: const CustomerBottomNav(current: CustomerTab.market),
       body: Column(
         children: [
           Padding(
@@ -176,6 +332,27 @@ class _ProductListScreenState extends State<ProductListScreen> {
               categories: cats,
               selectedId: _ctrl.filter.value.categoryId,
               onSelect: _selectCategory,
+            );
+          }),
+          Obx(() {
+            final filter = _ctrl.filter.value;
+            final hasLocation = filter.city?.isNotEmpty == true;
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(AppSpacing.md, 4, AppSpacing.md, 0),
+              child: Row(
+                children: [
+                  _LocationFilterChip(
+                    city: filter.city,
+                    district: filter.district,
+                    onTap: _showLocationFilterSheet,
+                    onClear: hasLocation
+                        ? () => _ctrl.applyFilter(
+                              filter.copyWith(clearCity: true, clearDistrict: true),
+                            )
+                        : null,
+                  ),
+                ],
+              ),
             );
           }),
           Obx(() {
@@ -331,6 +508,73 @@ class _SortTile extends StatelessWidget {
       value: value,
       groupValue: groupValue,
       onChanged: onChanged,
+    );
+  }
+}
+
+class _LocationFilterChip extends StatelessWidget {
+  final String? city;
+  final String? district;
+  final VoidCallback onTap;
+  final VoidCallback? onClear;
+
+  const _LocationFilterChip({
+    required this.city,
+    required this.district,
+    required this.onTap,
+    required this.onClear,
+  });
+
+  String get _label {
+    if (city == null || city!.isEmpty) return 'Konum';
+    if (district != null && district!.isNotEmpty) return '$city / $district';
+    return city!;
+  }
+
+  bool get _isActive => city != null && city!.isNotEmpty;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: _isActive ? AppColors.primaryFixed : AppColors.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          border: Border.all(
+            color: _isActive ? AppColors.primaryContainer : AppColors.outlineVariant,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.location_on_outlined,
+              size: 15,
+              color: _isActive ? AppColors.primary : AppColors.onSurfaceVariant,
+            ),
+            const SizedBox(width: 5),
+            Text(
+              _label,
+              style: TextStyle(
+                fontFamily: 'PlusJakartaSans',
+                fontSize: 13,
+                fontWeight: _isActive ? FontWeight.w600 : FontWeight.w400,
+                color: _isActive ? AppColors.primary : AppColors.onSurfaceVariant,
+              ),
+            ),
+            if (_isActive && onClear != null) ...[
+              const SizedBox(width: 4),
+              GestureDetector(
+                onTap: onClear,
+                child: const Icon(Icons.close, size: 14, color: AppColors.primary),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

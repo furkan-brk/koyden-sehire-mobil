@@ -23,7 +23,9 @@ import 'package:koyden_sehire/controllers/public/product_list_controller.dart';
 import 'package:koyden_sehire/core/api/api_client.dart';
 import 'package:koyden_sehire/core/services/auth_service.dart';
 import 'package:koyden_sehire/core/services/connectivity_service.dart';
+import 'package:koyden_sehire/core/services/favorites_service.dart';
 import 'package:koyden_sehire/core/storage/secure_storage_service.dart';
+import 'package:koyden_sehire/services/favorites_repository.dart';
 
 class AppBinding extends Bindings {
   @override
@@ -37,14 +39,21 @@ class AppBinding extends Bindings {
 
     Get.put<ConnectivityService>(ConnectivityService(), permanent: true);
 
-    Get.put<ApiClient>(
-      ApiClient(
-        storage,
-        onUnauthorized: () {
-          // ignore: discarded_futures
-          Get.find<AuthService>().handleUnauthorized();
-        },
-      ),
+    final apiClient = ApiClient(
+      storage,
+      onUnauthorized: () {
+        // ignore: discarded_futures
+        Get.find<AuthService>().handleUnauthorized();
+      },
+    );
+    Get.put<ApiClient>(apiClient, permanent: true);
+
+    Get.lazyPut<FavoritesRepository>(
+      () => FavoritesRepository(Get.find<ApiClient>()),
+      fenix: true,
+    );
+    Get.put<FavoritesService>(
+      FavoritesService(Get.find<FavoritesRepository>()),
       permanent: true,
     );
 

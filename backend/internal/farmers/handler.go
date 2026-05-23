@@ -3,6 +3,7 @@ package farmers
 import (
 	"math"
 	"strconv"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/koydensehire/backend/pkg/response"
@@ -14,6 +15,29 @@ type Handler struct {
 
 func NewHandler(svc *Service) *Handler {
 	return &Handler{svc: svc}
+}
+
+func (h *Handler) ListPublic(c *fiber.Ctx) error {
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+	limit, _ := strconv.Atoi(c.Query("limit", "20"))
+	if limit > 100 {
+		limit = 100
+	}
+	city := strings.TrimSpace(c.Query("city", ""))
+	search := strings.TrimSpace(c.Query("search", ""))
+
+	farmers, total, err := h.svc.ListPublic(page, limit, city, search)
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	totalPages := int(math.Ceil(float64(total) / float64(limit)))
+	return response.Paginated(c, farmers, response.Pagination{
+		Page:       page,
+		Limit:      limit,
+		Total:      total,
+		TotalPages: totalPages,
+	})
 }
 
 func (h *Handler) GetPublic(c *fiber.Ctx) error {

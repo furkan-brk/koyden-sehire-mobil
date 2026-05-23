@@ -92,6 +92,22 @@ Returns `409 CONFLICT` if phone or email already registered; `400 OTP_NOT_VERIFI
 
 ---
 
+## Customer Endpoints (`/customer/*` — Bearer JWT, role=customer, status=active)
+
+### Favorites
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/customer/favorites` | List favorited products (full product detail, active only) |
+| POST | `/customer/favorites/:productId` | Add product to favorites (201) |
+| DELETE | `/customer/favorites/:productId` | Remove product from favorites (200) |
+
+**GET /customer/favorites** returns `{"success": true, "data": [PublicProduct...]}`.  
+`POST` / `DELETE` return `{"success": true}`.  
+Error codes: `PRODUCT_NOT_AVAILABLE` (400) if product is not active on add; `NOT_FOUND` (404) if product ID doesn't exist.
+
+---
+
 ## Farmer Endpoints (`/farmer/*` — Bearer JWT, role=farmer, status=active)
 
 | Method | Path | Description |

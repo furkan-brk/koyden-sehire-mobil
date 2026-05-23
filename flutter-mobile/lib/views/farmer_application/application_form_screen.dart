@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -17,13 +17,15 @@ import 'package:koyden_sehire/services/category_repository.dart';
 import 'package:koyden_sehire/controllers/public/category_controller.dart';
 import 'package:koyden_sehire/models/farmer_model.dart';
 import 'package:koyden_sehire/controllers/application_form_controller.dart';
+import 'package:koyden_sehire/models/selected_location.dart';
+import 'package:koyden_sehire/views/farmer_application/select_location_screen.dart';
 
 const _stepTitles = [
   'Hesap Bilgileri',
-  'Üretici Profili',
-  'Üretim Bilgileri',
-  'Video Doğrulama',
-  'Şartlar ve Gönder',
+  'Ãœretici Profili',
+  'Ãœretim Bilgileri',
+  'Video DoÄŸrulama',
+  'Åžartlar ve GÃ¶nder',
 ];
 
 ApplicationFormController _formCtrl() => Get.find<ApplicationFormController>();
@@ -40,12 +42,12 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Formu terk etmek istediğinize emin misiniz?'),
-        content: const Text('Girdiğiniz bilgiler silinecek.'),
+        title: const Text('Formu terk etmek istediÄŸinize emin misiniz?'),
+        content: const Text('GirdiÄŸiniz bilgiler silinecek.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Vazgeç'),
+            child: const Text('VazgeÃ§'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
@@ -84,7 +86,7 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
         },
         child: Scaffold(
           appBar: AppBar(
-            title: Text('Adım ${ctrl.currentStep.value + 1} / 5'),
+            title: Text('AdÄ±m ${ctrl.currentStep.value + 1} / 5'),
             leading: IconButton(
               icon: const Icon(Icons.close),
               onPressed: () async {
@@ -216,14 +218,14 @@ class _StepAccountState extends State<_StepAccount> {
     if (!mounted) return;
     if (verified) {
       _formCtrl().setPhoneVerified(true);
-      context.toast('Telefon doğrulandı');
+      context.toast('Telefon doÄŸrulandÄ±');
     }
   }
 
   void _continue() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     if (!_formCtrl().phoneVerified.value) {
-      context.snack('Lütfen önce telefonunuzu doğrulayın', isError: true);
+      context.snack('LÃ¼tfen Ã¶nce telefonunuzu doÄŸrulayÄ±n', isError: true);
       return;
     }
     _save();
@@ -271,7 +273,7 @@ class _StepAccountState extends State<_StepAccount> {
                 return const SizedBox.shrink();
               }
               return AppButton(
-                label: 'Telefonu Doğrula',
+                label: 'Telefonu DoÄŸrula',
                 variant: AppButtonVariant.secondary,
                 onPressed: _verifyPhone,
                 icon: const Icon(Icons.verified_user_outlined,
@@ -280,21 +282,21 @@ class _StepAccountState extends State<_StepAccount> {
             }),
             const SizedBox(height: 12),
             AppTextField(
-              label: 'E-posta (isteğe bağlı)',
+              label: 'E-posta (isteÄŸe baÄŸlÄ±)',
               controller: _email,
               keyboardType: TextInputType.emailAddress,
               validator: Validators.email,
             ),
             const SizedBox(height: 12),
             AppTextField(
-              label: 'Şifre',
+              label: 'Åžifre',
               controller: _password,
               obscureText: true,
               validator: Validators.password,
             ),
             const SizedBox(height: 12),
             AppTextField(
-              label: 'Şifre Tekrar',
+              label: 'Åžifre Tekrar',
               controller: _passwordConfirm,
               obscureText: true,
               validator: Validators.confirmPassword(() => _password.text),
@@ -319,30 +321,32 @@ class _StepProducer extends StatefulWidget {
 class _StepProducerState extends State<_StepProducer> {
   final _formKey = GlobalKey<FormState>();
   final _businessName = TextEditingController();
-  final _city = TextEditingController();
-  final _district = TextEditingController();
-  final _village = TextEditingController();
   final _bio = TextEditingController();
   String? _producerType;
+  SelectedLocation? _selectedLocation;
 
   @override
   void initState() {
     super.initState();
     final d = _formCtrl().data.value;
     _businessName.text = d.businessName;
-    _city.text = d.city;
-    _district.text = d.district;
-    _village.text = d.village;
     _bio.text = d.bio;
     _producerType = d.producerType;
+    if (d.city.isNotEmpty) {
+      _selectedLocation = SelectedLocation(
+        city: d.city,
+        district: d.district,
+        village: d.village,
+        formattedAddress: [d.district, d.city].where((s) => s.isNotEmpty).join(', '),
+        lat: 0,
+        lng: 0,
+      );
+    }
   }
 
   @override
   void dispose() {
     _businessName.dispose();
-    _city.dispose();
-    _district.dispose();
-    _village.dispose();
     _bio.dispose();
     super.dispose();
   }
@@ -352,18 +356,34 @@ class _StepProducerState extends State<_StepProducer> {
       (d) => d.copyWith(
         businessName: _businessName.text.trim(),
         producerType: _producerType,
-        city: _city.text.trim(),
-        district: _district.text.trim(),
-        village: _village.text.trim(),
+        city: _selectedLocation?.city ?? d.city,
+        district: _selectedLocation?.district ?? d.district,
+        village: _selectedLocation?.village ?? d.village,
         bio: _bio.text.trim(),
       ),
     );
   }
 
+  Future<void> _openLocationPicker() async {
+    final result = await Navigator.push<SelectedLocation>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SelectLocationScreen(initial: _selectedLocation),
+      ),
+    );
+    if (result != null) {
+      setState(() => _selectedLocation = result);
+    }
+  }
+
   void _continue() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     if (_producerType == null) {
-      context.snack('Üretici tipi seçin', isError: true);
+      context.snack('Ãœretici tipi seÃ§in', isError: true);
+      return;
+    }
+    if (_selectedLocation == null) {
+      context.snack('LÃ¼tfen Ã§iftlik konumunu haritadan seÃ§in', isError: true);
       return;
     }
     _save();
@@ -377,6 +397,7 @@ class _StepProducerState extends State<_StepProducer> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = _selectedLocation;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Form(
@@ -385,16 +406,15 @@ class _StepProducerState extends State<_StepProducer> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             AppTextField(
-              label: 'Üretici / İşletme Adı',
-              hint: "Mehmet Amca'nın Çiftliği",
+              label: 'Ãœretici / Ä°ÅŸletme AdÄ±',
+              hint: "Mehmet Amca'nÄ±n Ã‡iftliÄŸi",
               controller: _businessName,
-              validator: (v) =>
-                  Validators.required(v, field: 'İşletme adı'),
+              validator: (v) => Validators.required(v, field: 'Ä°ÅŸletme adÄ±'),
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               value: _producerType,
-              decoration: const InputDecoration(labelText: 'Üretici Tipi'),
+              decoration: const InputDecoration(labelText: 'Ãœretici Tipi'),
               items: producerTypeLabels.entries
                   .map((e) =>
                       DropdownMenuItem(value: e.key, child: Text(e.value)))
@@ -402,29 +422,86 @@ class _StepProducerState extends State<_StepProducer> {
               onChanged: (v) => setState(() => _producerType = v),
             ),
             const SizedBox(height: 12),
-            AppTextField(
-              label: 'İl',
-              controller: _city,
-              validator: (v) => Validators.required(v, field: 'İl'),
+            // Location picker row
+            InkWell(
+              onTap: _openLocationPicker,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: loc == null
+                        ? AppColors.outlineVariant
+                        : AppColors.primaryContainer,
+                  ),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  color: loc == null
+                      ? Colors.transparent
+                      : AppColors.primaryFixed.withValues(alpha: 0.2),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      loc == null ? Icons.add_location_alt_outlined : Icons.location_on,
+                      color: loc == null ? AppColors.onSurfaceVariant : AppColors.primary,
+                      size: 22,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            loc == null ? 'Ã‡iftlik Konumunu SeÃ§ *' : 'Ã‡iftlik Konumu',
+                            style: TextStyle(
+                              fontFamily: 'PlusJakartaSans',
+                              fontSize: 12,
+                              color: loc == null
+                                  ? AppColors.onSurfaceVariant
+                                  : AppColors.primary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          if (loc != null) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              loc.formattedAddress.isNotEmpty
+                                  ? loc.formattedAddress
+                                  : [loc.district, loc.city]
+                                      .where((s) => s.isNotEmpty)
+                                      .join(', '),
+                              style: const TextStyle(
+                                fontFamily: 'PlusJakartaSans',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.onSurface,
+                              ),
+                            ),
+                          ] else
+                            const Text(
+                              'Haritadan Ã§iftlik adresinizi belirleyin',
+                              style: TextStyle(
+                                fontFamily: 'PlusJakartaSans',
+                                fontSize: 13,
+                                color: AppColors.outline,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.chevron_right,
+                      color: AppColors.onSurfaceVariant,
+                      size: 20,
+                    ),
+                  ],
+                ),
+              ),
             ),
             const SizedBox(height: 12),
             AppTextField(
-              label: 'İlçe',
-              controller: _district,
-              validator: (v) => Validators.required(v, field: 'İlçe'),
-            ),
-            const SizedBox(height: 12),
-            AppTextField(
-              label: 'Köy / Mahalle',
-              controller: _village,
-              validator: (v) =>
-                  Validators.required(v, field: 'Köy/Mahalle'),
-            ),
-            const SizedBox(height: 12),
-            AppTextField(
-              label: 'Kısa Biyografi',
-              hint:
-                  "Bursa Kestel'de ailemizle birlikte çilek ve sebze üretimi yapıyoruz.",
+              label: 'KÄ±sa Biyografi',
+              hint: "Bursa Kestel'de ailemizle birlikte Ã§ilek ve sebze Ã¼retimi yapÄ±yoruz.",
               controller: _bio,
               maxLines: 4,
               validator: (v) => Validators.required(v, field: 'Biyografi'),
@@ -505,7 +582,7 @@ class _StepProductionState extends State<_StepProduction> {
   void _continue() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     if (_selectedSlugs.isEmpty) {
-      context.snack('En az bir kategori seçin', isError: true);
+      context.snack('En az bir kategori seÃ§in', isError: true);
       return;
     }
     _save();
@@ -526,7 +603,7 @@ class _StepProductionState extends State<_StepProduction> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Ürün Kategorileri',
+            const Text('ÃœrÃ¼n Kategorileri',
                 style: TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             Obx(() {
@@ -535,7 +612,7 @@ class _StepProductionState extends State<_StepProduction> {
               }
               if (_cats.error.value != null) {
                 return const Text(
-                  'Kategoriler yüklenemedi',
+                  'Kategoriler yÃ¼klenemedi',
                   style: TextStyle(color: AppColors.onSurfaceVariant),
                 );
               }
@@ -561,18 +638,18 @@ class _StepProductionState extends State<_StepProduction> {
             }),
             const SizedBox(height: 16),
             AppTextField(
-              label: 'Ürün Örnekleri',
-              hint: 'Çilek, domates, salatalık, köy yumurtası',
+              label: 'ÃœrÃ¼n Ã–rnekleri',
+              hint: 'Ã‡ilek, domates, salatalÄ±k, kÃ¶y yumurtasÄ±',
               controller: _examples,
               maxLines: 2,
               validator: (v) =>
-                  Validators.required(v, field: 'Ürün örnekleri'),
+                  Validators.required(v, field: 'ÃœrÃ¼n Ã¶rnekleri'),
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               value: _placeType,
               decoration:
-                  const InputDecoration(labelText: 'Üretim Yeri (isteğe bağlı)'),
+                  const InputDecoration(labelText: 'Ãœretim Yeri (isteÄŸe baÄŸlÄ±)'),
               items: productionPlaceLabels.entries
                   .map((e) =>
                       DropdownMenuItem(value: e.key, child: Text(e.value)))
@@ -581,8 +658,8 @@ class _StepProductionState extends State<_StepProduction> {
             ),
             const SizedBox(height: 12),
             AppTextField(
-              label: 'Başvuru Notu (isteğe bağlı)',
-              hint: 'Eklemek istediğiniz bilgiler...',
+              label: 'BaÅŸvuru Notu (isteÄŸe baÄŸlÄ±)',
+              hint: 'Eklemek istediÄŸiniz bilgiler...',
               controller: _note,
               maxLines: 3,
             ),
@@ -634,7 +711,7 @@ class _StepVideoState extends State<_StepVideo> {
       if (size > AppConstants.maxApplicationVideoBytes) {
         if (!mounted) return;
         context.snack(
-          'Video boyutu 50 MB\'ı aşıyor. Lütfen daha kısa bir video seçin.',
+          'Video boyutu 50 MB\'Ä± aÅŸÄ±yor. LÃ¼tfen daha kÄ±sa bir video seÃ§in.',
           isError: true,
         );
         return;
@@ -644,7 +721,7 @@ class _StepVideoState extends State<_StepVideo> {
         _videoSize = size;
       });
     } catch (_) {
-      if (mounted) context.snack('Video seçilemedi', isError: true);
+      if (mounted) context.snack('Video seÃ§ilemedi', isError: true);
     }
   }
 
@@ -654,7 +731,7 @@ class _StepVideoState extends State<_StepVideo> {
     final ok = await _formCtrl().uploadVideo(file);
     if (!mounted) return;
     if (ok) {
-      context.toast('Video yüklendi');
+      context.toast('Video yÃ¼klendi');
       _formCtrl().next();
     } else {
       final err = _formCtrl().errorMessage.value;
@@ -688,7 +765,7 @@ class _StepVideoState extends State<_StepVideo> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text(
-              'Başvurunuzu daha güvenli ve hızlı değerlendirebilmemiz için kısa bir tanışma videosu yükleyebilirsiniz.',
+              'BaÅŸvurunuzu daha gÃ¼venli ve hÄ±zlÄ± deÄŸerlendirebilmemiz iÃ§in kÄ±sa bir tanÄ±ÅŸma videosu yÃ¼kleyebilirsiniz.',
               style: TextStyle(color: AppColors.onSurfaceVariant, height: 1.4),
             ),
             const SizedBox(height: 12),
@@ -702,29 +779,29 @@ class _StepVideoState extends State<_StepVideo> {
               child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Videoda ne söylenmeli?',
+                  Text('Videoda ne sÃ¶ylenmeli?',
                       style: TextStyle(fontWeight: FontWeight.w600)),
                   SizedBox(height: 4),
                   Text(
-                    'Adınızı, nerede üretim yaptığınızı ve hangi ürünleri ürettiğinizi söylemeniz yeterlidir. Mümkünse ürünlerinizi, bahçenizi veya üretim alanınızı da gösterebilirsiniz.',
+                    'AdÄ±nÄ±zÄ±, nerede Ã¼retim yaptÄ±ÄŸÄ±nÄ±zÄ± ve hangi Ã¼rÃ¼nleri Ã¼rettiÄŸinizi sÃ¶ylemeniz yeterlidir. MÃ¼mkÃ¼nse Ã¼rÃ¼nlerinizi, bahÃ§enizi veya Ã¼retim alanÄ±nÄ±zÄ± da gÃ¶sterebilirsiniz.',
                   ),
                   SizedBox(height: 8),
-                  Text('• 30-60 saniye önerilen, maksimum 90 saniye'),
-                  Text('• Maksimum 50 MB'),
-                  Text('• MP4 veya MOV formatı'),
+                  Text('â€¢ 30-60 saniye Ã¶nerilen, maksimum 90 saniye'),
+                  Text('â€¢ Maksimum 50 MB'),
+                  Text('â€¢ MP4 veya MOV formatÄ±'),
                 ],
               ),
             ),
             const SizedBox(height: 16),
             if (_videoFile == null) ...[
               AppButton(
-                label: 'Kameradan Çek',
+                label: 'Kameradan Ã‡ek',
                 icon: const Icon(Icons.videocam_outlined, color: Colors.white),
                 onPressed: () => _pickVideo(ImageSource.camera),
               ),
               const SizedBox(height: 8),
               AppButton(
-                label: 'Galeriden Seç',
+                label: 'Galeriden SeÃ§',
                 variant: AppButtonVariant.secondary,
                 icon: const Icon(Icons.photo_library_outlined,
                     color: AppColors.primaryContainer),
@@ -777,13 +854,13 @@ class _StepVideoState extends State<_StepVideo> {
                 LinearProgressIndicator(value: uploadProgress),
                 const SizedBox(height: 4),
                 Text(
-                  'Yükleniyor ${(uploadProgress * 100).toStringAsFixed(0)}%',
+                  'YÃ¼kleniyor ${(uploadProgress * 100).toStringAsFixed(0)}%',
                   style: const TextStyle(color: AppColors.onSurfaceVariant),
                 ),
               ],
               const SizedBox(height: 12),
               AppButton(
-                label: 'Yükle ve Devam Et',
+                label: 'YÃ¼kle ve Devam Et',
                 isLoading: isUploading,
                 onPressed: isUploading ? null : _upload,
               ),
@@ -802,7 +879,7 @@ class _StepVideoState extends State<_StepVideo> {
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Bu video herkese açık yayınlanmaz. Yalnızca başvurunuzu değerlendiren Köyden Şehre ekibi tarafından görüntülenir.',
+                      'Bu video herkese aÃ§Ä±k yayÄ±nlanmaz. YalnÄ±zca baÅŸvurunuzu deÄŸerlendiren KÃ¶yden Åžehre ekibi tarafÄ±ndan gÃ¶rÃ¼ntÃ¼lenir.',
                       style: TextStyle(color: AppColors.primaryContainer, height: 1.4),
                     ),
                   ),
@@ -822,7 +899,7 @@ class _StepVideoState extends State<_StepVideo> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: AppButton(
-                    label: 'Şimdilik Geç',
+                    label: 'Åžimdilik GeÃ§',
                     variant: AppButtonVariant.text,
                     onPressed: isUploading ? null : _skip,
                   ),
@@ -899,30 +976,30 @@ class _StepTermsState extends State<_StepTerms> {
             _CheckTile(
               value: _kvkk,
               onChanged: (v) => setState(() => _kvkk = v),
-              text: 'KVKK aydınlatma metnini okudum ve kabul ediyorum.',
+              text: 'KVKK aydÄ±nlatma metnini okudum ve kabul ediyorum.',
             ),
             _CheckTile(
               value: _platform,
               onChanged: (v) => setState(() => _platform = v),
               text:
-                  'Köyden Şehre\'nin ödeme, sipariş, kargo veya uygulama içi mesajlaşma yapmadığını anlıyorum.',
+                  'KÃ¶yden Åžehre\'nin Ã¶deme, sipariÅŸ, kargo veya uygulama iÃ§i mesajlaÅŸma yapmadÄ±ÄŸÄ±nÄ± anlÄ±yorum.',
             ),
             _CheckTile(
               value: _own,
               onChanged: (v) => setState(() => _own = v),
               text:
-                  'Verdiğim bilgilerin doğru olduğunu ve kendi üretimimi sattığımı onaylıyorum.',
+                  'VerdiÄŸim bilgilerin doÄŸru olduÄŸunu ve kendi Ã¼retimimi sattÄ±ÄŸÄ±mÄ± onaylÄ±yorum.',
             ),
             _CheckTile(
               value: _notIntermediary,
               onChanged: (v) => setState(() => _notIntermediary = v),
-              text: 'Aracı olmadığımı beyan ediyorum.',
+              text: 'AracÄ± olmadÄ±ÄŸÄ±mÄ± beyan ediyorum.',
             ),
             _CheckTile(
               value: _location,
               onChanged: (v) => setState(() => _location = v),
               text:
-                  'Üretim yaptığım konum bilgilerini doğru girdiğimi onaylıyorum.',
+                  'Ãœretim yaptÄ±ÄŸÄ±m konum bilgilerini doÄŸru girdiÄŸimi onaylÄ±yorum.',
             ),
             const SizedBox(height: 16),
             Container(
@@ -949,7 +1026,7 @@ class _StepTermsState extends State<_StepTerms> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: AppButton(
-                    label: 'Başvuruyu Gönder',
+                    label: 'BaÅŸvuruyu GÃ¶nder',
                     isLoading: isSubmitting,
                     onPressed:
                         _allAccepted && !isSubmitting ? _submit : null,

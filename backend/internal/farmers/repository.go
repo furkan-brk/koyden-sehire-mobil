@@ -1,6 +1,9 @@
 package farmers
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/jmoiron/sqlx"
 	apperrors "github.com/koydensehire/backend/pkg/errors"
 )
@@ -73,6 +76,51 @@ func (r *Repository) GetAdminDetail(id string) (*FarmerDetail, error) {
 		return nil, apperrors.ErrNotFound
 	}
 	return &d, nil
+}
+
+func (r *Repository) ListPublic(page, limit int, city, search string) ([]PublicFarmerSummary, int, error) {
+	args := []interface{}{}
+	conditions := []string{"u.status = 'active'", "u.role = 'farmer'"}
+
+	if city != "" {
+		args = append(args, city)
+		conditions = append(conditions, fmt.Sprintf("LOWER(fp.city) = LOWER($%d)", len(args)))
+	}
+	if search != "" {
+		args = append(args, "%"+strings.ToLower(search)+"%")
+		conditions = append(conditions, fmt.Sprintf(
+			"(LOWER(fp.display_name) LIKE $%d OR LOWER(fp.city) LIKE $%d OR LOWER(fp.producer_type) LIKE $%d)",
+			len(args), len(args), len(args),
+		))
+	}
+
+	where := "WHERE " + strings.Join(conditions, " AND ")
+
+	var total int
+	if err := r.db.Get(&total, fmt.Sprintf(`
+		SELECT COUNT(*) FROM users u
+		JOIN farmer_profiles fp ON fp.user_id = u.id
+		%s
+	`, where), args...); err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * limit
+	args = append(args, limit, offset)
+	var farmers []PublicFarmerSummary
+	err := r.db.Select(&farmers, fmt.Sprintf(`
+		SELECT fp.user_id AS id, fp.display_name, fp.producer_type, fp.city, fp.district,
+		       fp.profile_image_url, fp.is_verified, fp.is_founding_farmer
+		FROM users u
+		JOIN farmer_profiles fp ON fp.user_id = u.id
+		%s
+		ORDER BY fp.is_founding_farmer DESC, fp.is_verified DESC, u.created_at DESC
+		LIMIT $%d OFFSET $%d
+	`, where, len(args)-1, len(args)), args...)
+	if farmers == nil {
+		farmers = []PublicFarmerSummary{}
+	}
+	return farmers, total, err
 }
 
 func (r *Repository) ListAdmin(page, limit int) ([]FarmerDetail, int, error) {

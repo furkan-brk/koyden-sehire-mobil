@@ -1,8 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
+import 'package:koyden_sehire/core/services/favorites_service.dart';
 import 'package:koyden_sehire/core/utils/date_formatter.dart';
 import 'package:koyden_sehire/models/product_model.dart';
 
@@ -180,24 +182,32 @@ class _ProductImage extends StatelessWidget {
                   fg: AppColors.secondary,
                 ),
               ),
-            // Top-right favorite icon (static for now)
+            // Top-right favorite toggle
             Positioned(
               top: 6,
               right: 6,
-              child: Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.85),
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: const Icon(
-                  Icons.favorite_border,
-                  size: 16,
-                  color: AppColors.primaryContainer,
-                ),
-              ),
+              child: Obx(() {
+                final favs = Get.find<FavoritesService>();
+                final isFav = favs.isFavorite(product.id);
+                return GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => favs.toggle(context, product.id),
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.85),
+                      shape: BoxShape.circle,
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(
+                      isFav ? Icons.favorite : Icons.favorite_border,
+                      size: 16,
+                      color: AppColors.primaryContainer,
+                    ),
+                  ),
+                );
+              }),
             ),
           ],
         ),

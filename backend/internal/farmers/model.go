@@ -24,6 +24,17 @@ type FarmerDetail struct {
 	InviteQuota      int     `db:"invite_quota" json:"invite_quota"`
 }
 
+type PublicFarmerSummary struct {
+	ID               string  `json:"id"`
+	DisplayName      string  `json:"display_name"`
+	ProducerType     string  `json:"producer_type"`
+	City             string  `json:"city"`
+	District         string  `json:"district"`
+	ProfileImageURL  *string `json:"profile_image_url"`
+	IsVerified       bool    `json:"is_verified"`
+	IsFoundingFarmer bool    `json:"is_founding_farmer"`
+}
+
 type PublicFarmerDetail struct {
 	ID               string  `json:"id"`
 	DisplayName      string  `json:"display_name"`

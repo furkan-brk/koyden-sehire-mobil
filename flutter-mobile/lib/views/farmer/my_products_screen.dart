@@ -51,7 +51,7 @@ class _MyProductsScreenState extends State<MyProductsScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      bottomNavigationBar: const FarmerBottomNav(currentIndex: 1),
+      bottomNavigationBar: const FarmerBottomNav(current: FarmerTab.products),
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text('Ürünlerim'),

@@ -150,6 +150,15 @@ PostgreSQL 15+. UUID primary keys via `gen_random_uuid()`. All timestamps in UTC
 | `created_at` | timestamp | |
 | `updated_at` | timestamp | |
 
+### `favorites`
+| Column | Type | Notes |
+|--------|------|-------|
+| `user_id` | uuid FK → users | Cascade delete |
+| `product_id` | uuid FK → products | Cascade delete |
+| `created_at` | timestamptz | |
+
+PK: `(user_id, product_id)`. Index: `idx_favorites_user_created` on `(user_id, created_at DESC)`.
+
 ---
 
 ## Migrations

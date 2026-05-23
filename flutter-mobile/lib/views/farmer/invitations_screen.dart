@@ -22,7 +22,7 @@ class InvitationsScreen extends StatelessWidget {
     final ctrl = Get.find<InvitationController>();
     return Scaffold(
       appBar: AppBar(title: const Text('Davetlerim')),
-      bottomNavigationBar: const FarmerBottomNav(currentIndex: 2),
+      bottomNavigationBar: const FarmerBottomNav(current: FarmerTab.invites),
       body: Obx(() {
         if (ctrl.isLoading.value) return const AppLoading();
         if (ctrl.error.value != null) {

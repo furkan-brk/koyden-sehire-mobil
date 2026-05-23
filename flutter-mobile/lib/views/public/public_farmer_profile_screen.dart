@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,6 +12,7 @@ import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_loading.dart';
+import 'package:koyden_sehire/shared/widgets/customer_bottom_nav.dart';
 import 'package:koyden_sehire/shared/widgets/founding_badge.dart';
 import 'package:koyden_sehire/shared/widgets/product_card.dart';
 import 'package:koyden_sehire/shared/widgets/verified_badge.dart';
@@ -28,6 +31,7 @@ class FarmerProfileScreen extends StatefulWidget {
 class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
   bool _phoneRevealed = false;
   late final FarmerController _ctrl;
+  final _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -44,6 +48,7 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
   @override
   void dispose() {
     Get.delete<FarmerController>(tag: widget.farmerId);
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -65,212 +70,530 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Üretici')),
+      bottomNavigationBar: const CustomerBottomNav(current: CustomerTab.producers),
       body: Obx(() {
         if (_ctrl.isLoadingProfile.value && _ctrl.profile.value == null) {
-          return const AppLoading();
+          return const Scaffold(
+            body: AppLoading(),
+          );
         }
         if (_ctrl.profileError.value != null && _ctrl.profile.value == null) {
-          return AppErrorWidget(
-            message: _ctrl.profileError.value!,
-            onRetry: _ctrl.load,
+          return Scaffold(
+            appBar: AppBar(title: const Text('Üretici')),
+            body: AppErrorWidget(
+              message: _ctrl.profileError.value!,
+              onRetry: _ctrl.load,
+            ),
           );
         }
         final p = _ctrl.profile.value;
-        if (p == null) return const AppLoading();
-        return ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            _Header(profile: p),
-            if (p.bio != null && p.bio!.isNotEmpty) ...[
-              const SizedBox(height: 24),
-              Text('Hakkında', style: context.text.titleMedium),
-              const SizedBox(height: 8),
-              Text(p.bio!, style: const TextStyle(height: 1.5)),
-            ],
-            if (p.showPhone && (p.publicPhone?.isNotEmpty ?? false)) ...[
-              const SizedBox(height: 24),
-              Text('İletişim', style: context.text.titleMedium),
-              const SizedBox(height: 8),
-              if (!_phoneRevealed)
-                AppButton(
-                  label: 'İletişim Bilgisini Göster',
-                  variant: AppButtonVariant.secondary,
-                  onPressed: () => setState(() => _phoneRevealed = true),
-                  icon: const Icon(Icons.phone_outlined,
-                      color: AppColors.primaryContainer),
-                )
-              else ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.phone, color: AppColors.primaryContainer),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          PhoneFormatter.pretty(p.publicPhone!),
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: AppButton(
-                        label: 'Telefonu Kopyala',
-                        variant: AppButtonVariant.secondary,
-                        onPressed: () => _copy(p.publicPhone!),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: AppButton(
-                        label: 'Üreticiyi Ara',
-                        onPressed: () => _call(p.publicPhone!),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ],
-            const SizedBox(height: 24),
-            Text('Ürünleri', style: context.text.titleMedium),
-            const SizedBox(height: 8),
-            if (_ctrl.isLoadingProducts.value)
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else if (_ctrl.productsError.value != null)
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text(
-                  'Ürünler yüklenemedi',
-                  style: TextStyle(color: AppColors.onSurfaceVariant),
-                ),
-              )
-            else if (_ctrl.products.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: Text(
-                  'Bu üreticinin aktif ürünü yok.',
-                  style: TextStyle(color: AppColors.onSurfaceVariant),
-                ),
-              )
-            else
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 0.62,
-                ),
-                itemCount: _ctrl.products.length,
-                itemBuilder: (_, i) =>
-                    ProductCard(product: _ctrl.products[i]),
-              ),
-          ],
+        if (p == null) return const Scaffold(body: AppLoading());
+        return _ProfileBody(
+          profile: p,
+          ctrl: _ctrl,
+          scrollController: _scrollController,
+          phoneRevealed: _phoneRevealed,
+          onRevealPhone: () => setState(() => _phoneRevealed = true),
+          onCall: _call,
+          onCopy: _copy,
         );
       }),
     );
   }
 }
 
-class _Header extends StatelessWidget {
+class _ProfileBody extends StatelessWidget {
   final FarmerProfile profile;
-  const _Header({required this.profile});
+  final FarmerController ctrl;
+  final ScrollController scrollController;
+  final bool phoneRevealed;
+  final VoidCallback onRevealPhone;
+  final Future<void> Function(String) onCall;
+  final Future<void> Function(String) onCopy;
+
+  const _ProfileBody({
+    required this.profile,
+    required this.ctrl,
+    required this.scrollController,
+    required this.phoneRevealed,
+    required this.onRevealPhone,
+    required this.onCall,
+    required this.onCopy,
+  });
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final location = [
-      profile.city,
-      profile.district,
-      if (profile.village != null) profile.village,
-    ].whereType<String>().join(' • ');
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(3),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: cs.primaryContainer.withValues(alpha: 0.25),
-              width: 3,
+    final hasBio = profile.bio != null && profile.bio!.isNotEmpty;
+    final hasLongBio = hasBio && profile.bio!.length > 200;
+
+    return CustomScrollView(
+      controller: scrollController,
+      slivers: [
+        // ── Hero SliverAppBar ──────────────────────────────────────────
+        SliverAppBar(
+          expandedHeight: 340,
+          pinned: true,
+          stretch: true,
+          leading: const BackButton(),
+          flexibleSpace: FlexibleSpaceBar(
+            stretchModes: const [StretchMode.zoomBackground],
+            background: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (profile.profileImageUrl != null)
+                  CachedNetworkImage(
+                    imageUrl: profile.profileImageUrl!,
+                    fit: BoxFit.cover,
+                    placeholder: (_, __) => Container(
+                      color: cs.surfaceContainerLow,
+                    ),
+                    errorWidget: (_, __, ___) =>
+                        _PlaceholderHero(cs: cs),
+                  )
+                else
+                  _PlaceholderHero(cs: cs),
+                // Gradient overlay for readability
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          cs.surface.withValues(alpha: 0.15),
+                          cs.surface.withValues(alpha: 0.7),
+                          cs.surface,
+                        ],
+                        stops: const [0.0, 0.45, 0.78, 1.0],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          child: CircleAvatar(
-            radius: 48,
-            backgroundColor: AppColors.surfaceContainerLow,
-            backgroundImage: profile.profileImageUrl == null
-                ? null
-                : CachedNetworkImageProvider(profile.profileImageUrl!),
-            child: profile.profileImageUrl == null
-                ? const Icon(Icons.person,
-                    size: 48, color: AppColors.onSurfaceVariant)
-                : null,
+        ),
+
+        // ── Profile Header Card (glass-panel) ─────────────────────────
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              0,
+              AppSpacing.md,
+              AppSpacing.lg,
+            ),
+            child: _GlassProfileCard(profile: profile),
           ),
         ),
-        const SizedBox(height: 12),
-        Text(
-          profile.displayName,
-          style: Theme.of(context).textTheme.headlineMedium,
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          alignment: WrapAlignment.center,
-          children: [
-            if (profile.isFoundingFarmer) const FoundingBadge(small: false),
-            if (profile.isVerified) const VerifiedBadge(small: false),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: cs.secondaryContainer,
-                borderRadius: BorderRadius.circular(AppRadius.pill),
+
+        // ── Hikayemiz ─────────────────────────────────────────────────
+        if (hasBio) ...[
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              child: _SectionTitle(
+                icon: Icons.history_edu_outlined,
+                title: 'Hikayemiz',
               ),
-              child: Text(
-                producerTypeLabel(profile.producerType),
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: cs.secondary,
+            ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.sm)),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              child: _BioParagraphs(bio: profile.bio!),
+            ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
+        ],
+
+        // ── Üretim Felsefemiz (if long bio) ───────────────────────────
+        if (hasLongBio) ...[
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              child: _PhilosophyCard(bio: profile.bio!),
+            ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
+        ],
+
+        // ── İletişim ─────────────────────────────────────────────────
+        if (profile.showPhone && (profile.publicPhone?.isNotEmpty ?? false)) ...[
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              child: _ContactSection(
+                phone: profile.publicPhone!,
+                revealed: phoneRevealed,
+                onReveal: onRevealPhone,
+                onCall: onCall,
+                onCopy: onCopy,
+              ),
+            ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
+        ],
+
+        // ── Ürünler ───────────────────────────────────────────────────
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            child: Row(
+              children: [
+                Icon(Icons.storefront_outlined,
+                    color: cs.primary, size: 22),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    '${profile.displayName} Ürünleri',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.sm)),
+
+        Obx(() {
+          if (ctrl.isLoadingProducts.value) {
+            return const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            );
+          }
+          if (ctrl.productsError.value != null) {
+            return SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Text(
+                  'Ürünler yüklenemedi',
+                  style: TextStyle(color: cs.onSurfaceVariant),
                 ),
               ),
-            ),
-          ],
-        ),
-        if (location.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.location_on_outlined,
-                size: 14,
-                color: cs.onSurfaceVariant,
-              ),
-              const SizedBox(width: 4),
-              Flexible(
+            );
+          }
+          if (ctrl.products.isEmpty) {
+            return SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Text(
-                  location,
+                  'Bu üreticinin aktif ürünü yok.',
                   style: TextStyle(color: cs.onSurfaceVariant),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            );
+          }
+          return SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            sliver: SliverGrid(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 0.62,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (_, i) => ProductCard(product: ctrl.products[i]),
+                childCount: ctrl.products.length,
+              ),
+            ),
+          );
+        }),
+
+        const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xl)),
+      ],
+    );
+  }
+}
+
+// ── Sub-widgets ───────────────────────────────────────────────────────────────
+
+class _PlaceholderHero extends StatelessWidget {
+  final ColorScheme cs;
+  const _PlaceholderHero({required this.cs});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: cs.surfaceContainerLow,
+      child: Icon(Icons.person, size: 80, color: cs.onSurfaceVariant),
+    );
+  }
+}
+
+class _GlassProfileCard extends StatelessWidget {
+  final FarmerProfile profile;
+  const _GlassProfileCard({required this.profile});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final typeLabel = producerTypeLabel(profile.producerType);
+    final location = [
+      profile.city,
+      if (profile.district.isNotEmpty) profile.district,
+    ].join(' · ');
+    final tagline = '$typeLabel · $location';
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.md + 4),
+          decoration: BoxDecoration(
+            color: cs.surface.withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(
+              color: cs.outlineVariant.withValues(alpha: 0.5),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          profile.displayName,
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          tagline,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: cs.onSurfaceVariant),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  if (profile.isFoundingFarmer)
+                    const FoundingBadge()
+                  else if (profile.isVerified)
+                    const VerifiedBadge(),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  const _SectionTitle({required this.icon, required this.title});
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: cs.secondaryContainer,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          alignment: Alignment.center,
+          child: Icon(icon, color: cs.secondary, size: 20),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BioParagraphs extends StatelessWidget {
+  final String bio;
+  const _BioParagraphs({required this.bio});
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final paragraphs = bio
+        .split('\n\n')
+        .map((p) => p.trim())
+        .where((p) => p.isNotEmpty)
+        .toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: paragraphs
+          .map(
+            (p) => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Text(
+                p,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: cs.onSurfaceVariant,
+                      height: 1.6,
+                    ),
+              ),
+            ),
+          )
+          .toList(),
+    );
+  }
+}
+
+class _PhilosophyCard extends StatelessWidget {
+  final String bio;
+  const _PhilosophyCard({required this.bio});
+
+  String _extract(String bio) {
+    final parts = bio.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
+    return parts.length > 1 ? parts.last.trim() : bio.trim();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final quote = _extract(bio);
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md + 4),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'ÜRETİM FELSEFEMİZ',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: cs.secondary,
+                  letterSpacing: 1.2,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Stack(
+            children: [
+              Positioned(
+                top: 0,
+                left: 0,
+                child: Text(
+                  '"',
+                  style: TextStyle(
+                    fontSize: 48,
+                    height: 0.8,
+                    color: cs.secondary.withValues(alpha: 0.3),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 24),
+                child: Text(
+                  quote,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontStyle: FontStyle.italic,
+                        color: cs.onSurface,
+                        height: 1.55,
+                      ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ContactSection extends StatelessWidget {
+  final String phone;
+  final bool revealed;
+  final VoidCallback onReveal;
+  final Future<void> Function(String) onCall;
+  final Future<void> Function(String) onCopy;
+  const _ContactSection({
+    required this.phone,
+    required this.revealed,
+    required this.onReveal,
+    required this.onCall,
+    required this.onCopy,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionTitle(icon: Icons.phone_outlined, title: 'İletişim'),
+        const SizedBox(height: AppSpacing.sm),
+        if (!revealed)
+          AppButton(
+            label: 'İletişim Bilgisini Göster',
+            variant: AppButtonVariant.secondary,
+            onPressed: onReveal,
+            icon: const Icon(Icons.phone_outlined,
+                color: AppColors.primaryContainer),
+          )
+        else ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(color: cs.outlineVariant),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.phone, color: cs.primary),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    PhoneFormatter.pretty(phone),
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            children: [
+              Expanded(
+                child: AppButton(
+                  label: 'Kopyala',
+                  variant: AppButtonVariant.secondary,
+                  onPressed: () => onCopy(phone),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: AppButton(
+                  label: 'Ara',
+                  onPressed: () => onCall(phone),
                 ),
               ),
             ],

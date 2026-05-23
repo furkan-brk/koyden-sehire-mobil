@@ -25,6 +25,7 @@ import (
 	"github.com/koydensehire/backend/internal/database"
 	"github.com/koydensehire/backend/internal/farmer_applications"
 	"github.com/koydensehire/backend/internal/farmers"
+	"github.com/koydensehire/backend/internal/favorites"
 	"github.com/koydensehire/backend/internal/invites"
 	"github.com/koydensehire/backend/internal/middleware"
 	"github.com/koydensehire/backend/internal/notifications"
@@ -148,6 +149,10 @@ func main() {
 	uploadSvc := uploads.NewService(storageProvider)
 	uploadHandler := uploads.NewHandler(uploadSvc)
 
+	favRepo := favorites.NewRepository(db)
+	favSvc := favorites.NewService(favRepo)
+	favHandler := favorites.NewHandler(favSvc)
+
 	auditRepo := audit.NewRepository(db)
 	adminRepo := admin.NewRepository(db)
 	adminSvc := admin.NewService(adminRepo, db, storageProvider, cfg.App.Env, auditRepo)
@@ -169,6 +174,7 @@ func main() {
 	requireAuth := middleware.RequireAuth(db, cfg.JWT.Secret)
 	requireFarmer := middleware.RequireRole("farmer")
 	requireAdmin := middleware.RequireRole("admin")
+	requireCustomer := middleware.RequireRole("customer")
 	requireActive := middleware.RequireActiveUser()
 
 	api := app.Group("/api/v1")
@@ -206,6 +212,7 @@ func main() {
 	api.Get("/categories", catHandler.List)
 	api.Get("/products", productHandler.List)
 	api.Get("/products/:id", productHandler.GetByID)
+	api.Get("/farmers", farmerHandler.ListPublic)
 	api.Get("/farmers/:id", farmerHandler.GetPublic)
 	api.Get("/farmers/:id/products", func(c *fiber.Ctx) error {
 		id := c.Params("id")
@@ -234,6 +241,11 @@ func main() {
 	farmer.Get("/invites", inviteHandler.FarmerInvites)
 	farmer.Post("/uploads/product-image", uploadHandler.UploadProductImage)
 	farmer.Post("/uploads/profile-image", uploadHandler.UploadProfileImage)
+
+	customerGroup := api.Group("/customer", requireAuth, requireCustomer, requireActive)
+	customerGroup.Get("/favorites", favHandler.List)
+	customerGroup.Post("/favorites/:productId", favHandler.Add)
+	customerGroup.Delete("/favorites/:productId", favHandler.Remove)
 
 	adminGroup := api.Group("/admin", requireAuth, requireAdmin)
 	adminGroup.Get("/dashboard", adminHandler.Dashboard)

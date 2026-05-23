@@ -12,6 +12,7 @@ import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_loading.dart';
+import 'package:koyden_sehire/shared/widgets/customer_bottom_nav.dart';
 import 'package:koyden_sehire/shared/widgets/founding_badge.dart';
 import 'package:koyden_sehire/shared/widgets/image_carousel.dart';
 import 'package:koyden_sehire/shared/widgets/verified_badge.dart';
@@ -81,6 +82,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           ),
         ],
       ),
+      bottomNavigationBar: const CustomerBottomNav(current: CustomerTab.market),
       body: Obx(() {
         if (_ctrl.isLoading.value && _ctrl.product.value == null) {
           return const AppLoading();

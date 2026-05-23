@@ -33,6 +33,8 @@ import 'package:koyden_sehire/views/public/public_farmer_profile_screen.dart';
 import 'package:koyden_sehire/views/public/home_screen.dart';
 import 'package:koyden_sehire/views/public/product_detail_screen.dart';
 import 'package:koyden_sehire/views/public/product_list_screen.dart';
+import 'package:koyden_sehire/views/public/basket_screen.dart';
+import 'package:koyden_sehire/views/public/producers_list_screen.dart';
 import 'package:koyden_sehire/views/customer/customer_profile_screen.dart';
 import 'package:koyden_sehire/views/splash/splash_screen.dart';
 
@@ -41,6 +43,7 @@ import 'package:koyden_sehire/views/splash/splash_screen.dart';
 const _publicRoutes = {
   '/',
   '/products',
+  '/producers',
   '/search',
   '/apply',
   '/apply/form',
@@ -49,6 +52,7 @@ const _publicRoutes = {
   '/register',
   '/register/customer',
   '/otp',
+  '/basket',
 };
 
 bool _isPublic(String path) {
@@ -168,6 +172,14 @@ class AppRouter {
           path: '/farmers/:id',
           builder: (_, state) =>
               FarmerProfileScreen(farmerId: state.pathParameters['id']!),
+        ),
+        GoRoute(
+          path: '/basket',
+          builder: (_, __) => const BasketScreen(),
+        ),
+        GoRoute(
+          path: '/producers',
+          builder: (_, __) => const ProducersListScreen(),
         ),
         GoRoute(
           path: '/login',

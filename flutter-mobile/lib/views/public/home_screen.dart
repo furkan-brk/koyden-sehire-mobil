@@ -9,6 +9,7 @@ import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/category_chip.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_card.dart';
 import 'package:koyden_sehire/shared/widgets/product_card.dart';
+import 'package:koyden_sehire/shared/widgets/customer_bottom_nav.dart';
 import 'package:koyden_sehire/shared/widgets/shimmer_product_card.dart';
 import 'package:koyden_sehire/models/auth/auth_state.dart';
 import 'package:koyden_sehire/models/category_model.dart';
@@ -88,11 +89,7 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
         ],
       ),
-      bottomNavigationBar: Obx(() {
-        final isFarmer = auth.status.value == AuthStatus.farmerActive;
-        final isCustomer = auth.status.value == AuthStatus.customerActive;
-        return _PublicBottomNav(isFarmer: isFarmer, isCustomer: isCustomer);
-      }),
+      bottomNavigationBar: const CustomerBottomNav(current: CustomerTab.market),
       body: RefreshIndicator(
         onRefresh: () async {
           homeCtrl.load();
@@ -243,73 +240,6 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-
-class _PublicBottomNav extends StatelessWidget {
-  final bool isFarmer;
-  final bool isCustomer;
-  const _PublicBottomNav({required this.isFarmer, required this.isCustomer});
-
-  @override
-  Widget build(BuildContext context) {
-    return NavigationBar(
-      selectedIndex: 0,
-      onDestinationSelected: (i) {
-        switch (i) {
-          case 0:
-            break;
-          case 1:
-            context.push('/products');
-          case 2:
-            context.push('/apply');
-          case 3:
-            if (isFarmer) {
-              context.go('/farmer/dashboard');
-            } else if (isCustomer) {
-              context.push('/customer/profile');
-            } else {
-              context.push('/login');
-            }
-        }
-      },
-      destinations: [
-        const NavigationDestination(
-          icon: Icon(Icons.home_outlined),
-          selectedIcon: Icon(Icons.home),
-          label: 'Ana Sayfa',
-        ),
-        const NavigationDestination(
-          icon: Icon(Icons.shopping_bag_outlined),
-          selectedIcon: Icon(Icons.shopping_bag),
-          label: 'Ürünler',
-        ),
-        const NavigationDestination(
-          icon: Icon(Icons.agriculture_outlined),
-          selectedIcon: Icon(Icons.agriculture),
-          label: 'Başvur',
-        ),
-        NavigationDestination(
-          icon: Icon(isFarmer
-              ? Icons.dashboard_outlined
-              : isCustomer
-                  ? Icons.person_outline
-                  : Icons.login_outlined),
-          selectedIcon: Icon(isFarmer
-              ? Icons.dashboard
-              : isCustomer
-                  ? Icons.person
-                  : Icons.login),
-          label: isFarmer
-              ? 'Panelim'
-              : isCustomer
-                  ? 'Hesabım'
-                  : 'Giriş',
-        ),
-      ],
     );
   }
 }

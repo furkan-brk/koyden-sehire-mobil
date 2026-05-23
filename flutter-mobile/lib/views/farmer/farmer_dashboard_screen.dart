@@ -25,14 +25,49 @@ class FarmerDashboardScreen extends StatelessWidget {
     final auth = Get.find<AuthService>();
 
     return Scaffold(
-      bottomNavigationBar: const FarmerBottomNav(currentIndex: 0),
+      bottomNavigationBar: const FarmerBottomNav(current: FarmerTab.dashboard),
       appBar: AppBar(
         automaticallyImplyLeading: false,
+        toolbarHeight: 68,
         title: Obx(() {
           final displayName = profileCtrl.profile.value?.displayName ??
               auth.displayName.value ??
               'Üretici';
-          return Text('Merhaba, $displayName');
+          final cs = Theme.of(context).colorScheme;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Merhaba, $displayName'),
+              const SizedBox(height: 4),
+              GestureDetector(
+                onTap: () => context.go('/'),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: cs.secondaryContainer,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.storefront_outlined,
+                          size: 11, color: cs.primaryContainer),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Markete Gözat',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: cs.primaryContainer,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
         }),
         actions: [
           Obx(() {

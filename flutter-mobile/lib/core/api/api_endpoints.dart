@@ -6,6 +6,7 @@ class ApiEndpoints {
   static const String inviteValidate = '/invites/validate';
 
   static String productById(String id) => '/products/$id';
+  static const String farmers = '/farmers';
   static String farmerById(String id) => '/farmers/$id';
   static String farmerProducts(String farmerId) => '/farmers/$farmerId/products';
 
@@ -50,6 +51,10 @@ class ApiEndpoints {
   static String adminFarmer(String id) => '/admin/farmers/$id';
   static String adminFarmerSuspend(String id) => '/admin/farmers/$id/suspend';
   static String adminFarmerActivate(String id) => '/admin/farmers/$id/reactivate';
+
+  // Customer
+  static const String customerFavorites = '/customer/favorites';
+  static String customerFavoriteById(String id) => '/customer/favorites/$id';
 
   // Admin - Dashboard
   static const String adminDashboard = '/admin/dashboard';
