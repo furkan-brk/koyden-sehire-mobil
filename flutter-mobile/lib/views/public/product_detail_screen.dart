@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/app/theme.dart';
-import 'package:koyden_sehire/core/utils/date_formatter.dart';
-import 'package:koyden_sehire/core/utils/phone_formatter.dart';
+import 'package:koyden_sehire/core/utils/date_formatter.dart'; // AppFormatters.price
+import 'package:koyden_sehire/core/services/favorites_service.dart';
 import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
@@ -30,7 +28,6 @@ class ProductDetailScreen extends StatefulWidget {
 }
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
-  bool _phoneRevealed = false;
   late final ProductDetailController _ctrl;
 
   @override
@@ -49,21 +46,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   void dispose() {
     Get.delete<ProductDetailController>(tag: widget.productId);
     super.dispose();
-  }
-
-  Future<void> _callPhone(String phone) async {
-    final uri = Uri(scheme: 'tel', path: phone);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      await Clipboard.setData(ClipboardData(text: phone));
-      if (mounted) context.toast('Telefon panoya kopyalandı');
-    }
-  }
-
-  Future<void> _copyPhone(String phone) async {
-    await Clipboard.setData(ClipboardData(text: phone));
-    if (mounted) context.toast('Telefon panoya kopyalandı');
   }
 
   @override
@@ -95,13 +77,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         }
         final product = _ctrl.product.value;
         if (product == null) return const AppLoading();
-        return _Body(
-          product: product,
-          phoneRevealed: _phoneRevealed,
-          onReveal: () => setState(() => _phoneRevealed = true),
-          onCall: _callPhone,
-          onCopy: _copyPhone,
-        );
+        return _Body(product: product);
       }),
     );
   }
@@ -109,18 +85,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
 class _Body extends StatelessWidget {
   final ProductModel product;
-  final bool phoneRevealed;
-  final VoidCallback onReveal;
-  final Future<void> Function(String) onCall;
-  final Future<void> Function(String) onCopy;
 
-  const _Body({
-    required this.product,
-    required this.phoneRevealed,
-    required this.onReveal,
-    required this.onCall,
-    required this.onCopy,
-  });
+  const _Body({required this.product});
 
   @override
   Widget build(BuildContext context) {
@@ -131,6 +97,7 @@ class _Body extends StatelessWidget {
       product.district,
       if (product.village != null) product.village,
     ].whereType<String>().join(', ');
+
     return ListView(
       children: [
         ImageCarousel(imageUrls: product.imageUrls),
@@ -212,34 +179,30 @@ class _Body extends StatelessWidget {
               const SizedBox(height: 16),
               Text('Açıklama', style: context.text.titleMedium),
               const SizedBox(height: 8),
-              Text(product.description,
-                  style: const TextStyle(height: 1.5)),
+              Text(product.description, style: const TextStyle(height: 1.5)),
               if (farmer != null) ...[
                 const SizedBox(height: 24),
                 _FarmerCard(farmer: farmer),
+                const SizedBox(height: 16),
+                if (product.isAvailable)
+                  AppButton(
+                    label: 'Üreticiyi Gör ve İletişime Geç',
+                    icon: const Icon(Icons.person_outline, color: Colors.white),
+                    onPressed: () => context.push('/farmers/${farmer.id}'),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: const Text(
+                      'Bu ürün şu an tükenmiş.',
+                      style: TextStyle(color: AppColors.onSurfaceVariant),
+                    ),
+                  ),
               ],
-              const SizedBox(height: 24),
-              if (product.isAvailable) ...[
-                _ContactActions(
-                  publicPhone: null,
-                  phoneRevealed: phoneRevealed,
-                  onReveal: onReveal,
-                  onCall: onCall,
-                  onCopy: onCopy,
-                  farmerId: farmer?.id,
-                ),
-              ] else
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                  ),
-                  child: const Text(
-                    'Bu ürün şu an tükenmiş.',
-                    style: TextStyle(color: AppColors.onSurfaceVariant),
-                  ),
-                ),
               const SizedBox(height: 24),
               Container(
                 padding: const EdgeInsets.all(AppSpacing.md - 4),
@@ -373,92 +336,6 @@ class _FarmerCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _ContactActions extends StatelessWidget {
-  final String? publicPhone;
-  final bool phoneRevealed;
-  final VoidCallback onReveal;
-  final Future<void> Function(String) onCall;
-  final Future<void> Function(String) onCopy;
-  final String? farmerId;
-
-  const _ContactActions({
-    required this.publicPhone,
-    required this.phoneRevealed,
-    required this.onReveal,
-    required this.onCall,
-    required this.onCopy,
-    required this.farmerId,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (farmerId != null)
-          AppButton(
-            label: 'Üreticiyi Gör',
-            icon: const Icon(Icons.person_outline, color: Colors.white),
-            onPressed: () => context.push('/farmers/$farmerId'),
-          ),
-        const SizedBox(height: 8),
-        if (publicPhone != null) ...[
-          if (!phoneRevealed)
-            AppButton(
-              label: 'İletişim Bilgisini Göster',
-              variant: AppButtonVariant.secondary,
-              onPressed: onReveal,
-              icon: const Icon(Icons.phone_outlined, color: AppColors.primaryContainer),
-            )
-          else ...[
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(AppRadius.md),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.phone, color: AppColors.primaryContainer),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      PhoneFormatter.pretty(publicPhone!),
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: AppButton(
-                    label: 'Telefonu Kopyala',
-                    variant: AppButtonVariant.secondary,
-                    onPressed: () => onCopy(publicPhone!),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: AppButton(
-                    label: 'Üreticiyi Ara',
-                    onPressed: () => onCall(publicPhone!),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ],
     );
   }
 }

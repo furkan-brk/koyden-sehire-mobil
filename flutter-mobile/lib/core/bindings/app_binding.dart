@@ -129,7 +129,10 @@ class AppBinding extends Bindings {
       fenix: true,
     );
     Get.lazyPut<HomeController>(
-      () => HomeController(Get.find<ProductRepository>()),
+      () => HomeController(
+        Get.find<ProductRepository>(),
+        Get.find<FarmerRepository>(),
+      ),
       fenix: true,
     );
     Get.lazyPut<ProductListController>(
