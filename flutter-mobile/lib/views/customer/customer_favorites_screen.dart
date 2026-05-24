@@ -1,68 +1,63 @@
-// TODO: Favorites API hazır olduğunda burada gerçek favori listesi gösterilecek.
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
+import 'package:koyden_sehire/core/services/favorites_service.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
+import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
+import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
+import 'package:koyden_sehire/shared/widgets/product_card.dart';
+import 'package:koyden_sehire/shared/widgets/shimmer_product_card.dart';
 
 class CustomerFavoritesScreen extends StatelessWidget {
   const CustomerFavoritesScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final favs = Get.find<FavoritesService>();
+
     return Scaffold(
       appBar: AppBar(title: const Text('Favorilerim')),
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 96,
-                  height: 96,
-                  decoration: BoxDecoration(
-                    color: AppColors.error.withValues(alpha: 0.08),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.favorite_border,
-                    size: 48,
-                    color: AppColors.error,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Henüz favori ilanınız yok',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  'Beğendiğiniz ürünleri favorilerinize eklediğinizde burada görebileceksiniz.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: AppColors.onSurfaceVariant,
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                SizedBox(
-                  width: 220,
-                  child: AppButton(
-                    label: 'Ürünleri Keşfet',
-                    onPressed: () => context.go('/products'),
-                  ),
-                ),
-              ],
+      body: Obx(() {
+        if (favs.isLoading.value && favs.items.isEmpty) {
+          return const ShimmerList();
+        }
+
+        if (favs.errorMessage.value != null) {
+          return AppErrorWidget(
+            message: favs.errorMessage.value!,
+            onRetry: favs.refresh,
+          );
+        }
+
+        if (favs.items.isEmpty) {
+          return AppEmptyWidget(
+            icon: Icons.favorite_border,
+            message: 'Henüz favori ürününüz yok',
+            action: AppButton(
+              label: 'Ürünleri Keşfet',
+              fullWidth: false,
+              onPressed: () => context.go('/products'),
             ),
+          );
+        }
+
+        return RefreshIndicator(
+          onRefresh: favs.refresh,
+          child: GridView.builder(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 0.62,
+            ),
+            itemCount: favs.items.length,
+            itemBuilder: (_, i) => ProductCard(product: favs.items[i]),
           ),
-        ),
-      ),
+        );
+      }),
     );
   }
 }

@@ -10,6 +10,7 @@ import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_bottom_nav.dart';
+import 'package:koyden_sehire/shared/widgets/farmer_mode_chip.dart';
 import 'package:koyden_sehire/models/farmer_product_model.dart';
 import 'package:koyden_sehire/controllers/farmer/farmer_profile_controller.dart';
 import 'package:koyden_sehire/models/dashboard_model.dart';
@@ -33,39 +34,13 @@ class FarmerDashboardScreen extends StatelessWidget {
           final displayName = profileCtrl.profile.value?.displayName ??
               auth.displayName.value ??
               'Üretici';
-          final cs = Theme.of(context).colorScheme;
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
               Text('Merhaba, $displayName'),
               const SizedBox(height: 4),
-              GestureDetector(
-                onTap: () => context.go('/'),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: cs.secondaryContainer,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.storefront_outlined,
-                          size: 11, color: cs.primaryContainer),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Markete Gözat',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: cs.primaryContainer,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              const FarmerModeChip(),
             ],
           );
         }),

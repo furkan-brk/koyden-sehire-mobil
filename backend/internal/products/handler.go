@@ -10,12 +10,24 @@ import (
 	"github.com/koydensehire/backend/pkg/validator"
 )
 
+// PushNotifier is implemented by notifications.PushService.
+// Nil value is safe — all calls are no-ops when push is disabled.
+type PushNotifier interface {
+	ProductApproved(farmerID, productTitle string)
+	ProductRejected(farmerID, productTitle string)
+}
+
 type Handler struct {
-	svc *Service
+	svc  *Service
+	push PushNotifier
 }
 
 func NewHandler(svc *Service) *Handler {
 	return &Handler{svc: svc}
+}
+
+func (h *Handler) SetPushNotifier(n PushNotifier) {
+	h.push = n
 }
 
 func (h *Handler) List(c *fiber.Ctx) error {
@@ -163,20 +175,28 @@ func (h *Handler) AdminGetByID(c *fiber.Ctx) error {
 
 func (h *Handler) AdminApprove(c *fiber.Ctx) error {
 	id := c.Params("id")
+	p, _ := h.svc.GetByID(id)
 	if err := h.svc.AdminApprove(id); err != nil {
 		return response.Error(c, err)
+	}
+	if p != nil && h.push != nil {
+		go h.push.ProductApproved(p.FarmerID, p.Title)
 	}
 	return response.Success(c, nil, "Ürün onaylandı")
 }
 
 func (h *Handler) AdminReject(c *fiber.Ctx) error {
 	id := c.Params("id")
+	p, _ := h.svc.GetByID(id)
 	var req AdminRejectRequest
 	if err := c.BodyParser(&req); err != nil {
 		return response.BadRequest(c, "Geçersiz istek gövdesi")
 	}
 	if err := h.svc.AdminReject(id, req.AdminNote); err != nil {
 		return response.Error(c, err)
+	}
+	if p != nil && h.push != nil {
+		go h.push.ProductRejected(p.FarmerID, p.Title)
 	}
 	return response.Success(c, nil, "Ürün reddedildi")
 }

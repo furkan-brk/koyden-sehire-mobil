@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 
+import 'package:koyden_sehire/core/services/push_notification_service.dart';
 import 'package:koyden_sehire/services/auth_repository.dart';
 import 'package:koyden_sehire/models/auth/login_request.dart';
 import 'package:koyden_sehire/models/auth/login_response.dart';
@@ -20,6 +21,12 @@ class AuthService extends GetxService {
   final RxnString displayName = RxnString();
   final RxnString errorMessage = RxnString();
   final RxBool isSubmitting = false.obs;
+
+  /// Üretici pazar modunda mı? (Kalıcı değil — uygulama kapanınca sıfırlanır)
+  final RxBool isBrowsingAsCustomer = false.obs;
+
+  void enterCustomerMode() => isBrowsingAsCustomer.value = true;
+  void exitCustomerMode() => isBrowsingAsCustomer.value = false;
 
   AuthRepository get _repo => Get.find<AuthRepository>();
 
@@ -186,6 +193,12 @@ class AuthService extends GetxService {
     userId.value = res.user.id;
     displayName.value = res.user.fullName;
     status.value = next;
+
+    // Register FCM token with the backend for the authenticated role.
+    try {
+      final push = Get.find<PushNotificationService>();
+      await push.onLogin();
+    } catch (_) {}
   }
 
   String _mapAuthError(AppException e) {
@@ -207,6 +220,13 @@ class AuthService extends GetxService {
   }
 
   Future<void> logout() async {
+    // Deregister push token before clearing credentials so the request
+    // can still be authenticated.
+    try {
+      final push = Get.find<PushNotificationService>();
+      await push.onLogout();
+    } catch (_) {}
+    isBrowsingAsCustomer.value = false;
     await _storage.clearAll();
     _resetTo(AuthStatus.loggedOut);
   }

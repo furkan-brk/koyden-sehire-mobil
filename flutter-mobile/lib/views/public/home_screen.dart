@@ -8,6 +8,7 @@ import 'package:koyden_sehire/core/services/auth_service.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/category_chip.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_card.dart';
+import 'package:koyden_sehire/shared/widgets/farmer_mode_chip.dart';
 import 'package:koyden_sehire/shared/widgets/product_card.dart';
 import 'package:koyden_sehire/shared/widgets/customer_bottom_nav.dart';
 import 'package:koyden_sehire/shared/widgets/shimmer_product_card.dart';
@@ -28,6 +29,7 @@ class HomeScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
+        leading: const FarmerModeChip(),
         titleSpacing: AppSpacing.md,
         title: Row(
           children: [
@@ -60,12 +62,14 @@ class HomeScreen extends StatelessWidget {
             final status = auth.status.value;
             final isFarmer = status == AuthStatus.farmerActive;
             final isAdmin = status == AuthStatus.admin;
-            if (isFarmer) {
+            if (isFarmer && !auth.isBrowsingAsCustomer.value) {
               return TextButton.icon(
                 onPressed: () => context.go('/farmer/dashboard'),
                 icon: const Icon(Icons.dashboard_outlined, size: 18),
                 label: const Text('Panelim'),
               );
+            } else if (isFarmer && auth.isBrowsingAsCustomer.value) {
+              return const SizedBox.shrink();
             } else if (isAdmin) {
               return TextButton.icon(
                 onPressed: () => context.go('/admin'),
@@ -240,73 +244,6 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-
-class _PublicBottomNav extends StatelessWidget {
-  final bool isFarmer;
-  final bool isCustomer;
-  const _PublicBottomNav({required this.isFarmer, required this.isCustomer});
-
-  @override
-  Widget build(BuildContext context) {
-    return NavigationBar(
-      selectedIndex: 0,
-      onDestinationSelected: (i) {
-        switch (i) {
-          case 0:
-            break;
-          case 1:
-            context.push('/browse');
-          case 2:
-            context.push('/apply');
-          case 3:
-            if (isFarmer) {
-              context.go('/farmer/dashboard');
-            } else if (isCustomer) {
-              context.push('/customer/profile');
-            } else {
-              context.push('/login');
-            }
-        }
-      },
-      destinations: [
-        const NavigationDestination(
-          icon: Icon(Icons.home_outlined),
-          selectedIcon: Icon(Icons.home),
-          label: 'Ana Sayfa',
-        ),
-        const NavigationDestination(
-          icon: Icon(Icons.shopping_bag_outlined),
-          selectedIcon: Icon(Icons.shopping_bag),
-          label: 'Ürünler',
-        ),
-        const NavigationDestination(
-          icon: Icon(Icons.agriculture_outlined),
-          selectedIcon: Icon(Icons.agriculture),
-          label: 'Başvur',
-        ),
-        NavigationDestination(
-          icon: Icon(isFarmer
-              ? Icons.dashboard_outlined
-              : isCustomer
-                  ? Icons.person_outline
-                  : Icons.login_outlined),
-          selectedIcon: Icon(isFarmer
-              ? Icons.dashboard
-              : isCustomer
-                  ? Icons.person
-                  : Icons.login),
-          label: isFarmer
-              ? 'Panelim'
-              : isCustomer
-                  ? 'Hesabım'
-                  : 'Giriş',
-        ),
-      ],
     );
   }
 }

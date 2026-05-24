@@ -1,7 +1,11 @@
 import 'package:get/get.dart';
 
+import 'package:koyden_sehire/controllers/customer/customer_profile_controller.dart';
+import 'package:koyden_sehire/core/services/push_notification_service.dart';
 import 'package:koyden_sehire/services/admin_repository.dart';
 import 'package:koyden_sehire/services/auth_repository.dart';
+import 'package:koyden_sehire/services/customer_profile_repository.dart';
+import 'package:koyden_sehire/services/push_token_repository.dart';
 import 'package:koyden_sehire/services/application_repository.dart';
 import 'package:koyden_sehire/controllers/application_form_controller.dart';
 import 'package:koyden_sehire/services/dashboard_repository.dart';
@@ -57,6 +61,15 @@ class AppBinding extends Bindings {
       permanent: true,
     );
 
+    Get.lazyPut<PushTokenRepository>(
+      () => PushTokenRepository(Get.find<ApiClient>()),
+      fenix: true,
+    );
+    Get.put<PushNotificationService>(
+      PushNotificationService(Get.find<PushTokenRepository>()),
+      permanent: true,
+    );
+
     // Repositories (lazy + fenix so they re-create after Get.delete)
     Get.lazyPut<AuthRepository>(
       () => AuthRepository(Get.find<ApiClient>()),
@@ -99,6 +112,10 @@ class AppBinding extends Bindings {
     );
     Get.lazyPut<InvitationRepository>(
       () => InvitationRepository(Get.find<ApiClient>()),
+      fenix: true,
+    );
+    Get.lazyPut<CustomerProfileRepository>(
+      () => CustomerProfileRepository(Get.find<ApiClient>()),
       fenix: true,
     );
     Get.lazyPut<AdminRepository>(
@@ -144,6 +161,10 @@ class AppBinding extends Bindings {
     );
     Get.lazyPut<ApplicationFormController>(
       () => ApplicationFormController(Get.find<ApplicationRepository>()),
+      fenix: true,
+    );
+    Get.lazyPut<CustomerProfileController>(
+      () => CustomerProfileController(Get.find<CustomerProfileRepository>()),
       fenix: true,
     );
   }

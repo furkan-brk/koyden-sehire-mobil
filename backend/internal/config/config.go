@@ -17,6 +17,7 @@ type Config struct {
 	Storage  StorageConfig
 	SMS      SMSConfig
 	N8N      N8NConfig
+	FCM      FCMConfig
 }
 
 type AppConfig struct {
@@ -68,6 +69,11 @@ type SMSConfig struct {
 type N8NConfig struct {
 	WebhookURL    string
 	WebhookSecret string
+}
+
+type FCMConfig struct {
+	ProjectID          string
+	ServiceAccountJSON string
 }
 
 func Load() (*Config, error) {
@@ -137,6 +143,10 @@ func Load() (*Config, error) {
 		N8N: N8NConfig{
 			WebhookURL:    getEnv("N8N_WEBHOOK_URL", ""),
 			WebhookSecret: getEnv("N8N_WEBHOOK_SECRET", ""),
+		},
+		FCM: FCMConfig{
+			ProjectID:          getEnv("FCM_PROJECT_ID", ""),
+			ServiceAccountJSON: getEnv("FCM_SERVICE_ACCOUNT_JSON", ""),
 		},
 	}
 

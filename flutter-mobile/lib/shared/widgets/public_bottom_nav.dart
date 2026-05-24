@@ -15,7 +15,9 @@ class PublicBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = Get.find<AuthService>();
     return Obx(() {
-      final isCustomer = auth.status.value == AuthStatus.customerActive;
+      final isCustomer = auth.status.value == AuthStatus.customerActive ||
+          (auth.status.value == AuthStatus.farmerActive &&
+              auth.isBrowsingAsCustomer.value);
       return NavigationBar(
         selectedIndex: current.index,
         onDestinationSelected: (i) => _navigate(context, i, isCustomer),
@@ -52,6 +54,8 @@ class PublicBottomNav extends StatelessWidget {
 
   void _navigate(BuildContext context, int i, bool isCustomer) {
     if (i == current.index) return;
+    final auth = Get.find<AuthService>();
+    final isActuallyFarmer = auth.status.value == AuthStatus.farmerActive;
     switch (i) {
       case 0:
         context.go('/');
@@ -60,7 +64,7 @@ class PublicBottomNav extends StatelessWidget {
       case 2:
         context.go(isCustomer ? '/favorites' : '/apply');
       case 3:
-        context.go(isCustomer ? '/customer/profile' : '/login');
+        context.go(isActuallyFarmer ? '/farmer/profile' : '/customer/profile');
     }
   }
 }
