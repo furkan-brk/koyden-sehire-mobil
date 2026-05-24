@@ -37,7 +37,7 @@ class ApplicationFormController extends GetxController {
   }
 
   void next() {
-    if (currentStep.value < 4) currentStep.value = currentStep.value + 1;
+    if (currentStep.value < 3) currentStep.value = currentStep.value + 1;
   }
 
   void previous() {

@@ -73,7 +73,15 @@ class _InviteEntryScreenState extends State<InviteEntryScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Üretici Başvurusu')),
+      appBar: AppBar(
+        title: const Text('Üretici Başvurusu'),
+        leading: context.canPop()
+            ? const BackButton()
+            : IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => context.go('/'),
+              ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),

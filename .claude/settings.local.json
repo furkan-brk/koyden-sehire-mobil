@@ -77,7 +77,8 @@
       "WebFetch(domain:contribution.usercontent.google.com)",
       "Bash(winget install *)",
       "Bash(cloudflared tunnel *)",
-      "PowerShell(Get-Command *)"
+      "PowerShell(Get-Command *)",
+      "Bash(xargs ls -la)"
     ]
   }
 }

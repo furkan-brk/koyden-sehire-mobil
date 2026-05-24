@@ -1,9 +1,11 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
+import 'package:koyden_sehire/core/services/auth_service.dart';
 import 'package:koyden_sehire/core/utils/phone_formatter.dart';
 import 'package:koyden_sehire/core/utils/validators.dart';
 import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
@@ -252,9 +254,228 @@ class _FarmerProfileEditScreenState extends State<FarmerProfileEditScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: 24),
+            // Bildirimlerim kartı
+            _FarmerNotificationsCard(),
+            const SizedBox(height: 12),
+            // Hesap İşlemleri kartı
+            _AccountActionsCard(),
+            const SizedBox(height: 32),
           ],
         );
       }),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Bildirimlerim kartı
+// ---------------------------------------------------------------------------
+
+class _FarmerNotificationsCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 14, 16, 10),
+            child: Row(
+              children: [
+                Icon(Icons.notifications_outlined,
+                    size: 16, color: AppColors.onSurfaceVariant),
+                SizedBox(width: 6),
+                Text(
+                  'Bildirimlerim',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    color: AppColors.onSurfaceVariant,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, thickness: 1),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Text(
+              'Ürün onayları, başvuru durumu ve platform duyurularını buradan takip edebilirsin.',
+              style: TextStyle(
+                color: AppColors.onSurfaceVariant,
+                fontSize: 13,
+                height: 1.4,
+              ),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: Column(
+              children: [
+                _PreviewItem(
+                    icon: Icons.check_circle_outline,
+                    text: 'Ürün onay/red bildirimleri burada görünecek',
+                    color: AppColors.success),
+                SizedBox(height: 6),
+                _PreviewItem(
+                    icon: Icons.campaign_outlined,
+                    text: 'Platform duyuruları burada görünecek',
+                    color: AppColors.primaryContainer),
+                SizedBox(height: 6),
+                _PreviewItem(
+                    icon: Icons.account_circle_outlined,
+                    text: 'Başvuru ve hesap bildirimleri burada görünecek',
+                    color: AppColors.primaryContainer),
+              ],
+            ),
+          ),
+          const Divider(height: 1, thickness: 1),
+          InkWell(
+            onTap: () => context.push('/farmer/notifications'),
+            borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(AppRadius.md)),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  Icon(Icons.arrow_forward_ios,
+                      size: 14, color: AppColors.primaryContainer),
+                  SizedBox(width: 8),
+                  Text(
+                    'Bildirimleri Gör',
+                    style: TextStyle(
+                      color: AppColors.primaryContainer,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PreviewItem extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  final Color color;
+
+  const _PreviewItem({
+    required this.icon,
+    required this.text,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: 0.5,
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                  fontSize: 12, color: AppColors.onSurfaceVariant),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Hesap İşlemleri kartı
+// ---------------------------------------------------------------------------
+
+class _AccountActionsCard extends StatelessWidget {
+  Future<void> _confirmLogout(BuildContext context) async {
+    final auth = Get.find<AuthService>();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Çıkış Yap'),
+        content: const Text('Çıkış yapmak istediğinize emin misiniz?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Vazgeç'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Çıkış Yap',
+              style: TextStyle(color: AppColors.error),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    await auth.logout();
+    if (context.mounted) context.go('/');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 14, 16, 10),
+            child: Text(
+              'Hesap İşlemleri',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+                color: AppColors.onSurfaceVariant,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ),
+          const Divider(height: 1, thickness: 1),
+          InkWell(
+            onTap: () => _confirmLogout(context),
+            borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(AppRadius.md)),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  Icon(Icons.logout, size: 22, color: AppColors.error),
+                  SizedBox(width: 12),
+                  Text(
+                    'Çıkış Yap',
+                    style: TextStyle(
+                      color: AppColors.error,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

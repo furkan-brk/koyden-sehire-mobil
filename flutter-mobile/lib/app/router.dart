@@ -27,14 +27,18 @@ import 'package:koyden_sehire/views/farmer/farmer_dashboard_screen.dart';
 import 'package:koyden_sehire/views/farmer/invitations_screen.dart';
 import 'package:koyden_sehire/views/farmer/my_products_screen.dart';
 import 'package:koyden_sehire/views/farmer/product_form_screen.dart';
+import 'package:koyden_sehire/views/farmer/farmer_notifications_screen.dart';
 import 'package:koyden_sehire/views/farmer/farmer_profile_edit_screen.dart';
 import 'package:koyden_sehire/views/otp/otp_screen.dart';
 import 'package:koyden_sehire/views/public/public_farmer_profile_screen.dart';
 import 'package:koyden_sehire/views/public/home_screen.dart';
 import 'package:koyden_sehire/views/public/product_detail_screen.dart';
+import 'package:koyden_sehire/views/public/product_category_screen.dart';
 import 'package:koyden_sehire/views/public/product_list_screen.dart';
 import 'package:koyden_sehire/views/public/basket_screen.dart';
 import 'package:koyden_sehire/views/public/producers_list_screen.dart';
+import 'package:koyden_sehire/views/customer/customer_favorites_screen.dart';
+import 'package:koyden_sehire/views/customer/customer_notifications_screen.dart';
 import 'package:koyden_sehire/views/customer/customer_profile_screen.dart';
 import 'package:koyden_sehire/views/splash/splash_screen.dart';
 
@@ -45,6 +49,7 @@ const _publicRoutes = {
   '/products',
   '/producers',
   '/search',
+  '/browse',
   '/apply',
   '/apply/form',
   '/apply/success',
@@ -149,6 +154,10 @@ class AppRouter {
         GoRoute(
           path: '/',
           builder: (_, __) => const HomeScreen(),
+        ),
+        GoRoute(
+          path: '/browse',
+          builder: (_, __) => const ProductCategoryScreen(),
         ),
         GoRoute(
           path: '/products',
@@ -310,10 +319,22 @@ class AppRouter {
           path: '/farmer/invites',
           builder: (_, __) => const InvitationsScreen(),
         ),
+        GoRoute(
+          path: '/farmer/notifications',
+          builder: (_, __) => const FarmerNotificationsScreen(),
+        ),
         // Customer panel
         GoRoute(
           path: '/customer/profile',
           builder: (_, __) => const CustomerProfileScreen(),
+        ),
+        GoRoute(
+          path: '/customer/favorites',
+          builder: (_, __) => const CustomerFavoritesScreen(),
+        ),
+        GoRoute(
+          path: '/customer/notifications',
+          builder: (_, __) => const CustomerNotificationsScreen(),
         ),
       ],
     );
