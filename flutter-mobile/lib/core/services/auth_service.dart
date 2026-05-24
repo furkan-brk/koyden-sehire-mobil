@@ -21,6 +21,12 @@ class AuthService extends GetxService {
   final RxnString errorMessage = RxnString();
   final RxBool isSubmitting = false.obs;
 
+  /// Üretici pazar modunda mı? (Kalıcı değil — uygulama kapanınca sıfırlanır)
+  final RxBool isBrowsingAsCustomer = false.obs;
+
+  void enterCustomerMode() => isBrowsingAsCustomer.value = true;
+  void exitCustomerMode() => isBrowsingAsCustomer.value = false;
+
   AuthRepository get _repo => Get.find<AuthRepository>();
 
   /// Called by the API client when a 401 is received.
@@ -207,6 +213,7 @@ class AuthService extends GetxService {
   }
 
   Future<void> logout() async {
+    isBrowsingAsCustomer.value = false;
     await _storage.clearAll();
     _resetTo(AuthStatus.loggedOut);
   }

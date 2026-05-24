@@ -9,6 +9,7 @@ import 'package:koyden_sehire/models/auth/auth_state.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
+import 'package:koyden_sehire/shared/widgets/farmer_mode_chip.dart';
 import 'package:koyden_sehire/shared/widgets/product_card.dart';
 import 'package:koyden_sehire/shared/widgets/public_bottom_nav.dart';
 import 'package:koyden_sehire/shared/widgets/shimmer_product_card.dart';
@@ -22,11 +23,16 @@ class FavoritesScreen extends StatelessWidget {
     final favs = Get.find<FavoritesService>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Favorilerim')),
+      appBar: AppBar(
+        title: const Text('Favorilerim'),
+        leading: const FarmerModeChip(),
+      ),
       bottomNavigationBar:
           const PublicBottomNav(current: PublicTab.applyOrFavorites),
       body: Obx(() {
-        if (auth.status.value != AuthStatus.customerActive) {
+        final isFarmerBrowsing = auth.status.value == AuthStatus.farmerActive &&
+            auth.isBrowsingAsCustomer.value;
+        if (auth.status.value != AuthStatus.customerActive && !isFarmerBrowsing) {
           return _GuestPlaceholder();
         }
 

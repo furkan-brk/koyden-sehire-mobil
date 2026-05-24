@@ -33,7 +33,6 @@ import 'package:koyden_sehire/views/otp/otp_screen.dart';
 import 'package:koyden_sehire/views/public/public_farmer_profile_screen.dart';
 import 'package:koyden_sehire/views/public/home_screen.dart';
 import 'package:koyden_sehire/views/public/product_detail_screen.dart';
-import 'package:koyden_sehire/views/public/product_category_screen.dart';
 import 'package:koyden_sehire/views/public/product_list_screen.dart';
 import 'package:koyden_sehire/views/public/basket_screen.dart';
 import 'package:koyden_sehire/views/public/producers_list_screen.dart';
@@ -154,10 +153,6 @@ class AppRouter {
         GoRoute(
           path: '/',
           builder: (_, __) => const HomeScreen(),
-        ),
-        GoRoute(
-          path: '/browse',
-          builder: (_, __) => const ProductCategoryScreen(),
         ),
         GoRoute(
           path: '/products',

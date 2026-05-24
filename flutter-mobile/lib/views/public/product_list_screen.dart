@@ -6,6 +6,7 @@ import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/category_chip.dart';
+import 'package:koyden_sehire/shared/widgets/farmer_mode_chip.dart';
 import 'package:koyden_sehire/shared/widgets/product_card.dart';
 import 'package:koyden_sehire/shared/widgets/customer_bottom_nav.dart';
 import 'package:koyden_sehire/shared/widgets/shimmer_product_card.dart';
@@ -420,7 +421,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Ürünler')),
+      appBar: AppBar(
+        title: const Text('Ürünler'),
+        leading: const FarmerModeChip(),
+      ),
       bottomNavigationBar: const CustomerBottomNav(current: CustomerTab.market),
       body: Column(
         children: [
