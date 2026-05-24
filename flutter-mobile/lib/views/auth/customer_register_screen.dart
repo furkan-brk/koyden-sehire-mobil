@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/core/services/auth_service.dart';
 import 'package:koyden_sehire/core/utils/validators.dart';
@@ -10,6 +13,7 @@ import 'package:koyden_sehire/models/auth/auth_state.dart';
 import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_text_field.dart';
+import 'package:koyden_sehire/shared/widgets/otp_input.dart';
 
 /// Multi-step customer registration: phone → OTP → profile.
 ///
@@ -32,17 +36,18 @@ enum _Step { phone, otp, profile }
 
 class _CustomerRegisterScreenState extends State<CustomerRegisterScreen> {
   final _phoneFormKey = GlobalKey<FormState>();
-  final _otpFormKey = GlobalKey<FormState>();
   final _profileFormKey = GlobalKey<FormState>();
 
   final _phoneController = TextEditingController();
-  final _otpController = TextEditingController();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
   _Step _step = _Step.phone;
   bool _obscure = true;
+  String _otpCode = '';
+  int _cooldown = 0;
+  Timer? _cooldownTimer;
 
   AuthService get _auth => Get.find<AuthService>();
 
@@ -67,14 +72,32 @@ class _CustomerRegisterScreenState extends State<CustomerRegisterScreen> {
 
   @override
   void dispose() {
+    _cooldownTimer?.cancel();
     _errorWorker?.dispose();
     _statusWorker?.dispose();
     _phoneController.dispose();
-    _otpController.dispose();
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  void _startCooldown() {
+    _cooldownTimer?.cancel();
+    setState(() => _cooldown = AppConstants.otpResendCooldownSeconds);
+    _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
+      setState(() {
+        _cooldown--;
+        if (_cooldown <= 0) {
+          _cooldown = 0;
+          t.cancel();
+        }
+      });
+    });
   }
 
   Future<void> _sendOtp() async {
@@ -82,21 +105,30 @@ class _CustomerRegisterScreenState extends State<CustomerRegisterScreen> {
     FocusScope.of(context).unfocus();
     final ok = await _auth.requestRegisterOtp(_phoneController.text.trim());
     if (ok && mounted) {
-      setState(() => _step = _Step.otp);
+      _startCooldown();
+      setState(() {
+        _step = _Step.otp;
+        _otpCode = '';
+      });
       context.snack('Doğrulama kodu gönderildi');
     }
   }
 
   Future<void> _verifyOtp() async {
-    if (!(_otpFormKey.currentState?.validate() ?? false)) return;
+    if (_otpCode.length != AppConstants.otpLength) return;
     FocusScope.of(context).unfocus();
     final ok = await _auth.verifyRegisterOtp(
       _phoneController.text.trim(),
-      _otpController.text.trim(),
+      _otpCode,
     );
     if (ok && mounted) {
       setState(() => _step = _Step.profile);
     }
+  }
+
+  Future<void> _resendOtp() async {
+    final ok = await _auth.requestRegisterOtp(_phoneController.text.trim());
+    if (ok && mounted) _startCooldown();
   }
 
   Future<void> _submitProfile() async {
@@ -120,12 +152,6 @@ class _CustomerRegisterScreenState extends State<CustomerRegisterScreen> {
   String? _validateStrongPassword(String? v) {
     if (v == null || v.isEmpty) return 'Şifre zorunludur';
     if (v.length < 8) return 'Şifre en az 8 karakter olmalı';
-    return null;
-  }
-
-  String? _validateOtp(String? v) {
-    if (v == null || v.trim().isEmpty) return 'Kod zorunludur';
-    if (v.trim().length != 6) return '6 haneli kodu girin';
     return null;
   }
 
@@ -195,47 +221,47 @@ class _CustomerRegisterScreenState extends State<CustomerRegisterScreen> {
   }
 
   Widget _buildOtpStep() {
-    return Form(
-      key: _otpFormKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _StepHeader(
-            step: 2,
-            total: 3,
-            title: 'Doğrulama kodunu girin',
-            subtitle:
-                '${_phoneController.text} numarasına gönderdiğimiz 6 haneli kodu girin.',
-          ),
-          const SizedBox(height: 24),
-          AppTextField(
-            label: 'OTP Kodu',
-            controller: _otpController,
-            keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(6),
-            ],
-            validator: _validateOtp,
-            textInputAction: TextInputAction.done,
-          ),
-          const SizedBox(height: 24),
-          Obx(() => AppButton(
-                label: 'Doğrula',
-                isLoading: _auth.isSubmitting.value,
-                onPressed: _auth.isSubmitting.value ? null : _verifyOtp,
-              )),
-          const SizedBox(height: 12),
-          TextButton(
-            onPressed: () async {
-              // Resend uses the same /otp/send endpoint; backend cooldown
-              // (default 60s) prevents abuse.
-              await _auth.requestRegisterOtp(_phoneController.text.trim());
-            },
-            child: const Text('Kodu tekrar gönder'),
-          ),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _StepHeader(
+          step: 2,
+          total: 3,
+          title: 'Doğrulama kodunu girin',
+          subtitle:
+              '${_phoneController.text} numarasına gönderdiğimiz 6 haneli kodu girin.',
+        ),
+        const SizedBox(height: 32),
+        OtpInput(
+          length: AppConstants.otpLength,
+          onChanged: (v) => setState(() => _otpCode = v),
+          onCompleted: (v) {
+            _otpCode = v;
+            _verifyOtp();
+          },
+        ),
+        const SizedBox(height: 24),
+        Obx(() => AppButton(
+              label: 'Doğrula',
+              isLoading: _auth.isSubmitting.value,
+              onPressed: (_otpCode.length == AppConstants.otpLength &&
+                      !_auth.isSubmitting.value)
+                  ? _verifyOtp
+                  : null,
+            )),
+        const SizedBox(height: 12),
+        Center(
+          child: _cooldown > 0
+              ? Text(
+                  'Kodu tekrar gönder ($_cooldown)',
+                  style: const TextStyle(color: AppColors.onSurfaceVariant),
+                )
+              : TextButton(
+                  onPressed: _resendOtp,
+                  child: const Text('Kodu tekrar gönder'),
+                ),
+        ),
+      ],
     );
   }
 
