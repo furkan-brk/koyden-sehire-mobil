@@ -35,9 +35,8 @@ import 'package:koyden_sehire/views/public/home_screen.dart';
 import 'package:koyden_sehire/views/public/product_detail_screen.dart';
 import 'package:koyden_sehire/views/public/product_category_screen.dart';
 import 'package:koyden_sehire/views/public/product_list_screen.dart';
-import 'package:koyden_sehire/views/public/basket_screen.dart';
 import 'package:koyden_sehire/views/public/producers_list_screen.dart';
-import 'package:koyden_sehire/views/customer/customer_favorites_screen.dart';
+import 'package:koyden_sehire/views/public/favorites_screen.dart';
 import 'package:koyden_sehire/views/customer/customer_notifications_screen.dart';
 import 'package:koyden_sehire/views/customer/customer_profile_screen.dart';
 import 'package:koyden_sehire/views/splash/splash_screen.dart';
@@ -57,7 +56,7 @@ const _publicRoutes = {
   '/register',
   '/register/customer',
   '/otp',
-  '/basket',
+  '/favorites',
 };
 
 bool _isPublic(String path) {
@@ -181,10 +180,6 @@ class AppRouter {
           path: '/farmers/:id',
           builder: (_, state) =>
               FarmerProfileScreen(farmerId: state.pathParameters['id']!),
-        ),
-        GoRoute(
-          path: '/basket',
-          builder: (_, __) => const BasketScreen(),
         ),
         GoRoute(
           path: '/producers',
@@ -329,8 +324,14 @@ class AppRouter {
           builder: (_, __) => const CustomerProfileScreen(),
         ),
         GoRoute(
+          path: '/favorites',
+          builder: (_, __) => const FavoritesScreen(),
+        ),
+        // Legacy route — old links/buttons may still target this; redirect
+        // to the canonical /favorites route which uses the real screen.
+        GoRoute(
           path: '/customer/favorites',
-          builder: (_, __) => const CustomerFavoritesScreen(),
+          redirect: (_, __) => '/favorites',
         ),
         GoRoute(
           path: '/customer/notifications',

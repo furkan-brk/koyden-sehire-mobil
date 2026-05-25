@@ -6,8 +6,10 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/app/theme.dart';
+import 'package:koyden_sehire/core/services/favorites_service.dart';
 import 'package:koyden_sehire/core/utils/date_formatter.dart';
 import 'package:koyden_sehire/core/utils/phone_formatter.dart';
+import 'package:koyden_sehire/core/utils/whatsapp_helper.dart';
 import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
@@ -66,6 +68,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     if (mounted) context.toast('Telefon panoya kopyalandı');
   }
 
+  Future<void> _openWhatsApp(String? phone, String productTitle) async {
+    final message =
+        'Merhaba, Köyden Şehre üzerinden $productTitle ilanınızı gördüm. '
+        'Ürün hakkında bilgi almak istiyorum.';
+    final ok = await WhatsAppHelper.open(phone, message);
+    if (!ok && mounted) {
+      context.toast('Bu üretici için iletişim bilgisi bulunamadı.');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -75,11 +87,20 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.favorite_border),
-            tooltip: 'Favorilere ekle',
-            onPressed: () {},
-          ),
+          Obx(() {
+            final product = _ctrl.product.value;
+            if (product == null) return const SizedBox.shrink();
+            final favs = Get.find<FavoritesService>();
+            final isFav = favs.isFavorite(product.id);
+            return IconButton(
+              icon: Icon(
+                isFav ? Icons.favorite : Icons.favorite_border,
+                color: isFav ? AppColors.error : null,
+              ),
+              tooltip: isFav ? 'Favorilerden çıkar' : 'Favorilere ekle',
+              onPressed: () => favs.toggle(context, product.id),
+            );
+          }),
         ],
       ),
       bottomNavigationBar: const CustomerBottomNav(current: CustomerTab.market),
@@ -101,6 +122,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           onReveal: () => setState(() => _phoneRevealed = true),
           onCall: _callPhone,
           onCopy: _copyPhone,
+          onWhatsApp: () => _openWhatsApp(product.publicPhone, product.title),
         );
       }),
     );
@@ -113,6 +135,7 @@ class _Body extends StatelessWidget {
   final VoidCallback onReveal;
   final Future<void> Function(String) onCall;
   final Future<void> Function(String) onCopy;
+  final Future<void> Function() onWhatsApp;
 
   const _Body({
     required this.product,
@@ -120,6 +143,7 @@ class _Body extends StatelessWidget {
     required this.onReveal,
     required this.onCall,
     required this.onCopy,
+    required this.onWhatsApp,
   });
 
   @override
@@ -221,11 +245,12 @@ class _Body extends StatelessWidget {
               const SizedBox(height: 24),
               if (product.isAvailable) ...[
                 _ContactActions(
-                  publicPhone: null,
+                  publicPhone: product.publicPhone,
                   phoneRevealed: phoneRevealed,
                   onReveal: onReveal,
                   onCall: onCall,
                   onCopy: onCopy,
+                  onWhatsApp: onWhatsApp,
                   farmerId: farmer?.id,
                 ),
               ] else
@@ -383,6 +408,7 @@ class _ContactActions extends StatelessWidget {
   final VoidCallback onReveal;
   final Future<void> Function(String) onCall;
   final Future<void> Function(String) onCopy;
+  final Future<void> Function() onWhatsApp;
   final String? farmerId;
 
   const _ContactActions({
@@ -391,6 +417,7 @@ class _ContactActions extends StatelessWidget {
     required this.onReveal,
     required this.onCall,
     required this.onCopy,
+    required this.onWhatsApp,
     required this.farmerId,
   });
 
@@ -399,10 +426,18 @@ class _ContactActions extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        AppButton(
+          label: 'WhatsApp ile İletişime Geç',
+          icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
+          onPressed: onWhatsApp,
+        ),
+        const SizedBox(height: 8),
         if (farmerId != null)
           AppButton(
             label: 'Üreticiyi Gör',
-            icon: const Icon(Icons.person_outline, color: Colors.white),
+            variant: AppButtonVariant.secondary,
+            icon: const Icon(Icons.person_outline,
+                color: AppColors.primaryContainer),
             onPressed: () => context.push('/farmers/$farmerId'),
           ),
         const SizedBox(height: 8),

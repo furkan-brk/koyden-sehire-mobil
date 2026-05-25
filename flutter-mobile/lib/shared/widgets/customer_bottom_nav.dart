@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:koyden_sehire/core/services/auth_service.dart';
 import 'package:koyden_sehire/models/auth/auth_state.dart';
 
-enum CustomerTab { market, producers, basket, profile }
+enum CustomerTab { market, producers, products, profile }
 
 class CustomerBottomNav extends StatelessWidget {
   final CustomerTab current;
@@ -31,9 +31,9 @@ class CustomerBottomNav extends StatelessWidget {
             label: 'Üreticiler',
           ),
           const NavigationDestination(
-            icon: Icon(Icons.shopping_basket_outlined),
-            selectedIcon: Icon(Icons.shopping_basket),
-            label: 'Sepetim',
+            icon: Icon(Icons.shopping_bag_outlined),
+            selectedIcon: Icon(Icons.shopping_bag),
+            label: 'Ürünler',
           ),
           NavigationDestination(
             icon: Icon(isCustomer ? Icons.person_outline : Icons.login_outlined),
@@ -53,7 +53,7 @@ class CustomerBottomNav extends StatelessWidget {
       case 1:
         context.go('/producers');
       case 2:
-        context.go('/basket');
+        context.go('/browse');
       case 3:
         if (isCustomer) {
           context.go('/customer/profile');

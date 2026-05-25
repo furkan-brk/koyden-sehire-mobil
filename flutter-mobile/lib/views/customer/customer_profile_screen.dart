@@ -39,7 +39,20 @@ class CustomerProfileScreen extends StatelessWidget {
     final auth = Get.find<AuthService>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profilim')),
+      appBar: AppBar(
+        title: const Text('Profilim'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Geri',
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/');
+            }
+          },
+        ),
+      ),
       body: SafeArea(
         child: Obx(() {
           final name = auth.displayName.value ?? '';
@@ -86,7 +99,7 @@ class CustomerProfileScreen extends StatelessWidget {
                     iconColor: AppColors.error,
                     label: 'Favorilerim',
                     subtitle: 'Kaydettiğin ürünleri burada görebilirsin.',
-                    onTap: () => context.push('/customer/favorites'),
+                    onTap: () => context.push('/favorites'),
                   ),
                   const _Divider(),
                   _NavRow(

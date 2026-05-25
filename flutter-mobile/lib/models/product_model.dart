@@ -17,6 +17,7 @@ class ProductModel {
   final String? adminNote;
   final List<String> imageUrls;
   final FarmerSummary? farmer;
+  final String? publicPhone;
   final DateTime? createdAt;
 
   const ProductModel({
@@ -36,6 +37,7 @@ class ProductModel {
     this.adminNote,
     this.imageUrls = const [],
     this.farmer,
+    this.publicPhone,
     this.createdAt,
   });
 
@@ -83,6 +85,7 @@ class ProductModel {
       farmer: farmerJson == null
           ? null
           : FarmerSummary.fromJson(farmerJson.cast<String, dynamic>()),
+      publicPhone: json['public_phone']?.toString(),
       createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
     );
   }

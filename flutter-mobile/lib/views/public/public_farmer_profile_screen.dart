@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/core/utils/phone_formatter.dart';
+import 'package:koyden_sehire/core/utils/whatsapp_helper.dart';
 import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
@@ -67,6 +68,16 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
     if (mounted) context.toast('Telefon panoya kopyalandı');
   }
 
+  Future<void> _openWhatsApp(String? phone) async {
+    const message =
+        'Merhaba, Köyden Şehre üzerinden profilinizi gördüm. '
+        'Ürünleriniz hakkında bilgi almak istiyorum.';
+    final ok = await WhatsAppHelper.open(phone, message);
+    if (!ok && mounted) {
+      context.toast('Bu üretici için iletişim bilgisi bulunamadı.');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -96,6 +107,7 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
           onRevealPhone: () => setState(() => _phoneRevealed = true),
           onCall: _call,
           onCopy: _copy,
+          onWhatsApp: () => _openWhatsApp(p.publicPhone),
         );
       }),
     );
@@ -110,6 +122,7 @@ class _ProfileBody extends StatelessWidget {
   final VoidCallback onRevealPhone;
   final Future<void> Function(String) onCall;
   final Future<void> Function(String) onCopy;
+  final Future<void> Function() onWhatsApp;
 
   const _ProfileBody({
     required this.profile,
@@ -119,6 +132,7 @@ class _ProfileBody extends StatelessWidget {
     required this.onRevealPhone,
     required this.onCall,
     required this.onCopy,
+    required this.onWhatsApp,
   });
 
   @override
@@ -183,9 +197,26 @@ class _ProfileBody extends StatelessWidget {
               AppSpacing.md,
               0,
               AppSpacing.md,
-              AppSpacing.lg,
+              AppSpacing.md,
             ),
             child: _GlassProfileCard(profile: profile),
+          ),
+        ),
+
+        // ── WhatsApp CTA (girişsiz çalışır) ────────────────────────────
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              0,
+              AppSpacing.md,
+              AppSpacing.lg,
+            ),
+            child: AppButton(
+              label: 'WhatsApp ile İletişime Geç',
+              icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
+              onPressed: onWhatsApp,
+            ),
           ),
         ),
 
