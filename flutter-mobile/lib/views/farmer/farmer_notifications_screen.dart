@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
+import 'package:koyden_sehire/shared/widgets/farmer_bottom_nav.dart';
 
 class FarmerNotificationsScreen extends StatelessWidget {
   const FarmerNotificationsScreen({super.key});
@@ -10,6 +11,7 @@ class FarmerNotificationsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Bildirimlerim')),
+      bottomNavigationBar: const FarmerBottomNav(current: FarmerTab.profile),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),

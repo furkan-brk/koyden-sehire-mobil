@@ -10,6 +10,7 @@ import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/shared/widgets/app_text_field.dart';
+import 'package:koyden_sehire/shared/widgets/customer_bottom_nav.dart';
 
 class CustomerProfileScreen extends StatelessWidget {
   const CustomerProfileScreen({super.key});
@@ -56,18 +57,8 @@ class CustomerProfileScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text('Profilim'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          tooltip: 'Geri',
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/');
-            }
-          },
-        ),
         actions: [
           Obx(() {
             if (ctrl.isLoading.value || ctrl.profile.value == null) {
@@ -81,6 +72,7 @@ class CustomerProfileScreen extends StatelessWidget {
           }),
         ],
       ),
+      bottomNavigationBar: const CustomerBottomNav(current: CustomerTab.profile),
       body: Obx(() {
         if (ctrl.isLoading.value) return const AppLoading();
 

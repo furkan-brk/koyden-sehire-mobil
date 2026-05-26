@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
+import 'package:koyden_sehire/shared/widgets/customer_bottom_nav.dart';
 
 class CustomerNotificationsScreen extends StatelessWidget {
   const CustomerNotificationsScreen({super.key});
@@ -12,6 +13,7 @@ class CustomerNotificationsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Bildirimlerim')),
+      bottomNavigationBar: const CustomerBottomNav(current: CustomerTab.profile),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
