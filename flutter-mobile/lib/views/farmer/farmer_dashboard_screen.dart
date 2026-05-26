@@ -35,32 +35,8 @@ class FarmerDashboardScreen extends StatelessWidget {
               'Üretici';
           return Text('Merhaba, $displayName');
         }),
-        actions: [
-          Obx(() {
-            final profile = profileCtrl.profile.value;
-            return IconButton(
-              icon: CircleAvatar(
-                radius: 14,
-                backgroundColor: AppColors.surfaceContainerLow,
-                backgroundImage: profile?.profileImageUrl == null
-                    ? null
-                    : CachedNetworkImageProvider(profile!.profileImageUrl!),
-                child: profile?.profileImageUrl == null
-                    ? const Icon(Icons.person, size: 16)
-                    : null,
-              ),
-              onPressed: () => context.push('/farmer/profile'),
-            );
-          }),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Çıkış Yap',
-            onPressed: () async {
-              await auth.logout();
-              if (context.mounted) context.go('/');
-            },
-          ),
-          const FarmerModeChip(),
+        actions: const [
+          FarmerModeChip(),
         ],
       ),
       body: Obx(() {
