@@ -25,7 +25,7 @@ class FavoritesScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Favorilerim'),
-        leading: const FarmerModeChip(),
+        actions: const [FarmerModeChip()],
       ),
       bottomNavigationBar: const CustomerBottomNav(current: CustomerTab.favorites),
       body: Obx(() {

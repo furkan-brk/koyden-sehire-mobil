@@ -10,6 +10,7 @@ import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/core/utils/phone_formatter.dart';
 import 'package:koyden_sehire/core/utils/whatsapp_helper.dart';
 import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
+import 'package:koyden_sehire/shared/widgets/farmer_mode_chip.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_loading.dart';
@@ -150,6 +151,7 @@ class _ProfileBody extends StatelessWidget {
           pinned: true,
           stretch: true,
           leading: const BackButton(),
+          actions: const [FarmerModeChip()],
           flexibleSpace: FlexibleSpaceBar(
             stretchModes: const [StretchMode.zoomBackground],
             background: Stack(

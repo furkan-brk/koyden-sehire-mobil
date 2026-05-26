@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/app/theme.dart';
+import 'package:koyden_sehire/shared/widgets/location_filter_sheet.dart';
 import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/customer_bottom_nav.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_card.dart';
 import 'package:koyden_sehire/controllers/public/producers_list_controller.dart';
+import 'package:koyden_sehire/shared/widgets/farmer_mode_chip.dart';
 import 'package:koyden_sehire/services/farmer_repository.dart';
 
 class ProducersListScreen extends StatefulWidget {
@@ -48,107 +49,14 @@ class _ProducersListScreenState extends State<ProducersListScreen> {
   void _onSearchSubmitted(String value) =>
       _ctrl.applySearch(value.trim().isEmpty ? null : value.trim());
 
-  void _showCitySheet() {
-    final currentCity = _ctrl.city.value;
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
-      ),
-      builder: (ctx) {
-        final searchCtrl = TextEditingController();
-        return StatefulBuilder(
-          builder: (ctx, setSheet) => DraggableScrollableSheet(
-            expand: false,
-            initialChildSize: 0.6,
-            maxChildSize: 0.92,
-            builder: (_, scrollCtrl) => Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 10, bottom: 4),
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppColors.outlineVariant,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-                  child: Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Şehre Göre Filtrele',
-                          style: TextStyle(
-                            fontFamily: 'PlusJakartaSans',
-                            fontSize: 17,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      if (currentCity != null)
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(ctx);
-                            _ctrl.applyCity(null);
-                          },
-                          child: const Text('Temizle'),
-                        ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                  child: TextField(
-                    controller: searchCtrl,
-                    decoration: InputDecoration(
-                      hintText: 'İl ara...',
-                      prefixIcon: const Icon(Icons.search, size: 18),
-                      filled: true,
-                      fillColor: AppColors.surfaceContainerLow,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                    ),
-                    onChanged: (_) => setSheet(() {}),
-                  ),
-                ),
-                Expanded(
-                  child: ListView(
-                    controller: scrollCtrl,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    children: AppConstants.turkishCities
-                        .where((c) =>
-                            searchCtrl.text.isEmpty ||
-                            c.toLowerCase().contains(searchCtrl.text.toLowerCase()))
-                        .map(
-                          (city) => RadioListTile<String>(
-                            title: Text(city),
-                            value: city,
-                            groupValue: currentCity,
-                            onChanged: (v) {
-                              Navigator.pop(ctx);
-                              _ctrl.applyCity(v);
-                            },
-                            dense: true,
-                            activeColor: AppColors.primary,
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+  Future<void> _showLocationSheet() async {
+    final result = await showLocationFilterSheet(
+      context,
+      initialCity: _ctrl.city.value,
+      initialDistrict: _ctrl.district.value,
     );
+    if (result == null) return;
+    _ctrl.applyLocation(c: result.city, d: result.district);
   }
 
   @override
@@ -158,6 +66,7 @@ class _ProducersListScreenState extends State<ProducersListScreen> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text('Üreticiler'),
+        actions: const [FarmerModeChip()],
       ),
       bottomNavigationBar:
           const CustomerBottomNav(current: CustomerTab.producers),
@@ -204,14 +113,16 @@ class _ProducersListScreenState extends State<ProducersListScreen> {
           ),
           Obx(() {
             final city = _ctrl.city.value;
+            final district = _ctrl.district.value;
             return Padding(
               padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, 4),
               child: Row(
                 children: [
-                  _CityChip(
+                  _LocationChip(
                     city: city,
-                    onTap: _showCitySheet,
-                    onClear: city != null ? () => _ctrl.applyCity(null) : null,
+                    district: district,
+                    onTap: _showLocationSheet,
+                    onClear: city != null ? () => _ctrl.applyLocation() : null,
                   ),
                 ],
               ),
@@ -263,16 +174,24 @@ class _ProducersListScreenState extends State<ProducersListScreen> {
   }
 }
 
-class _CityChip extends StatelessWidget {
+class _LocationChip extends StatelessWidget {
   final String? city;
+  final String? district;
   final VoidCallback onTap;
   final VoidCallback? onClear;
 
-  const _CityChip({
+  const _LocationChip({
     required this.city,
+    required this.district,
     required this.onTap,
     this.onClear,
   });
+
+  String get _label {
+    if (city == null) return 'Konum';
+    if (district != null && district!.isNotEmpty) return '$city / $district';
+    return city!;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -299,7 +218,7 @@ class _CityChip extends StatelessWidget {
             ),
             const SizedBox(width: 5),
             Text(
-              city ?? 'Şehir',
+              _label,
               style: TextStyle(
                 fontFamily: 'PlusJakartaSans',
                 fontSize: 13,

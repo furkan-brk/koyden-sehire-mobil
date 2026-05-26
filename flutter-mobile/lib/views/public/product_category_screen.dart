@@ -6,6 +6,7 @@ import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/controllers/public/category_controller.dart';
 import 'package:koyden_sehire/models/category_model.dart';
 import 'package:koyden_sehire/shared/widgets/customer_bottom_nav.dart';
+import 'package:koyden_sehire/shared/widgets/farmer_mode_chip.dart';
 
 const _kLabels = <String, String>{
   'sebze': 'Taze Sebze',
@@ -69,6 +70,7 @@ class ProductCategoryScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Ürünler'),
         leading: context.canPop() ? const BackButton() : null,
+        actions: const [FarmerModeChip()],
       ),
       bottomNavigationBar: const CustomerBottomNav(current: CustomerTab.market),
       body: SafeArea(
