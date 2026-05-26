@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
-import 'package:koyden_sehire/core/services/auth_service.dart';
 import 'package:koyden_sehire/core/utils/date_formatter.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
@@ -12,7 +11,6 @@ import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_bottom_nav.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_mode_chip.dart';
 import 'package:koyden_sehire/models/farmer_product_model.dart';
-import 'package:koyden_sehire/controllers/farmer/farmer_profile_controller.dart';
 import 'package:koyden_sehire/models/dashboard_model.dart';
 import 'package:koyden_sehire/controllers/farmer/dashboard_controller.dart';
 
@@ -22,19 +20,12 @@ class FarmerDashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dashCtrl = Get.find<DashboardController>();
-    final profileCtrl = Get.find<FarmerProfileController>();
-    final auth = Get.find<AuthService>();
 
     return Scaffold(
       bottomNavigationBar: const FarmerBottomNav(current: FarmerTab.dashboard),
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Obx(() {
-          final displayName = profileCtrl.profile.value?.displayName ??
-              auth.displayName.value ??
-              'Üretici';
-          return Text('Merhaba, $displayName');
-        }),
+        title: const Text('Köyden Şehire - Çiftçi'),
         actions: const [
           FarmerModeChip(),
         ],
