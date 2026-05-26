@@ -68,12 +68,9 @@ class ProductCategoryScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ürünler'),
-        leading: context.canPop()
-            ? const BackButton()
-            : null,
+        leading: context.canPop() ? const BackButton() : null,
       ),
-      bottomNavigationBar:
-          const CustomerBottomNav(current: CustomerTab.market),
+      bottomNavigationBar: const CustomerBottomNav(current: CustomerTab.market),
       body: SafeArea(
         child: Obx(() {
           if (catCtrl.isLoading.value) {
@@ -108,8 +105,7 @@ class ProductCategoryScreen extends StatelessWidget {
                   child: roots.isEmpty
                       ? const SizedBox.shrink()
                       : GridView.builder(
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 3,
                             crossAxisSpacing: 10,
                             mainAxisSpacing: 10,
