@@ -6,12 +6,15 @@ import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/core/services/auth_service.dart';
 import 'package:koyden_sehire/models/auth/auth_state.dart';
 
-/// Shown in AppBar leading on public screens and as a subtitle element on the
-/// farmer dashboard.
+/// Farmer-only mode toggle chip.
 ///
 /// - Farmer NOT in customer-browse mode → "Pazara Göz At" (enters browse mode)
-/// - Farmer in customer-browse mode → "Panele Dön" (exits browse mode)
-/// - Non-farmer → empty
+/// - Farmer in customer-browse mode     → "Panele Dön"   (exits browse mode)
+/// - Non-farmer                         → invisible (SizedBox.shrink)
+///
+/// Used in:
+///   • FarmerDashboardScreen AppBar actions (primary placement)
+///   • HomeScreen AppBar leading (when farmer is browsing as customer)
 class FarmerModeChip extends StatelessWidget {
   const FarmerModeChip({super.key});
 
@@ -24,65 +27,50 @@ class FarmerModeChip extends StatelessWidget {
       }
 
       if (auth.isBrowsingAsCustomer.value) {
-        return _chip(
-          context,
-          icon: Icons.agriculture,
-          label: 'Panele Dön',
-          color: AppColors.primaryContainer,
-          onLabel: AppColors.onPrimary,
-          onTap: () {
+        return ActionChip(
+          avatar: const Icon(
+            Icons.agriculture,
+            size: 16,
+            color: AppColors.onPrimaryContainer,
+          ),
+          label: const Text('Panele Dön'),
+          onPressed: () {
             auth.exitCustomerMode();
             context.go('/farmer/dashboard');
           },
+          backgroundColor: AppColors.primaryContainer,
+          labelStyle: const TextStyle(
+            color: AppColors.onPrimaryContainer,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          side: BorderSide.none,
+          visualDensity: VisualDensity.compact,
         );
       }
 
-      return _chip(
-        context,
-        icon: Icons.storefront_outlined,
-        label: 'Pazara Göz At',
-        color: AppColors.secondaryContainer,
-        onLabel: AppColors.secondary,
-        onTap: () {
+      return ActionChip(
+        avatar: const Icon(
+          Icons.storefront_outlined,
+          size: 16,
+          color: AppColors.onSecondaryContainer,
+        ),
+        label: const Text('Pazara Göz At'),
+        onPressed: () {
           auth.enterCustomerMode();
           context.go('/');
         },
+        backgroundColor: AppColors.secondaryContainer,
+        labelStyle: const TextStyle(
+          color: AppColors.onSecondaryContainer,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        side: BorderSide.none,
+        visualDensity: VisualDensity.compact,
       );
     });
-  }
-
-  Widget _chip(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required Color color,
-    required Color onLabel,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(AppRadius.pill),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 13, color: onLabel),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: onLabel,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

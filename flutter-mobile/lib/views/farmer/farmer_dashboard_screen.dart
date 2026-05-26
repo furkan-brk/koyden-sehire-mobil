@@ -29,22 +29,14 @@ class FarmerDashboardScreen extends StatelessWidget {
       bottomNavigationBar: const FarmerBottomNav(current: FarmerTab.dashboard),
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        toolbarHeight: 68,
         title: Obx(() {
           final displayName = profileCtrl.profile.value?.displayName ??
               auth.displayName.value ??
               'Üretici';
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Merhaba, $displayName'),
-              const SizedBox(height: 4),
-              const FarmerModeChip(),
-            ],
-          );
+          return Text('Merhaba, $displayName');
         }),
         actions: [
+          const FarmerModeChip(),
           Obx(() {
             final profile = profileCtrl.profile.value;
             return IconButton(
