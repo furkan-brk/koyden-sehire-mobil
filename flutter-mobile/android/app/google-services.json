@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "167692479721",
+    "project_id": "sehirden-koye",
+    "storage_bucket": "sehirden-koye.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:167692479721:android:f950c5ef5e7f2e95701478",
+        "android_client_info": {
+          "package_name": "com.koydensehire.koyden_sehire"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBLS1VfIN_MK2SdxcPm2OzkxH9fJvlL1cI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

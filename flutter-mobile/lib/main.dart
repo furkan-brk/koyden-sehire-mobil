@@ -8,6 +8,7 @@ import 'package:koyden_sehire/app/app.dart';
 import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/core/bindings/app_binding.dart';
 import 'package:koyden_sehire/core/services/push_notification_service.dart';
+import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,12 +25,19 @@ Future<void> main() async {
 
   // Firebase must be initialised before AppBinding so PushNotificationService
   // can call FirebaseMessaging.instance inside onInit().
-  // Wrapped in try-catch so the app boots without google-services.json in dev.
+  // Web'de FCM background handler desteklenmez, sadece init yapılır.
+  // Wrapped in try-catch so the app boots without firebase config in dev.
   try {
-    await Firebase.initializeApp();
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    if (!kIsWeb) {
+      FirebaseMessaging.onBackgroundMessage(
+        firebaseMessagingBackgroundHandler,
+      );
+    }
   } catch (e) {
-    // google-services.json missing or Firebase project not configured.
+    // Firebase project not configured or missing files.
     // Push notifications will be unavailable but the rest of the app works.
     debugPrint('[Firebase] initializeApp failed: $e');
   }

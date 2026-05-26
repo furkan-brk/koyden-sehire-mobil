@@ -79,11 +79,15 @@
       "Bash(cloudflared tunnel *)",
       "PowerShell(Get-Command *)",
       "Bash(xargs ls -la)",
+      "Bash(adb devices *)",
       "Bash(flutter devices *)",
       "Bash(flutter logs *)",
+      "Bash(flutter emulators *)",
+      "Bash(flutter build *)",
       "Bash(sort -t\"'\" -k2)",
       "Bash(uniq -D -f1)",
-      "Bash(flutter emulators *)"
+      "Bash(awk -F\"'\" '{print $2}')",
+      "Bash(grep -v \"^$\")"
     ]
   }
 }

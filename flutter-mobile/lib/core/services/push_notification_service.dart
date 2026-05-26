@@ -33,6 +33,8 @@ class PushNotificationService extends GetxService {
   @override
   Future<void> onInit() async {
     super.onInit();
+    if (kIsWeb) return; // Admin web paneli push bildirimi kullanmaz
+
     try {
       await _initLocalNotifications();
       await _requestPermission();
@@ -53,8 +55,7 @@ class PushNotificationService extends GetxService {
 
     if (!kIsWeb && Platform.isAndroid) {
       await _localNotifications
-          .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
           ?.createNotificationChannel(_androidChannel);
     }
   }
