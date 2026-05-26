@@ -30,6 +30,8 @@ import 'package:koyden_sehire/core/services/connectivity_service.dart';
 import 'package:koyden_sehire/core/services/favorites_service.dart';
 import 'package:koyden_sehire/core/storage/secure_storage_service.dart';
 import 'package:koyden_sehire/services/favorites_repository.dart';
+import 'package:koyden_sehire/services/notification_repository.dart';
+import 'package:koyden_sehire/controllers/farmer/farmer_notifications_controller.dart';
 
 class AppBinding extends Bindings {
   @override
@@ -122,6 +124,10 @@ class AppBinding extends Bindings {
       () => AdminRepository(Get.find<ApiClient>()),
       fenix: true,
     );
+    Get.lazyPut<NotificationRepository>(
+      () => NotificationRepository(Get.find<ApiClient>()),
+      fenix: true,
+    );
 
     // Global controllers (lazy + fenix; initialized on first access)
     Get.lazyPut<CategoryController>(
@@ -168,6 +174,10 @@ class AppBinding extends Bindings {
     );
     Get.lazyPut<CustomerProfileController>(
       () => CustomerProfileController(Get.find<CustomerProfileRepository>()),
+      fenix: true,
+    );
+    Get.lazyPut<FarmerNotificationsController>(
+      () => FarmerNotificationsController(Get.find<NotificationRepository>()),
       fenix: true,
     );
   }

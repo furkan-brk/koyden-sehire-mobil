@@ -118,8 +118,10 @@ func main() {
 
 	fcmClient := notifications.NewFCMClient(cfg.FCM.ProjectID, cfg.FCM.ServiceAccountJSON)
 	dtRepo := device_tokens.NewRepository(db)
-	pushSvc := notifications.NewPushService(dtRepo, fcmClient)
+	notifRepo := notifications.NewNotifRepository(db)
+	pushSvc := notifications.NewPushService(dtRepo, notifRepo, fcmClient)
 	dtHandler := device_tokens.NewHandler(dtRepo)
+	notifHandler := notifications.NewHandler(notifRepo)
 
 	authRepo := auth.NewRepository(db)
 	authSvc := auth.NewService(authRepo, rdb, cfg.JWT.Secret, cfg.JWT.AccessTokenExpiry, cfg.JWT.RefreshTokenExpiry)
@@ -251,6 +253,9 @@ func main() {
 	farmer.Post("/uploads/profile-image", append(fm, uploadHandler.UploadProfileImage)...)
 	farmer.Post("/push-token", append(fm, dtHandler.Upsert)...)
 	farmer.Delete("/push-token", append(fm, dtHandler.Remove)...)
+	farmer.Get("/notifications", append(fm, notifHandler.List)...)
+	farmer.Patch("/notifications/read-all", append(fm, notifHandler.MarkAllRead)...)
+	farmer.Patch("/notifications/:id/read", append(fm, notifHandler.MarkRead)...)
 
 	cm := []fiber.Handler{requireAuth, requireCustomer, requireActive}
 	customerGroup := api.Group("/customer")
@@ -258,6 +263,9 @@ func main() {
 	customerGroup.Put("/profile", append(cm, userHandler.UpdateCustomerProfile)...)
 	customerGroup.Post("/push-token", append(cm, dtHandler.Upsert)...)
 	customerGroup.Delete("/push-token", append(cm, dtHandler.Remove)...)
+	customerGroup.Get("/notifications", append(cm, notifHandler.List)...)
+	customerGroup.Patch("/notifications/read-all", append(cm, notifHandler.MarkAllRead)...)
+	customerGroup.Patch("/notifications/:id/read", append(cm, notifHandler.MarkRead)...)
 	customerGroup.Get("/favorites", append(cm, favHandler.List)...)
 	customerGroup.Post("/favorites/:productId", append(cm, favHandler.Add)...)
 	customerGroup.Delete("/favorites/:productId", append(cm, favHandler.Remove)...)

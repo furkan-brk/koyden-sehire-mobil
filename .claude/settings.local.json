@@ -87,7 +87,9 @@
       "Bash(sort -t\"'\" -k2)",
       "Bash(uniq -D -f1)",
       "Bash(awk -F\"'\" '{print $2}')",
-      "Bash(grep -v \"^$\")"
+      "Bash(grep -v \"^$\")",
+      "Read(//c/tmp/**)",
+      "Bash(python3 -c ' *)"
     ]
   }
 }

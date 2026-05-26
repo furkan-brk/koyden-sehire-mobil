@@ -4,6 +4,7 @@ import 'package:get/get.dart' hide Trans;
 
 import 'package:koyden_sehire/core/services/connectivity_service.dart';
 import 'package:koyden_sehire/app/constants.dart';
+import 'package:koyden_sehire/app/keys.dart';
 import 'package:koyden_sehire/app/router.dart';
 import 'package:koyden_sehire/app/theme.dart';
 
@@ -16,6 +17,7 @@ class KoydenSehireApp extends StatelessWidget {
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
+      scaffoldMessengerKey: scaffoldMessengerKey,
       routerConfig: AppRouter.router,
       locale: const Locale('tr', 'TR'),
       supportedLocales: const [Locale('tr', 'TR')],

@@ -15,6 +15,20 @@ class AppConstants {
   /// Call this in `main()` and abort the release build if true.
   static bool get isDevDefaultBaseUrl => baseUrl == 'http://10.0.2.2:8080/api/v1';
 
+  /// Google Maps API key. Provided at build time via --dart-define=GOOGLE_MAPS_API_KEY=...
+  static const String googleMapsApiKey = String.fromEnvironment(
+    'GOOGLE_MAPS_API_KEY',
+    defaultValue: '',
+  );
+
+  /// FCM Web VAPID key — Firebase Console → Project Settings →
+  /// Cloud Messaging → Web configuration → Web Push certificates.
+  /// Provide at build time: --dart-define=VAPID_KEY=BH...
+  static const String vapidKey = String.fromEnvironment(
+    'VAPID_KEY',
+    defaultValue: '',
+  );
+
   static const String appName = 'Köyden Şehre';
   static const String appTagline = 'Yerel üreticilerden taze ürünler';
   static const String appVersion = '1.0.0';

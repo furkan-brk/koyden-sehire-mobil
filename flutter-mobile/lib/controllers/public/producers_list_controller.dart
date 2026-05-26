@@ -15,6 +15,7 @@ class ProducersListController extends GetxController {
   final RxInt total = 0.obs;
   final RxnString errorMessage = RxnString();
   final RxnString city = RxnString();
+  final RxnString district = RxnString();
   final RxnString search = RxnString();
 
   @override
@@ -28,8 +29,9 @@ class ProducersListController extends GetxController {
     await _load(reset: true);
   }
 
-  Future<void> applyCity(String? c) async {
+  Future<void> applyLocation({String? c, String? d}) async {
     city.value = (c?.trim().isEmpty ?? true) ? null : c?.trim();
+    district.value = (d?.trim().isEmpty ?? true) ? null : d?.trim();
     await _load(reset: true);
   }
 
@@ -41,6 +43,7 @@ class ProducersListController extends GetxController {
       final res = await _repo.list(
         page: nextPage,
         city: city.value,
+        district: district.value,
         search: search.value,
       );
       items.addAll(res.items);
@@ -65,6 +68,7 @@ class ProducersListController extends GetxController {
       final res = await _repo.list(
         page: 1,
         city: city.value,
+        district: district.value,
         search: search.value,
       );
       items.assignAll(res.items);

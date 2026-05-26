@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
+import 'package:koyden_sehire/core/services/google_geocoding_service.dart';
 import 'package:koyden_sehire/models/selected_location.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
 
@@ -25,6 +25,8 @@ class _SelectLocationScreenState extends State<SelectLocationScreen>
   late final MapController _mapController;
   late final AnimationController _pinAnimCtrl;
   late final Animation<double> _pinOffset;
+
+  final _geocoding = GoogleGeocodingService();
 
   Timer? _debounce;
   LatLng _center = _turkeyCenter;
@@ -84,27 +86,21 @@ class _SelectLocationScreenState extends State<SelectLocationScreen>
     if (!mounted) return;
     setState(() => _isGeocodingLoading = true);
     try {
-      final marks = await placemarkFromCoordinates(
-        pos.latitude,
-        pos.longitude,
-      );
-      if (marks.isEmpty || !mounted) return;
-      final m = marks.first;
+      final addr = await _geocoding.reverseGeocode(pos.latitude, pos.longitude);
+      if (addr == null || !mounted) return;
       setState(() {
-        _city = m.administrativeArea ?? '';
-        _district = m.subAdministrativeArea ?? '';
-        _village = m.subLocality?.isNotEmpty == true
-            ? m.subLocality!
-            : (m.locality ?? '');
-        _addressLine1 = [m.street, m.subLocality ?? m.locality]
-            .where((s) => s?.isNotEmpty == true)
-            .join(', ');
-        _addressLine2 = [m.subAdministrativeArea, m.administrativeArea]
-            .where((s) => s?.isNotEmpty == true)
+        _city = addr.city;
+        _district = addr.district;
+        _village = addr.village;
+        _addressLine1 = addr.streetAddress.isNotEmpty
+            ? addr.streetAddress
+            : addr.formattedAddress;
+        _addressLine2 = [addr.district, addr.city]
+            .where((s) => s.isNotEmpty)
             .join(', ');
       });
     } catch (_) {
-      // Geocoding failed â€” keep last known values
+      // Geocoding failed
     } finally {
       if (mounted) setState(() => _isGeocodingLoading = false);
     }

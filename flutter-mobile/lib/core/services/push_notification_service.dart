@@ -2,9 +2,12 @@ import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 
+import 'package:koyden_sehire/app/constants.dart';
+import 'package:koyden_sehire/app/keys.dart';
 import 'package:koyden_sehire/core/services/auth_service.dart';
 import 'package:koyden_sehire/models/auth/auth_state.dart';
 import 'package:koyden_sehire/services/push_token_repository.dart';
@@ -33,10 +36,10 @@ class PushNotificationService extends GetxService {
   @override
   Future<void> onInit() async {
     super.onInit();
-    if (kIsWeb) return; // Admin web paneli push bildirimi kullanmaz
-
     try {
-      await _initLocalNotifications();
+      if (!kIsWeb) {
+        await _initLocalNotifications();
+      }
       await _requestPermission();
       _listenForeground();
       _listenTokenRefresh();
@@ -53,7 +56,7 @@ class PushNotificationService extends GetxService {
       const InitializationSettings(android: android, iOS: ios),
     );
 
-    if (!kIsWeb && Platform.isAndroid) {
+    if (Platform.isAndroid) {
       await _localNotifications
           .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
           ?.createNotificationChannel(_androidChannel);
@@ -66,9 +69,12 @@ class PushNotificationService extends GetxService {
       badge: true,
       sound: true,
     );
+    debugPrint('[Push] İzin durumu: ${settings.authorizationStatus}');
     if (settings.authorizationStatus == AuthorizationStatus.authorized ||
         settings.authorizationStatus == AuthorizationStatus.provisional) {
       await _registerCurrentToken();
+    } else {
+      debugPrint('[Push] Bildirim izni verilmedi — token kaydı atlandı');
     }
   }
 
@@ -76,6 +82,40 @@ class PushNotificationService extends GetxService {
     FirebaseMessaging.onMessage.listen((message) {
       final notification = message.notification;
       if (notification == null) return;
+
+      if (kIsWeb) {
+        // Web'de flutter_local_notifications desteklenmez — SnackBar göster
+        scaffoldMessengerKey.currentState?.showSnackBar(
+          SnackBar(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  notification.title ?? 'Bildirim',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                if ((notification.body ?? '').isNotEmpty)
+                  Text(
+                    notification.body!,
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF2E7D32),
+            duration: const Duration(seconds: 4),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+        return;
+      }
+
       _localNotifications.show(
         notification.hashCode,
         notification.title,
@@ -102,12 +142,22 @@ class PushNotificationService extends GetxService {
 
   Future<void> _registerCurrentToken() async {
     try {
-      final token = await FirebaseMessaging.instance.getToken();
+      debugPrint('[Push] getToken() çağrılıyor...');
+      // Web FCM için VAPID key zorunlu; mobil'de gerek yok.
+      final token = kIsWeb && AppConstants.vapidKey.isNotEmpty
+          ? await FirebaseMessaging.instance.getToken(
+              vapidKey: AppConstants.vapidKey,
+            )
+          : await FirebaseMessaging.instance.getToken();
+      debugPrint(
+        '[Push] getToken() sonucu: ${token == null ? "NULL" : "${token.substring(0, 20)}..."}',
+      );
       if (token == null) return;
       _currentToken = token;
       await _registerTokenWithBackend(token);
-    } catch (e) {
+    } catch (e, st) {
       // Non-fatal — user can still use the app without push notifications.
+      debugPrint('[Push] _registerCurrentToken HATA: $e\n$st');
     }
   }
 
@@ -118,23 +168,38 @@ class PushNotificationService extends GetxService {
         : Platform.isIOS
             ? 'ios'
             : 'android';
+    debugPrint(
+      '[Push] _registerTokenWithBackend — status: ${auth.status.value}, platform: $platform',
+    );
     try {
       switch (auth.status.value) {
         case AuthStatus.farmerActive:
           await _repo.registerFarmer(token, platform);
+          debugPrint('[Push] Farmer token backend\'e kaydedildi ✓');
         case AuthStatus.customerActive:
           await _repo.registerCustomer(token, platform);
+          debugPrint('[Push] Customer token backend\'e kaydedildi ✓');
+        case AuthStatus.admin:
+          // Admin push token backend endpoint'i henüz yok — atla.
+          debugPrint('[Push] Admin rolü için push token endpoint yok — atlandı');
         default:
+          debugPrint(
+            '[Push] Kimlik doğrulanmamış — token kaydı ertelendi: ${auth.status.value}',
+          );
           break;
       }
-    } catch (_) {
+    } catch (e, st) {
       // Backend unavailable or user not authenticated yet — will retry on next login.
+      debugPrint('[Push] _registerTokenWithBackend HATA: $e\n$st');
     }
   }
 
   /// Call after a successful login to register the token for the newly
   /// authenticated role.
   Future<void> onLogin() async {
+    debugPrint(
+      '[Push] onLogin() çağrıldı — _currentToken: ${_currentToken == null ? "null" : "mevcut"}',
+    );
     final token = _currentToken;
     if (token == null) {
       await _registerCurrentToken();
@@ -149,6 +214,7 @@ class PushNotificationService extends GetxService {
     if (token == null) return;
 
     final auth = Get.find<AuthService>();
+    final platform = kIsWeb ? 'web' : Platform.isIOS ? 'ios' : 'android';
     try {
       switch (auth.status.value) {
         case AuthStatus.farmerActive:
@@ -158,6 +224,7 @@ class PushNotificationService extends GetxService {
         default:
           break;
       }
+      debugPrint('[Push] Token backend\'den silindi ($platform)');
     } catch (_) {}
     _currentToken = null;
   }

@@ -1,148 +1,71 @@
-// TODO: Bildirim API hazır olduğunda burada gerçek bildirimler gösterilecek.
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:get/get.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
-import 'package:koyden_sehire/shared/widgets/app_button.dart';
+import 'package:koyden_sehire/services/notification_repository.dart';
+import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/customer_bottom_nav.dart';
+import 'package:koyden_sehire/views/farmer/farmer_notifications_screen.dart'
+    show _CustomerNotifController, _NotificationTile, _EmptyState;
 
 class CustomerNotificationsScreen extends StatelessWidget {
   const CustomerNotificationsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Bildirimlerim')),
-      bottomNavigationBar: const CustomerBottomNav(current: CustomerTab.profile),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          children: [
-            Center(
-              child: Container(
-                width: 96,
-                height: 96,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryContainer.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.notifications_outlined,
-                  size: 48,
-                  color: AppColors.primaryContainer,
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Henüz bildiriminiz yok',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'Favori ürünler, üretici güncellemeleri ve platform duyuruları burada görünecek.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppColors.onSurfaceVariant,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 28),
-            // Yakında gelecek bildirim tipleri — preview/pasif görünüm
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(AppRadius.md),
-                border: Border.all(color: AppColors.outlineVariant),
-              ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'İleride burada neler göreceksiniz?',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  _PreviewNotificationTile(
-                    icon: Icons.storefront_outlined,
-                    text: 'Favori üreticin yeni ürün ekledi',
-                  ),
-                  SizedBox(height: 8),
-                  _PreviewNotificationTile(
-                    icon: Icons.category_outlined,
-                    text: 'İlgilendiğin kategoride yeni ürün var',
-                  ),
-                  SizedBox(height: 8),
-                  _PreviewNotificationTile(
-                    icon: Icons.campaign_outlined,
-                    text: 'Platform duyurusu',
-                  ),
-                  SizedBox(height: 6),
-                  Text(
-                    'Bu bildirim türleri yakında aktif olacak.',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-            Center(
-              child: SizedBox(
-                width: 220,
-                child: AppButton(
-                  label: 'Ürünleri Keşfet',
-                  onPressed: () => context.go('/products'),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+    final ctrl = Get.put(
+      _CustomerNotifController(Get.find<NotificationRepository>()),
     );
-  }
-}
 
-class _PreviewNotificationTile extends StatelessWidget {
-  final IconData icon;
-  final String text;
-
-  const _PreviewNotificationTile({required this.icon, required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Opacity(
-      opacity: 0.45,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.sm),
-          border: Border.all(color: AppColors.outlineVariant),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 18, color: AppColors.primaryContainer),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                text,
-                style: const TextStyle(fontSize: 13),
-              ),
-            ),
-          ],
-        ),
+    return Scaffold(
+      appBar: AppBar(
+        title: Obx(() {
+          final unread = ctrl.unreadCount.value;
+          return Text(unread > 0 ? 'Bildirimlerim ($unread)' : 'Bildirimlerim');
+        }),
+        actions: [
+          Obx(() {
+            if (ctrl.items.any((n) => !n.isRead)) {
+              return TextButton(
+                onPressed: ctrl.markAllRead,
+                child: const Text('Tümünü Okundu Say'),
+              );
+            }
+            return const SizedBox.shrink();
+          }),
+        ],
       ),
+      bottomNavigationBar: const CustomerBottomNav(current: CustomerTab.profile),
+      body: Obx(() {
+        if (ctrl.isLoading.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (ctrl.errorMessage.value != null) {
+          return AppErrorWidget(
+            message: ctrl.errorMessage.value!,
+            onRetry: ctrl.load,
+          );
+        }
+        if (ctrl.items.isEmpty) {
+          return const _EmptyState(role: 'customer');
+        }
+        return RefreshIndicator(
+          onRefresh: ctrl.load,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            itemCount: ctrl.items.length,
+            separatorBuilder: (_, __) =>
+                const Divider(height: 1, indent: 56, endIndent: 16),
+            itemBuilder: (_, i) {
+              final n = ctrl.items[i];
+              return _NotificationTile(
+                notification: n,
+                onTap: () => ctrl.markRead(n.id),
+              );
+            },
+          ),
+        );
+      }),
     );
   }
 }

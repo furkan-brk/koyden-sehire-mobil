@@ -12,12 +12,14 @@ class FarmerRepository {
     int page = 1,
     int limit = 20,
     String? city,
+    String? district,
     String? search,
   }) {
     final query = <String, dynamic>{
       'page': page,
       'limit': limit,
       if (city != null && city.isNotEmpty) 'city': city,
+      if (district != null && district.isNotEmpty) 'district': district,
       if (search != null && search.isNotEmpty) 'search': search,
     };
     return _api.get(

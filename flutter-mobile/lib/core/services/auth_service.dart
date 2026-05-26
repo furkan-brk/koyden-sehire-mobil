@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
 import 'package:koyden_sehire/core/services/push_notification_service.dart';
@@ -198,7 +199,9 @@ class AuthService extends GetxService {
     try {
       final push = Get.find<PushNotificationService>();
       await push.onLogin();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[AuthService] push.onLogin() HATA: $e');
+    }
   }
 
   String _mapAuthError(AppException e) {

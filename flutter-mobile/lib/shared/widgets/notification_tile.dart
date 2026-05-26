@@ -1,132 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
-import 'package:koyden_sehire/controllers/farmer/farmer_notifications_controller.dart';
 import 'package:koyden_sehire/models/notification_model.dart';
-import 'package:koyden_sehire/services/notification_repository.dart';
-import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
-import 'package:koyden_sehire/shared/widgets/farmer_bottom_nav.dart';
 
-class FarmerNotificationsScreen extends StatelessWidget {
-  const FarmerNotificationsScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final ctrl = Get.find<FarmerNotificationsController>();
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Obx(() {
-          final unread = ctrl.unreadCount.value;
-          return Text(unread > 0 ? 'Bildirimlerim ($unread)' : 'Bildirimlerim');
-        }),
-        actions: [
-          Obx(() {
-            if (ctrl.items.any((n) => !n.isRead)) {
-              return TextButton(
-                onPressed: ctrl.markAllRead,
-                child: const Text('Tümünü Okundu Say'),
-              );
-            }
-            return const SizedBox.shrink();
-          }),
-        ],
-      ),
-      bottomNavigationBar: const FarmerBottomNav(current: FarmerTab.profile),
-      body: Obx(() {
-        if (ctrl.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (ctrl.errorMessage.value != null) {
-          return AppErrorWidget(
-            message: ctrl.errorMessage.value!,
-            onRetry: ctrl.load,
-          );
-        }
-        if (ctrl.items.isEmpty) {
-          return _EmptyState(role: 'farmer');
-        }
-        return RefreshIndicator(
-          onRefresh: ctrl.load,
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: ctrl.items.length,
-            separatorBuilder: (_, __) =>
-                const Divider(height: 1, indent: 56, endIndent: 16),
-            itemBuilder: (_, i) {
-              final n = ctrl.items[i];
-              return _NotificationTile(
-                notification: n,
-                onTap: () => ctrl.markRead(n.id),
-              );
-            },
-          ),
-        );
-      }),
-    );
-  }
-}
-
-// ── Customer bildirimler ekranı (aynı layout, customer role) ──────────────────
-
-class _CustomerNotifController extends GetxController {
-  final NotificationRepository _repo;
-  _CustomerNotifController(this._repo);
-
-  final RxList<AppNotification> items = <AppNotification>[].obs;
-  final RxBool isLoading = false.obs;
-  final RxInt unreadCount = 0.obs;
-  final RxnString errorMessage = RxnString();
-
-  @override
-  void onInit() {
-    super.onInit();
-    load();
-  }
-
-  Future<void> load() async {
-    isLoading.value = true;
-    errorMessage.value = null;
-    try {
-      final res = await _repo.list(role: 'customer');
-      items.assignAll(res.items);
-      unreadCount.value = res.unreadCount;
-    } catch (_) {
-      errorMessage.value = 'Bildirimler yüklenemedi';
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  Future<void> markRead(String id) async {
-    try {
-      await _repo.markRead(role: 'customer', id: id);
-      final idx = items.indexWhere((n) => n.id == id);
-      if (idx != -1 && !items[idx].isRead) {
-        items[idx] = items[idx].copyWith(isRead: true);
-        if (unreadCount.value > 0) unreadCount.value--;
-      }
-    } catch (_) {}
-  }
-
-  Future<void> markAllRead() async {
-    try {
-      await _repo.markAllRead(role: 'customer');
-      items.assignAll(items.map((n) => n.copyWith(isRead: true)).toList());
-      unreadCount.value = 0;
-    } catch (_) {}
-  }
-}
-
-// ── Shared widgets ────────────────────────────────────────────────────────────
-
-class _NotificationTile extends StatelessWidget {
+class NotificationTile extends StatelessWidget {
   final AppNotification notification;
   final VoidCallback onTap;
 
-  const _NotificationTile({
+  const NotificationTile({
+    super.key,
     required this.notification,
     required this.onTap,
   });
@@ -155,6 +38,16 @@ class _NotificationTile extends StatelessWidget {
       default:
         return AppColors.primary;
     }
+  }
+
+  String _formatDate(DateTime dt) {
+    final now = DateTime.now();
+    final diff = now.difference(dt);
+    if (diff.inMinutes < 1) return 'Az önce';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} dakika önce';
+    if (diff.inHours < 24) return '${diff.inHours} saat önce';
+    if (diff.inDays < 7) return '${diff.inDays} gün önce';
+    return DateFormat('d MMM yyyy', 'tr_TR').format(dt);
   }
 
   @override
@@ -234,21 +127,11 @@ class _NotificationTile extends StatelessWidget {
       ),
     );
   }
-
-  String _formatDate(DateTime dt) {
-    final now = DateTime.now();
-    final diff = now.difference(dt);
-    if (diff.inMinutes < 1) return 'Az önce';
-    if (diff.inMinutes < 60) return '${diff.inMinutes} dakika önce';
-    if (diff.inHours < 24) return '${diff.inHours} saat önce';
-    if (diff.inDays < 7) return '${diff.inDays} gün önce';
-    return DateFormat('d MMM yyyy', 'tr_TR').format(dt);
-  }
 }
 
-class _EmptyState extends StatelessWidget {
+class NotificationEmptyState extends StatelessWidget {
   final String role;
-  const _EmptyState({required this.role});
+  const NotificationEmptyState({super.key, required this.role});
 
   @override
   Widget build(BuildContext context) {
