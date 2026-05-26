@@ -36,7 +36,6 @@ class FarmerDashboardScreen extends StatelessWidget {
           return Text('Merhaba, $displayName');
         }),
         actions: [
-          const FarmerModeChip(),
           Obx(() {
             final profile = profileCtrl.profile.value;
             return IconButton(
@@ -61,6 +60,7 @@ class FarmerDashboardScreen extends StatelessWidget {
               if (context.mounted) context.go('/');
             },
           ),
+          const FarmerModeChip(),
         ],
       ),
       body: Obx(() {

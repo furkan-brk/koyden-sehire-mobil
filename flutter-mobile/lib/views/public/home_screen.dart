@@ -57,7 +57,6 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
         actions: [
-          const FarmerModeChip(),
           Obx(() {
             final status = auth.status.value;
             final isFarmer = status == AuthStatus.farmerActive;
@@ -90,6 +89,7 @@ class HomeScreen extends StatelessWidget {
               );
             }
           }),
+          const FarmerModeChip(),
           const SizedBox(width: AppSpacing.sm),
         ],
       ),
