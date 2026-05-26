@@ -43,3 +43,12 @@ func (r *Repository) UpdateFarmerProfile(userID string, req *UpdateProfileReques
 		req.ProfileImageURL, userID)
 	return err
 }
+
+func (r *Repository) UpdateCustomerProfile(userID string, req *UpdateCustomerProfileRequest) error {
+	_, err := r.db.Exec(`
+		UPDATE users
+		SET full_name = $1, email = $2, updated_at = NOW()
+		WHERE id = $3
+	`, req.FullName, req.Email, userID)
+	return err
+}

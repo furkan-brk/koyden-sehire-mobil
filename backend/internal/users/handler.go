@@ -49,3 +49,39 @@ func (h *Handler) UpdateProfile(c *fiber.Ctx) error {
 
 	return response.Success(c, nil, "Profil güncellendi")
 }
+
+func (h *Handler) GetCustomerProfile(c *fiber.Ctx) error {
+	userID, _ := c.Locals(middleware.UserIDKey).(string)
+	if userID == "" {
+		return response.Unauthorized(c, "Kimlik doğrulama gerekli")
+	}
+
+	profile, err := h.svc.GetCustomerProfile(userID)
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.Success(c, profile, "")
+}
+
+func (h *Handler) UpdateCustomerProfile(c *fiber.Ctx) error {
+	userID, _ := c.Locals(middleware.UserIDKey).(string)
+	if userID == "" {
+		return response.Unauthorized(c, "Kimlik doğrulama gerekli")
+	}
+
+	var req UpdateCustomerProfileRequest
+	if err := c.BodyParser(&req); err != nil {
+		return response.BadRequest(c, "Geçersiz istek gövdesi")
+	}
+	if err := validator.Validate(&req); err != nil {
+		return response.BadRequest(c, "Zorunlu alanlar eksik veya geçersiz")
+	}
+
+	profile, err := h.svc.UpdateCustomerProfile(userID, &req)
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.Success(c, profile, "Profil güncellendi")
+}

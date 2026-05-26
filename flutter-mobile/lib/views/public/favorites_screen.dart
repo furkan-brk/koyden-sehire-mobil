@@ -9,9 +9,9 @@ import 'package:koyden_sehire/models/auth/auth_state.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
+import 'package:koyden_sehire/shared/widgets/customer_bottom_nav.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_mode_chip.dart';
 import 'package:koyden_sehire/shared/widgets/product_card.dart';
-import 'package:koyden_sehire/shared/widgets/public_bottom_nav.dart';
 import 'package:koyden_sehire/shared/widgets/shimmer_product_card.dart';
 
 class FavoritesScreen extends StatelessWidget {
@@ -27,11 +27,9 @@ class FavoritesScreen extends StatelessWidget {
         title: const Text('Favorilerim'),
         leading: const FarmerModeChip(),
       ),
-      bottomNavigationBar:
-          const PublicBottomNav(current: PublicTab.applyOrFavorites),
+      bottomNavigationBar: const CustomerBottomNav(current: CustomerTab.favorites),
       body: Obx(() {
-        final isFarmerBrowsing = auth.status.value == AuthStatus.farmerActive &&
-            auth.isBrowsingAsCustomer.value;
+        final isFarmerBrowsing = auth.status.value == AuthStatus.farmerActive && auth.isBrowsingAsCustomer.value;
         if (auth.status.value != AuthStatus.customerActive && !isFarmerBrowsing) {
           return _GuestPlaceholder();
         }
@@ -101,10 +99,7 @@ class _GuestPlaceholder extends StatelessWidget {
             Text(
               'Beğendiğiniz ürünleri kaydedin, her yerden erişin.',
               textAlign: TextAlign.center,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: cs.onSurfaceVariant),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
             ),
             const SizedBox(height: 24),
             AppButton(

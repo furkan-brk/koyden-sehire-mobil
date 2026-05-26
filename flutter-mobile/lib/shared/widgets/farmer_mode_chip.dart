@@ -6,8 +6,12 @@ import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/core/services/auth_service.dart';
 import 'package:koyden_sehire/models/auth/auth_state.dart';
 
-/// Üretici → Pazar modu geçiş chip'i.
-/// Farmer girişli olan tüm ekranlarda sol üste yerleştirilir.
+/// Shown in AppBar leading on public screens and as a subtitle element on the
+/// farmer dashboard.
+///
+/// - Farmer NOT in customer-browse mode → "Pazara Göz At" (enters browse mode)
+/// - Farmer in customer-browse mode → "Panele Dön" (exits browse mode)
+/// - Non-farmer → empty
 class FarmerModeChip extends StatelessWidget {
   const FarmerModeChip({super.key});
 
@@ -18,67 +22,67 @@ class FarmerModeChip extends StatelessWidget {
       if (auth.status.value != AuthStatus.farmerActive) {
         return const SizedBox.shrink();
       }
-      final isBrowsing = auth.isBrowsingAsCustomer.value;
-      return GestureDetector(
-        onTap: () => _toggle(context, auth, isBrowsing),
-        child: Container(
-          margin: const EdgeInsets.only(left: 8, top: 6, bottom: 6),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: isBrowsing
-                ? AppColors.secondaryContainer
-                : AppColors.primaryFixed.withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(AppRadius.pill),
-            border: Border.all(
-              color: isBrowsing
-                  ? AppColors.onSecondaryContainer.withValues(alpha: 0.2)
-                  : AppColors.primaryContainer.withValues(alpha: 0.4),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                isBrowsing ? Icons.storefront_outlined : Icons.agriculture_outlined,
-                size: 13,
-                color: isBrowsing
-                    ? AppColors.onSecondaryContainer
-                    : AppColors.primaryContainer,
-              ),
-              const SizedBox(width: 5),
-              Text(
-                isBrowsing ? 'Pazar Modu' : 'Üretici Modu',
-                style: TextStyle(
-                  fontFamily: 'PlusJakartaSans',
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: isBrowsing
-                      ? AppColors.onSecondaryContainer
-                      : AppColors.primaryContainer,
-                ),
-              ),
-              const SizedBox(width: 4),
-              Icon(
-                isBrowsing ? Icons.swap_horiz : Icons.swap_horiz,
-                size: 12,
-                color: isBrowsing
-                    ? AppColors.onSecondaryContainer
-                    : AppColors.primaryContainer,
-              ),
-            ],
-          ),
-        ),
+
+      if (auth.isBrowsingAsCustomer.value) {
+        return _chip(
+          context,
+          icon: Icons.agriculture,
+          label: 'Panele Dön',
+          color: AppColors.primaryContainer,
+          onLabel: AppColors.onPrimary,
+          onTap: () {
+            auth.exitCustomerMode();
+            context.go('/farmer/dashboard');
+          },
+        );
+      }
+
+      return _chip(
+        context,
+        icon: Icons.storefront_outlined,
+        label: 'Pazara Göz At',
+        color: AppColors.secondaryContainer,
+        onLabel: AppColors.secondary,
+        onTap: () {
+          auth.enterCustomerMode();
+          context.go('/');
+        },
       );
     });
   }
 
-  void _toggle(BuildContext context, AuthService auth, bool isBrowsing) {
-    if (isBrowsing) {
-      auth.exitCustomerMode();
-      context.go('/farmer/dashboard');
-    } else {
-      auth.enterCustomerMode();
-      context.go('/');
-    }
+  Widget _chip(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required Color color,
+    required Color onLabel,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 13, color: onLabel),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: onLabel,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

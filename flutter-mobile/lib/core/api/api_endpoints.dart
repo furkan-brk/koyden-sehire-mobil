@@ -52,7 +52,12 @@ class ApiEndpoints {
   static String adminFarmerSuspend(String id) => '/admin/farmers/$id/suspend';
   static String adminFarmerActivate(String id) => '/admin/farmers/$id/reactivate';
 
+  // Push tokens
+  static const String farmerPushToken = '/farmer/push-token';
+  static const String customerPushToken = '/customer/push-token';
+
   // Customer
+  static const String customerProfile = '/customer/profile';
   static const String customerFavorites = '/customer/favorites';
   static String customerFavoriteById(String id) => '/customer/favorites/$id';
 

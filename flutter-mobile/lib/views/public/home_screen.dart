@@ -124,8 +124,7 @@ class HomeScreen extends StatelessWidget {
                 }
                 if (catCtrl.error.value != null) {
                   return Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                     child: Text(
                       'Kategoriler yüklenemedi',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -157,8 +156,7 @@ class HomeScreen extends StatelessWidget {
                 }
                 if (homeCtrl.error.value != null) {
                   return Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                     child: Text(
                       'Ürünler yüklenemedi',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -170,8 +168,7 @@ class HomeScreen extends StatelessWidget {
                 final items = homeCtrl.newProducts;
                 if (items.isEmpty) {
                   return Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                     child: Text(
                       'Henüz ürün bulunmuyor.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -185,11 +182,9 @@ class HomeScreen extends StatelessWidget {
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     physics: const ClampingScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                     itemCount: items.length,
-                    separatorBuilder: (_, __) =>
-                        const SizedBox(width: AppSpacing.sm + 4),
+                    separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm + 4),
                     itemBuilder: (_, i) => SizedBox(
                       width: 168,
                       child: ProductCard(product: items[i], compact: true),
@@ -215,11 +210,9 @@ class HomeScreen extends StatelessWidget {
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         physics: const ClampingScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.md),
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                         itemCount: farmers.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(width: AppSpacing.sm + 4),
+                        separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm + 4),
                         itemBuilder: (_, i) => FarmerCard(farmer: farmers[i]),
                       ),
                     ),
@@ -233,11 +226,8 @@ class HomeScreen extends StatelessWidget {
             const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.md)),
             SliverToBoxAdapter(
               child: Obx(() {
-                final isFarmer =
-                    auth.status.value == AuthStatus.farmerActive;
-                return isFarmer
-                    ? const _FarmerPanelCtaCard()
-                    : const _GuestCtaCard();
+                final isFarmer = auth.status.value == AuthStatus.farmerActive;
+                return isFarmer ? const _FarmerPanelCtaCard() : const _GuestCtaCard();
               }),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xl)),
@@ -247,8 +237,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
 
 class _HeroSearchBar extends StatelessWidget {
   const _HeroSearchBar();
@@ -337,13 +325,11 @@ IconData _iconForCategorySlug(String slug, String? backendIcon) {
   if (s.contains('yumurta') || s.contains('egg')) {
     return Icons.egg_alt_outlined;
   }
-  if (s.contains('sut') || s.contains('süt') || s.contains('milk') ||
-      s.contains('dairy')) {
+  if (s.contains('sut') || s.contains('süt') || s.contains('milk') || s.contains('dairy')) {
     return Icons.local_drink_outlined;
   }
   if (s.contains('bal') || s.contains('honey')) return Icons.hive_outlined;
-  if (s.contains('tahil') || s.contains('tahıl') || s.contains('grain') ||
-      s.contains('bakliyat')) {
+  if (s.contains('tahil') || s.contains('tahıl') || s.contains('grain') || s.contains('bakliyat')) {
     return Icons.grass_outlined;
   }
   if (s.contains('et') || s.contains('meat')) {

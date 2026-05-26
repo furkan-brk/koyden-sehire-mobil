@@ -3,7 +3,13 @@ import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
+import 'package:koyden_sehire/controllers/customer/customer_profile_controller.dart';
 import 'package:koyden_sehire/core/services/auth_service.dart';
+import 'package:koyden_sehire/core/utils/validators.dart' show Validators;
+import 'package:koyden_sehire/shared/widgets/app_button.dart';
+import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
+import 'package:koyden_sehire/shared/widgets/app_loading.dart';
+import 'package:koyden_sehire/shared/widgets/app_text_field.dart';
 
 class CustomerProfileScreen extends StatelessWidget {
   const CustomerProfileScreen({super.key});
@@ -34,117 +40,266 @@ class CustomerProfileScreen extends StatelessWidget {
     if (context.mounted) context.go('/');
   }
 
+  void _showEditSheet(BuildContext context, CustomerProfileController ctrl) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => _EditSheet(ctrl: ctrl),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = Get.find<AuthService>();
+    final ctrl = Get.find<CustomerProfileController>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profilim')),
-      body: SafeArea(
-        child: Obx(() {
-          final name = auth.displayName.value ?? '';
-          final displayedName = name.isNotEmpty ? name : 'Müşteri';
+      appBar: AppBar(
+        title: const Text('Profilim'),
+        actions: [
+          Obx(() {
+            if (ctrl.isLoading.value || ctrl.profile.value == null) {
+              return const SizedBox.shrink();
+            }
+            return TextButton.icon(
+              onPressed: () => _showEditSheet(context, ctrl),
+              icon: const Icon(Icons.edit_outlined, size: 18),
+              label: const Text('Düzenle'),
+            );
+          }),
+        ],
+      ),
+      body: Obx(() {
+        if (ctrl.isLoading.value) return const AppLoading();
 
-          return ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-            children: [
-              // A) Üst profil kartı
-              _ProfileHeaderCard(name: displayedName),
-              const SizedBox(height: 16),
+        if (ctrl.errorMessage.value != null && ctrl.profile.value == null) {
+          return AppErrorWidget(
+            message: ctrl.errorMessage.value!,
+            onRetry: ctrl.load,
+          );
+        }
 
-              // B) Hesap Bilgileri
-              _SectionCard(
-                title: 'Hesap Bilgileri',
-                children: [
-                  _InfoRow(
-                    icon: Icons.person_outline,
-                    label: 'Ad Soyad',
-                    value: displayedName,
-                  ),
-                  const _Divider(),
-                  const _InfoRow(
-                    icon: Icons.phone_outlined,
-                    label: 'Telefon',
-                    value: 'Belirtilmemiş',
-                  ),
-                  const _Divider(),
-                  const _InfoRow(
-                    icon: Icons.email_outlined,
-                    label: 'E-posta',
-                    value: 'Belirtilmemiş',
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
+        final profile = ctrl.profile.value;
+        if (profile == null) return const AppLoading();
 
-              // C) Müşteri Alanı
-              _SectionCard(
-                title: 'Müşteri Alanı',
-                children: [
-                  _NavRow(
-                    icon: Icons.favorite_border,
-                    iconColor: AppColors.error,
-                    label: 'Favorilerim',
-                    subtitle: 'Kaydettiğin ürünleri burada görebilirsin.',
-                    onTap: () => context.push('/customer/favorites'),
-                  ),
-                  const _Divider(),
-                  _NavRow(
-                    icon: Icons.notifications_outlined,
-                    iconColor: AppColors.primaryContainer,
-                    label: 'Bildirimlerim',
-                    subtitle:
-                        'Uygulama duyurularını ve ürün haberlerini buradan takip edebilirsin.',
-                    onTap: () => context.push('/customer/notifications'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // D) Platform bilgilendirme
-              const _SectionCard(
-                title: 'Köyden Şehre Nasıl Çalışır?',
-                titleIcon: Icons.info_outline,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(16, 0, 16, 14),
-                    child: Text(
-                      "Köyden Şehre'de ödeme, sepet, sipariş, kargo veya uygulama içi mesajlaşma bulunmaz. "
-                      'Müşteri, üreticiyle doğrudan iletişime geçer.',
-                      style: TextStyle(
-                        color: AppColors.onSurfaceVariant,
-                        height: 1.5,
-                      ),
+        return ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          children: [
+            _ProfileHeaderCard(name: profile.fullName),
+            const SizedBox(height: 16),
+            _SectionCard(
+              title: 'Hesap Bilgileri',
+              children: [
+                _InfoRow(
+                  icon: Icons.person_outline,
+                  label: 'Ad Soyad',
+                  value: profile.fullName,
+                ),
+                const _Divider(),
+                _InfoRow(
+                  icon: Icons.phone_outlined,
+                  label: 'Telefon',
+                  value: profile.phone,
+                ),
+                const _Divider(),
+                _InfoRow(
+                  icon: Icons.email_outlined,
+                  label: 'E-posta',
+                  value: profile.email?.isNotEmpty == true
+                      ? profile.email!
+                      : 'Belirtilmemiş',
+                  muted: profile.email == null || profile.email!.isEmpty,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _SectionCard(
+              title: 'Müşteri Alanı',
+              children: [
+                _NavRow(
+                  icon: Icons.favorite_border,
+                  iconColor: AppColors.error,
+                  label: 'Favorilerim',
+                  subtitle: 'Kaydettiğin ürünleri burada görebilirsin.',
+                  onTap: () => context.push('/favorites'),
+                ),
+                const _Divider(),
+                _NavRow(
+                  icon: Icons.notifications_outlined,
+                  iconColor: AppColors.primaryContainer,
+                  label: 'Bildirimlerim',
+                  subtitle:
+                      'Uygulama duyurularını ve ürün haberlerini buradan takip edebilirsin.',
+                  onTap: () => context.push('/customer/notifications'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const _SectionCard(
+              title: 'Köyden Şehre Nasıl Çalışır?',
+              titleIcon: Icons.info_outline,
+              children: [
+                Padding(
+                  padding: EdgeInsets.fromLTRB(16, 0, 16, 14),
+                  child: Text(
+                    "Köyden Şehre'de ödeme, sepet, sipariş, kargo veya uygulama içi mesajlaşma bulunmaz. Müşteri, üreticiyle doğrudan iletişime geçer.",
+                    style: TextStyle(
+                      color: AppColors.onSurfaceVariant,
+                      height: 1.5,
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // E) Hesap İşlemleri
-              _SectionCard(
-                title: 'Hesap İşlemleri',
-                children: [
-                  _DangerRow(
-                    icon: Icons.logout,
-                    label: 'Çıkış Yap',
-                    onTap: () => _confirmLogout(context, auth),
-                    isLast: true,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-            ],
-          );
-        }),
-      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _SectionCard(
+              title: 'Hesap İşlemleri',
+              children: [
+                _DangerRow(
+                  icon: Icons.logout,
+                  label: 'Çıkış Yap',
+                  isLast: true,
+                  onTap: () => _confirmLogout(context, auth),
+                ),
+              ],
+            ),
+            const SizedBox(height: 32),
+          ],
+        );
+      }),
     );
   }
 }
 
-// ---------------------------------------------------------------------------
-// Profile header card
-// ---------------------------------------------------------------------------
+class _EditSheet extends StatefulWidget {
+  final CustomerProfileController ctrl;
+  const _EditSheet({required this.ctrl});
+
+  @override
+  State<_EditSheet> createState() => _EditSheetState();
+}
+
+class _EditSheetState extends State<_EditSheet> {
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _emailCtrl;
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    final p = widget.ctrl.profile.value;
+    _nameCtrl = TextEditingController(text: p?.fullName ?? '');
+    _emailCtrl = TextEditingController(text: p?.email ?? '');
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _emailCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final email = _emailCtrl.text.trim();
+    final ok = await widget.ctrl.update(
+      fullName: _nameCtrl.text.trim(),
+      email: email.isEmpty ? null : email,
+    );
+    if (!mounted) return;
+    if (ok) {
+      Navigator.pop(context);
+      Get.snackbar(
+        'Kaydedildi',
+        'Profiliniz güncellendi',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Profili Düzenle',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            AppTextField(
+              controller: _nameCtrl,
+              label: 'Ad Soyad',
+              validator: (v) {
+                if (v == null || v.trim().length < 2) {
+                  return 'En az 2 karakter giriniz';
+                }
+                if (v.trim().length > 100) return 'En fazla 100 karakter';
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+            AppTextField(
+              controller: _emailCtrl,
+              label: 'E-posta (isteğe bağlı)',
+              keyboardType: TextInputType.emailAddress,
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) return null;
+                return Validators.email(v.trim());
+              },
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Telefon numarası değiştirilemez.',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: AppColors.onSurfaceVariant),
+            ),
+            const SizedBox(height: 20),
+            Obx(() => AppButton(
+                  label: 'Kaydet',
+                  isLoading: widget.ctrl.isSaving.value,
+                  onPressed: _save,
+                )),
+            Obx(() {
+              final err = widget.ctrl.errorMessage.value;
+              if (err == null) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  err,
+                  style: const TextStyle(color: AppColors.error),
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _ProfileHeaderCard extends StatelessWidget {
   final String name;
@@ -165,11 +320,7 @@ class _ProfileHeaderCard extends StatelessWidget {
           CircleAvatar(
             radius: 36,
             backgroundColor: cs.secondaryContainer,
-            child: Icon(
-              Icons.person,
-              size: 36,
-              color: cs.primaryContainer,
-            ),
+            child: Icon(Icons.person, size: 36, color: cs.primaryContainer),
           ),
           const SizedBox(height: 12),
           Text(
@@ -181,8 +332,7 @@ class _ProfileHeaderCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
               color: cs.secondaryContainer,
               borderRadius: BorderRadius.circular(AppRadius.pill),
@@ -211,10 +361,6 @@ class _ProfileHeaderCard extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Generic section card
-// ---------------------------------------------------------------------------
 
 class _SectionCard extends StatelessWidget {
   final String title;
@@ -266,12 +412,9 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Row widgets
-// ---------------------------------------------------------------------------
-
 class _Divider extends StatelessWidget {
   const _Divider();
+
   @override
   Widget build(BuildContext context) =>
       const Divider(height: 1, thickness: 1, indent: 16);
@@ -281,11 +424,13 @@ class _InfoRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
+  final bool muted;
 
   const _InfoRow({
     required this.icon,
     required this.label,
     required this.value,
+    this.muted = false,
   });
 
   @override
@@ -312,7 +457,7 @@ class _InfoRow extends StatelessWidget {
                   value,
                   style: TextStyle(
                     fontWeight: FontWeight.w500,
-                    color: value == 'Belirtilmemiş'
+                    color: muted
                         ? AppColors.onSurfaceVariant
                         : AppColors.onSurface,
                   ),
@@ -371,7 +516,8 @@ class _NavRow extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppColors.onSurfaceVariant),
+            const Icon(Icons.chevron_right,
+                color: AppColors.onSurfaceVariant),
           ],
         ),
       ),

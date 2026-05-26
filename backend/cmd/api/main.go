@@ -23,6 +23,7 @@ import (
 	"github.com/koydensehire/backend/internal/categories"
 	"github.com/koydensehire/backend/internal/config"
 	"github.com/koydensehire/backend/internal/database"
+	device_tokens "github.com/koydensehire/backend/internal/device_tokens"
 	"github.com/koydensehire/backend/internal/farmer_applications"
 	"github.com/koydensehire/backend/internal/farmers"
 	"github.com/koydensehire/backend/internal/favorites"
@@ -115,6 +116,11 @@ func main() {
 	webhookSvc := notifications.NewWebhookService(cfg.N8N.WebhookURL, cfg.N8N.WebhookSecret)
 	notifSvc := notifications.NewService(webhookSvc)
 
+	fcmClient := notifications.NewFCMClient(cfg.FCM.ProjectID, cfg.FCM.ServiceAccountJSON)
+	dtRepo := device_tokens.NewRepository(db)
+	pushSvc := notifications.NewPushService(dtRepo, fcmClient)
+	dtHandler := device_tokens.NewHandler(dtRepo)
+
 	authRepo := auth.NewRepository(db)
 	authSvc := auth.NewService(authRepo, rdb, cfg.JWT.Secret, cfg.JWT.AccessTokenExpiry, cfg.JWT.RefreshTokenExpiry)
 	authHandler := auth.NewHandler(authSvc)
@@ -148,6 +154,7 @@ func main() {
 
 	uploadSvc := uploads.NewService(storageProvider)
 	uploadHandler := uploads.NewHandler(uploadSvc)
+	productHandler.SetPushNotifier(pushSvc)
 
 	favRepo := favorites.NewRepository(db)
 	favSvc := favorites.NewService(favRepo)
@@ -242,9 +249,15 @@ func main() {
 	farmer.Get("/invites", append(fm, inviteHandler.FarmerInvites)...)
 	farmer.Post("/uploads/product-image", append(fm, uploadHandler.UploadProductImage)...)
 	farmer.Post("/uploads/profile-image", append(fm, uploadHandler.UploadProfileImage)...)
+	farmer.Post("/push-token", append(fm, dtHandler.Upsert)...)
+	farmer.Delete("/push-token", append(fm, dtHandler.Remove)...)
 
 	cm := []fiber.Handler{requireAuth, requireCustomer, requireActive}
 	customerGroup := api.Group("/customer")
+	customerGroup.Get("/profile", append(cm, userHandler.GetCustomerProfile)...)
+	customerGroup.Put("/profile", append(cm, userHandler.UpdateCustomerProfile)...)
+	customerGroup.Post("/push-token", append(cm, dtHandler.Upsert)...)
+	customerGroup.Delete("/push-token", append(cm, dtHandler.Remove)...)
 	customerGroup.Get("/favorites", append(cm, favHandler.List)...)
 	customerGroup.Post("/favorites/:productId", append(cm, favHandler.Add)...)
 	customerGroup.Delete("/favorites/:productId", append(cm, favHandler.Remove)...)
