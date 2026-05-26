@@ -76,11 +76,7 @@ class HomeScreen extends StatelessWidget {
                 label: const Text('Admin'),
               );
             } else if (status == AuthStatus.customerActive) {
-              return TextButton.icon(
-                onPressed: () => context.push('/customer/profile'),
-                icon: const Icon(Icons.person_outline, size: 18),
-                label: const Text('Hesabım'),
-              );
+              return const SizedBox.shrink();
             } else {
               return TextButton.icon(
                 onPressed: () => context.push('/login'),
