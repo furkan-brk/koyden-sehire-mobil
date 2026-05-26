@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 
-import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/controllers/farmer/farmer_notifications_controller.dart';
-import 'package:koyden_sehire/models/notification_model.dart';
-import 'package:koyden_sehire/services/notification_repository.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_bottom_nav.dart';
+import 'package:koyden_sehire/shared/widgets/notification_tile.dart';
 
 class FarmerNotificationsScreen extends StatelessWidget {
   const FarmerNotificationsScreen({super.key});
@@ -46,7 +43,7 @@ class FarmerNotificationsScreen extends StatelessWidget {
           );
         }
         if (ctrl.items.isEmpty) {
-          return _EmptyState(role: 'farmer');
+          return const NotificationEmptyState(role: 'farmer');
         }
         return RefreshIndicator(
           onRefresh: ctrl.load,
@@ -57,7 +54,7 @@ class FarmerNotificationsScreen extends StatelessWidget {
                 const Divider(height: 1, indent: 56, endIndent: 16),
             itemBuilder: (_, i) {
               final n = ctrl.items[i];
-              return _NotificationTile(
+              return NotificationTile(
                 notification: n,
                 onTap: () => ctrl.markRead(n.id),
               );
@@ -65,231 +62,6 @@ class FarmerNotificationsScreen extends StatelessWidget {
           ),
         );
       }),
-    );
-  }
-}
-
-// ── Customer bildirimler ekranı (aynı layout, customer role) ──────────────────
-
-class _CustomerNotifController extends GetxController {
-  final NotificationRepository _repo;
-  _CustomerNotifController(this._repo);
-
-  final RxList<AppNotification> items = <AppNotification>[].obs;
-  final RxBool isLoading = false.obs;
-  final RxInt unreadCount = 0.obs;
-  final RxnString errorMessage = RxnString();
-
-  @override
-  void onInit() {
-    super.onInit();
-    load();
-  }
-
-  Future<void> load() async {
-    isLoading.value = true;
-    errorMessage.value = null;
-    try {
-      final res = await _repo.list(role: 'customer');
-      items.assignAll(res.items);
-      unreadCount.value = res.unreadCount;
-    } catch (_) {
-      errorMessage.value = 'Bildirimler yüklenemedi';
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  Future<void> markRead(String id) async {
-    try {
-      await _repo.markRead(role: 'customer', id: id);
-      final idx = items.indexWhere((n) => n.id == id);
-      if (idx != -1 && !items[idx].isRead) {
-        items[idx] = items[idx].copyWith(isRead: true);
-        if (unreadCount.value > 0) unreadCount.value--;
-      }
-    } catch (_) {}
-  }
-
-  Future<void> markAllRead() async {
-    try {
-      await _repo.markAllRead(role: 'customer');
-      items.assignAll(items.map((n) => n.copyWith(isRead: true)).toList());
-      unreadCount.value = 0;
-    } catch (_) {}
-  }
-}
-
-// ── Shared widgets ────────────────────────────────────────────────────────────
-
-class _NotificationTile extends StatelessWidget {
-  final AppNotification notification;
-  final VoidCallback onTap;
-
-  const _NotificationTile({
-    required this.notification,
-    required this.onTap,
-  });
-
-  IconData get _icon {
-    switch (notification.type) {
-      case 'product_approved':
-        return Icons.check_circle_outline;
-      case 'product_rejected':
-        return Icons.cancel_outlined;
-      case 'new_product':
-        return Icons.storefront_outlined;
-      case 'announcement':
-        return Icons.campaign_outlined;
-      default:
-        return Icons.notifications_outlined;
-    }
-  }
-
-  Color get _iconColor {
-    switch (notification.type) {
-      case 'product_approved':
-        return AppColors.success;
-      case 'product_rejected':
-        return AppColors.error;
-      default:
-        return AppColors.primary;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isUnread = !notification.isRead;
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        color: isUnread
-            ? AppColors.primaryFixed.withValues(alpha: 0.08)
-            : Colors.transparent,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: _iconColor.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(_icon, size: 18, color: _iconColor),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          notification.title,
-                          style: TextStyle(
-                            fontWeight: isUnread
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                      if (isUnread)
-                        Container(
-                          width: 8,
-                          height: 8,
-                          margin: const EdgeInsets.only(left: 6),
-                          decoration: const BoxDecoration(
-                            color: AppColors.primary,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    notification.body,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.onSurfaceVariant,
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _formatDate(notification.createdAt),
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _formatDate(DateTime dt) {
-    final now = DateTime.now();
-    final diff = now.difference(dt);
-    if (diff.inMinutes < 1) return 'Az önce';
-    if (diff.inMinutes < 60) return '${diff.inMinutes} dakika önce';
-    if (diff.inHours < 24) return '${diff.inHours} saat önce';
-    if (diff.inDays < 7) return '${diff.inDays} gün önce';
-    return DateFormat('d MMM yyyy', 'tr_TR').format(dt);
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  final String role;
-  const _EmptyState({required this.role});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: AppColors.primaryFixed.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.notifications_outlined,
-                size: 40,
-                color: AppColors.primary,
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Henüz bildirim yok',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              role == 'farmer'
-                  ? 'Ürün onayları ve platform güncellemeleri burada görünecek.'
-                  : 'Favori üreticilerinizden yeni ürün bildirimleri burada görünecek.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.onSurfaceVariant,
-                height: 1.5,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

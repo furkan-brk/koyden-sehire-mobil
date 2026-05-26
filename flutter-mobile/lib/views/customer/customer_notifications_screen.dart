@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import 'package:koyden_sehire/app/theme.dart';
+import 'package:koyden_sehire/controllers/customer/customer_notifications_controller.dart';
 import 'package:koyden_sehire/services/notification_repository.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/customer_bottom_nav.dart';
-import 'package:koyden_sehire/views/farmer/farmer_notifications_screen.dart'
-    show _CustomerNotifController, _NotificationTile, _EmptyState;
+import 'package:koyden_sehire/shared/widgets/notification_tile.dart';
 
 class CustomerNotificationsScreen extends StatelessWidget {
   const CustomerNotificationsScreen({super.key});
@@ -14,7 +13,7 @@ class CustomerNotificationsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ctrl = Get.put(
-      _CustomerNotifController(Get.find<NotificationRepository>()),
+      CustomerNotificationsController(Get.find<NotificationRepository>()),
     );
 
     return Scaffold(
@@ -47,7 +46,7 @@ class CustomerNotificationsScreen extends StatelessWidget {
           );
         }
         if (ctrl.items.isEmpty) {
-          return const _EmptyState(role: 'customer');
+          return const NotificationEmptyState(role: 'customer');
         }
         return RefreshIndicator(
           onRefresh: ctrl.load,
@@ -58,7 +57,7 @@ class CustomerNotificationsScreen extends StatelessWidget {
                 const Divider(height: 1, indent: 56, endIndent: 16),
             itemBuilder: (_, i) {
               final n = ctrl.items[i];
-              return _NotificationTile(
+              return NotificationTile(
                 notification: n,
                 onTap: () => ctrl.markRead(n.id),
               );

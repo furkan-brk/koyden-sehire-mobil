@@ -32,6 +32,7 @@ import 'package:koyden_sehire/core/storage/secure_storage_service.dart';
 import 'package:koyden_sehire/services/favorites_repository.dart';
 import 'package:koyden_sehire/services/notification_repository.dart';
 import 'package:koyden_sehire/controllers/farmer/farmer_notifications_controller.dart';
+import 'package:koyden_sehire/controllers/customer/customer_notifications_controller.dart';
 
 class AppBinding extends Bindings {
   @override
@@ -178,6 +179,10 @@ class AppBinding extends Bindings {
     );
     Get.lazyPut<FarmerNotificationsController>(
       () => FarmerNotificationsController(Get.find<NotificationRepository>()),
+      fenix: true,
+    );
+    Get.lazyPut<CustomerNotificationsController>(
+      () => CustomerNotificationsController(Get.find<NotificationRepository>()),
       fenix: true,
     );
   }
