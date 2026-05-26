@@ -248,8 +248,6 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-
 class _HeroSearchBar extends StatelessWidget {
   const _HeroSearchBar();
 

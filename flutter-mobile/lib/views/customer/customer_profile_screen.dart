@@ -27,8 +27,10 @@ class CustomerProfileScreen extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Çıkış Yap',
-                style: TextStyle(color: AppColors.error)),
+            child: const Text(
+              'Çıkış Yap',
+              style: TextStyle(color: AppColors.error),
+            ),
           ),
         ],
       ),
@@ -120,7 +122,7 @@ class CustomerProfileScreen extends StatelessWidget {
                   iconColor: AppColors.error,
                   label: 'Favorilerim',
                   subtitle: 'Kaydettiğin ürünleri burada görebilirsin.',
-                  onTap: () => context.push('/customer/favorites'),
+                  onTap: () => context.push('/favorites'),
                 ),
                 const _Divider(),
                 _NavRow(
@@ -141,10 +143,11 @@ class CustomerProfileScreen extends StatelessWidget {
                 Padding(
                   padding: EdgeInsets.fromLTRB(16, 0, 16, 14),
                   child: Text(
-                    "Köyden Şehre'de ödeme, sepet, sipariş, kargo veya uygulama içi mesajlaşma bulunmaz. "
-                    'Müşteri, üreticiyle doğrudan iletişime geçer.',
+                    "Köyden Şehre'de ödeme, sepet, sipariş, kargo veya uygulama içi mesajlaşma bulunmaz. Müşteri, üreticiyle doğrudan iletişime geçer.",
                     style: TextStyle(
-                        color: AppColors.onSurfaceVariant, height: 1.5),
+                      color: AppColors.onSurfaceVariant,
+                      height: 1.5,
+                    ),
                   ),
                 ),
               ],
@@ -168,10 +171,6 @@ class CustomerProfileScreen extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Edit bottom sheet
-// ---------------------------------------------------------------------------
 
 class _EditSheet extends StatefulWidget {
   final CustomerProfileController ctrl;
@@ -237,8 +236,10 @@ class _EditSheetState extends State<_EditSheet> {
             Row(
               children: [
                 Expanded(
-                  child: Text('Profili Düzenle',
-                      style: Theme.of(context).textTheme.titleLarge),
+                  child: Text(
+                    'Profili Düzenle',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close),
@@ -287,8 +288,10 @@ class _EditSheetState extends State<_EditSheet> {
               if (err == null) return const SizedBox.shrink();
               return Padding(
                 padding: const EdgeInsets.only(top: 8),
-                child: Text(err,
-                    style: const TextStyle(color: AppColors.error)),
+                child: Text(
+                  err,
+                  style: const TextStyle(color: AppColors.error),
+                ),
               );
             }),
           ],
@@ -297,10 +300,6 @@ class _EditSheetState extends State<_EditSheet> {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Shared sub-widgets (identical to previous implementation)
-// ---------------------------------------------------------------------------
 
 class _ProfileHeaderCard extends StatelessWidget {
   final String name;
@@ -324,31 +323,38 @@ class _ProfileHeaderCard extends StatelessWidget {
             child: Icon(Icons.person, size: 36, color: cs.primaryContainer),
           ),
           const SizedBox(height: 12),
-          Text(name,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            name,
+            style: Theme.of(context)
+                .textTheme
+                .titleLarge
+                ?.copyWith(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 6),
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
               color: cs.secondaryContainer,
               borderRadius: BorderRadius.circular(AppRadius.pill),
             ),
-            child: Text('Müşteri Hesabı',
-                style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: cs.secondary)),
+            child: Text(
+              'Müşteri Hesabı',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: cs.secondary,
+              ),
+            ),
           ),
           const SizedBox(height: 10),
           Text(
             'Ürünleri keşfet, favorilerini takip et ve üreticilerle doğrudan iletişime geç.',
             textAlign: TextAlign.center,
             style: TextStyle(
-                color: cs.onSurfaceVariant, fontSize: 13, height: 1.4),
+              color: cs.onSurfaceVariant,
+              fontSize: 13,
+              height: 1.4,
+            ),
           ),
         ],
       ),
@@ -386,12 +392,15 @@ class _SectionCard extends StatelessWidget {
                   Icon(titleIcon, size: 16, color: AppColors.onSurfaceVariant),
                   const SizedBox(width: 6),
                 ],
-                Text(title,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                        color: AppColors.onSurfaceVariant,
-                        letterSpacing: 0.3)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    color: AppColors.onSurfaceVariant,
+                    letterSpacing: 0.3,
+                  ),
+                ),
               ],
             ),
           ),
@@ -405,6 +414,7 @@ class _SectionCard extends StatelessWidget {
 
 class _Divider extends StatelessWidget {
   const _Divider();
+
   @override
   Widget build(BuildContext context) =>
       const Divider(height: 1, thickness: 1, indent: 16);
@@ -435,16 +445,23 @@ class _InfoRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label,
-                    style: const TextStyle(
-                        fontSize: 11, color: AppColors.onSurfaceVariant)),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(value,
-                    style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        color: muted
-                            ? AppColors.onSurfaceVariant
-                            : AppColors.onSurface)),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: muted
+                        ? AppColors.onSurfaceVariant
+                        : AppColors.onSurface,
+                  ),
+                ),
               ],
             ),
           ),
@@ -483,15 +500,19 @@ class _NavRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label,
-                      style:
-                          const TextStyle(fontWeight: FontWeight.w600)),
+                  Text(
+                    label,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
                   const SizedBox(height: 2),
-                  Text(subtitle,
-                      style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.onSurfaceVariant,
-                          height: 1.3)),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.onSurfaceVariant,
+                      height: 1.3,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -522,8 +543,7 @@ class _DangerRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: isLast
-          ? const BorderRadius.vertical(
-              bottom: Radius.circular(AppRadius.md))
+          ? const BorderRadius.vertical(bottom: Radius.circular(AppRadius.md))
           : BorderRadius.zero,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -531,10 +551,13 @@ class _DangerRow extends StatelessWidget {
           children: [
             Icon(icon, size: 22, color: AppColors.error),
             const SizedBox(width: 12),
-            Text(label,
-                style: const TextStyle(
-                    color: AppColors.error,
-                    fontWeight: FontWeight.w600)),
+            Text(
+              label,
+              style: const TextStyle(
+                color: AppColors.error,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         ),
       ),

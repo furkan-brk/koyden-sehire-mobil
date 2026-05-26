@@ -57,11 +57,18 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.favorite_border),
-            tooltip: 'Favorilere ekle',
-            onPressed: () {},
-          ),
+          Obx(() {
+            final favs = Get.find<FavoritesService>();
+            final isFav = favs.isFavorite(widget.productId);
+            return IconButton(
+              icon: Icon(
+                isFav ? Icons.favorite : Icons.favorite_border,
+                color: isFav ? AppColors.error : null,
+              ),
+              tooltip: isFav ? 'Favorilerden çıkar' : 'Favorilere ekle',
+              onPressed: () => favs.toggle(context, widget.productId),
+            );
+          }),
         ],
       ),
       bottomNavigationBar: const CustomerBottomNav(current: CustomerTab.market),

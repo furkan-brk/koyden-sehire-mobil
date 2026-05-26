@@ -33,10 +33,9 @@ import 'package:koyden_sehire/views/otp/otp_screen.dart';
 import 'package:koyden_sehire/views/public/public_farmer_profile_screen.dart';
 import 'package:koyden_sehire/views/public/home_screen.dart';
 import 'package:koyden_sehire/views/public/product_detail_screen.dart';
+import 'package:koyden_sehire/views/public/favorites_screen.dart';
 import 'package:koyden_sehire/views/public/product_list_screen.dart';
-import 'package:koyden_sehire/views/public/basket_screen.dart';
 import 'package:koyden_sehire/views/public/producers_list_screen.dart';
-import 'package:koyden_sehire/views/customer/customer_favorites_screen.dart';
 import 'package:koyden_sehire/views/customer/customer_notifications_screen.dart';
 import 'package:koyden_sehire/views/customer/customer_profile_screen.dart';
 import 'package:koyden_sehire/views/splash/splash_screen.dart';
@@ -47,8 +46,8 @@ const _publicRoutes = {
   '/',
   '/products',
   '/producers',
+  '/favorites',
   '/search',
-  '/browse',
   '/apply',
   '/apply/form',
   '/apply/success',
@@ -56,7 +55,6 @@ const _publicRoutes = {
   '/register',
   '/register/customer',
   '/otp',
-  '/basket',
 };
 
 bool _isPublic(String path) {
@@ -162,6 +160,10 @@ class AppRouter {
           ),
         ),
         GoRoute(
+          path: '/favorites',
+          builder: (_, __) => const FavoritesScreen(),
+        ),
+        GoRoute(
           path: '/search',
           builder: (_, state) => ProductListScreen(
             initialSearch: state.uri.queryParameters['q'],
@@ -176,10 +178,6 @@ class AppRouter {
           path: '/farmers/:id',
           builder: (_, state) =>
               FarmerProfileScreen(farmerId: state.pathParameters['id']!),
-        ),
-        GoRoute(
-          path: '/basket',
-          builder: (_, __) => const BasketScreen(),
         ),
         GoRoute(
           path: '/producers',
@@ -322,10 +320,6 @@ class AppRouter {
         GoRoute(
           path: '/customer/profile',
           builder: (_, __) => const CustomerProfileScreen(),
-        ),
-        GoRoute(
-          path: '/customer/favorites',
-          builder: (_, __) => const CustomerFavoritesScreen(),
         ),
         GoRoute(
           path: '/customer/notifications',

@@ -9,9 +9,9 @@ import 'package:koyden_sehire/models/auth/auth_state.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
+import 'package:koyden_sehire/shared/widgets/customer_bottom_nav.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_mode_chip.dart';
 import 'package:koyden_sehire/shared/widgets/product_card.dart';
-import 'package:koyden_sehire/shared/widgets/public_bottom_nav.dart';
 import 'package:koyden_sehire/shared/widgets/shimmer_product_card.dart';
 
 class FavoritesScreen extends StatelessWidget {
@@ -28,7 +28,7 @@ class FavoritesScreen extends StatelessWidget {
         leading: const FarmerModeChip(),
       ),
       bottomNavigationBar:
-          const PublicBottomNav(current: PublicTab.applyOrFavorites),
+          const CustomerBottomNav(current: CustomerTab.favorites),
       body: Obx(() {
         final isFarmerBrowsing = auth.status.value == AuthStatus.farmerActive &&
             auth.isBrowsingAsCustomer.value;
