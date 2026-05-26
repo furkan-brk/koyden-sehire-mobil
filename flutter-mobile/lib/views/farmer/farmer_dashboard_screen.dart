@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/core/utils/date_formatter.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
@@ -25,7 +26,55 @@ class FarmerDashboardScreen extends StatelessWidget {
       bottomNavigationBar: const FarmerBottomNav(current: FarmerTab.dashboard),
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text('Köyden Şehre - Çiftçi'),
+        titleSpacing: AppSpacing.md,
+        title: Builder(
+          builder: (context) {
+            final cs = Theme.of(context).colorScheme;
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: cs.secondaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    Icons.eco_outlined,
+                    color: cs.primaryContainer,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  AppConstants.appName,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: cs.onSurface,
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryContainer,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                  child: const Text(
+                    'Çiftçi',
+                    style: TextStyle(
+                      color: AppColors.onPrimaryContainer,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
         actions: const [
           FarmerModeChip(),
         ],
