@@ -78,7 +78,12 @@
       "Bash(winget install *)",
       "Bash(cloudflared tunnel *)",
       "PowerShell(Get-Command *)",
-      "Bash(xargs ls -la)"
+      "Bash(xargs ls -la)",
+      "Bash(flutter devices *)",
+      "Bash(flutter logs *)",
+      "Bash(sort -t\"'\" -k2)",
+      "Bash(uniq -D -f1)",
+      "Bash(flutter emulators *)"
     ]
   }
 }

@@ -24,8 +24,15 @@ Future<void> main() async {
 
   // Firebase must be initialised before AppBinding so PushNotificationService
   // can call FirebaseMessaging.instance inside onInit().
-  await Firebase.initializeApp();
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  // Wrapped in try-catch so the app boots without google-services.json in dev.
+  try {
+    await Firebase.initializeApp();
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  } catch (e) {
+    // google-services.json missing or Firebase project not configured.
+    // Push notifications will be unavailable but the rest of the app works.
+    debugPrint('[Firebase] initializeApp failed: $e');
+  }
 
   await initializeDateFormatting('tr_TR');
   // Register all global services/repositories before runApp so screens can

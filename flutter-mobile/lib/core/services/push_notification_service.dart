@@ -33,10 +33,15 @@ class PushNotificationService extends GetxService {
   @override
   Future<void> onInit() async {
     super.onInit();
-    await _initLocalNotifications();
-    await _requestPermission();
-    _listenForeground();
-    _listenTokenRefresh();
+    try {
+      await _initLocalNotifications();
+      await _requestPermission();
+      _listenForeground();
+      _listenTokenRefresh();
+    } catch (e) {
+      // Firebase not configured — push notifications disabled.
+      debugPrint('[PushNotificationService] init skipped: $e');
+    }
   }
 
   Future<void> _initLocalNotifications() async {

@@ -310,10 +310,6 @@ class AppRouter {
           builder: (_, __) => const FarmerNotificationsScreen(),
         ),
         // Customer panel
-        GoRoute(
-          path: '/customer/profile',
-          builder: (_, __) => const CustomerProfileScreen(),
-        ),
         // Legacy route — old links/buttons may still target this; redirect
         // to the canonical /favorites route which uses the real screen.
         GoRoute(
