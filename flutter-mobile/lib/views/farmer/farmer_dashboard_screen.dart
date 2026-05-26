@@ -25,7 +25,7 @@ class FarmerDashboardScreen extends StatelessWidget {
       bottomNavigationBar: const FarmerBottomNav(current: FarmerTab.dashboard),
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text('Köyden Şehire - Çiftçi'),
+        title: const Text('Köyden Şehre - Çiftçi'),
         actions: const [
           FarmerModeChip(),
         ],
