@@ -144,21 +144,30 @@ class AppRouter {
           path: '/splash',
           builder: (_, __) => const SplashScreen(),
         ),
+        // ── Public tab routes — NoTransitionPage keeps the AppBar visually
+        //    static when the user taps BottomNav items.
         GoRoute(
           path: '/',
-          builder: (_, __) => const HomeScreen(),
+          pageBuilder: (_, state) => const NoTransitionPage(child: HomeScreen()),
         ),
         GoRoute(
           path: '/products',
-          builder: (_, state) => ProductListScreen(
-            initialCategoryId: state.uri.queryParameters['category_id'],
-            initialSearch: state.uri.queryParameters['search'],
+          pageBuilder: (_, state) => NoTransitionPage(
+            child: ProductListScreen(
+              initialCategoryId: state.uri.queryParameters['category_id'],
+              initialSearch: state.uri.queryParameters['search'],
+            ),
           ),
         ),
         GoRoute(
           path: '/favorites',
-          builder: (_, __) => const FavoritesScreen(),
+          pageBuilder: (_, state) => const NoTransitionPage(child: FavoritesScreen()),
         ),
+        GoRoute(
+          path: '/producers',
+          pageBuilder: (_, state) => const NoTransitionPage(child: ProducersListScreen()),
+        ),
+        // ── Public non-tab routes — keep slide transition
         GoRoute(
           path: '/search',
           builder: (_, state) => ProductListScreen(
@@ -172,10 +181,6 @@ class AppRouter {
         GoRoute(
           path: '/farmers/:id',
           builder: (_, state) => FarmerProfileScreen(farmerId: state.pathParameters['id']!),
-        ),
-        GoRoute(
-          path: '/producers',
-          builder: (_, __) => const ProducersListScreen(),
         ),
         GoRoute(
           path: '/login',
@@ -276,19 +281,24 @@ class AppRouter {
           path: '/apply/success',
           builder: (_, __) => const ApplicationSuccessScreen(),
         ),
-        // Farmer panel
+        // ── Farmer tab routes — NoTransitionPage keeps AppBar static
         GoRoute(
           path: '/farmer/dashboard',
-          builder: (_, __) => const FarmerDashboardScreen(),
-        ),
-        GoRoute(
-          path: '/farmer/profile',
-          builder: (_, __) => const FarmerProfileEditScreen(),
+          pageBuilder: (_, state) => const NoTransitionPage(child: FarmerDashboardScreen()),
         ),
         GoRoute(
           path: '/farmer/products',
-          builder: (_, __) => const MyProductsScreen(),
+          pageBuilder: (_, state) => const NoTransitionPage(child: MyProductsScreen()),
         ),
+        GoRoute(
+          path: '/farmer/invites',
+          pageBuilder: (_, state) => const NoTransitionPage(child: InvitationsScreen()),
+        ),
+        GoRoute(
+          path: '/farmer/profile',
+          pageBuilder: (_, state) => const NoTransitionPage(child: FarmerProfileEditScreen()),
+        ),
+        // ── Farmer non-tab routes — keep slide transition
         GoRoute(
           path: '/farmer/products/new',
           builder: (_, __) => const ProductFormScreen(),
@@ -298,23 +308,22 @@ class AppRouter {
           builder: (_, state) => ProductFormScreen(editingId: state.pathParameters['id']),
         ),
         GoRoute(
-          path: '/farmer/invites',
-          builder: (_, __) => const InvitationsScreen(),
-        ),
-        GoRoute(
           path: '/farmer/notifications',
-          builder: (_, __) => const FarmerNotificationsScreen(),
+          pageBuilder: (_, state) => const NoTransitionPage(child: FarmerNotificationsScreen()),
         ),
-        // Customer panel
-        // Legacy route — old links/buttons may still target this; redirect
-        // to the canonical /favorites route which uses the real screen.
+        // ── Customer panel
+        // Legacy redirect — old links still target this path.
         GoRoute(
           path: '/customer/favorites',
           redirect: (_, __) => '/favorites',
         ),
         GoRoute(
+          path: '/customer/profile',
+          pageBuilder: (_, state) => const NoTransitionPage(child: CustomerProfileScreen()),
+        ),
+        GoRoute(
           path: '/customer/notifications',
-          builder: (_, __) => const CustomerNotificationsScreen(),
+          pageBuilder: (_, state) => const NoTransitionPage(child: CustomerNotificationsScreen()),
         ),
       ],
     );
