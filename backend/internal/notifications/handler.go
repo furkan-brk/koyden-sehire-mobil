@@ -18,7 +18,7 @@ func NewHandler(repo *NotifRepository) *Handler {
 // GET /farmer/notifications?page=1&limit=20
 // GET /customer/notifications?page=1&limit=20
 func (h *Handler) List(c *fiber.Ctx) error {
-	userID, ok := c.Locals("userID").(string)
+	userID, ok := c.Locals("user_id").(string)
 	if !ok || userID == "" {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"success": false,
@@ -55,7 +55,7 @@ func (h *Handler) List(c *fiber.Ctx) error {
 // MarkRead marks a single notification as read.
 // PATCH /farmer/notifications/:id/read
 func (h *Handler) MarkRead(c *fiber.Ctx) error {
-	userID, ok := c.Locals("userID").(string)
+	userID, ok := c.Locals("user_id").(string)
 	if !ok || userID == "" {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"success": false,
@@ -75,7 +75,7 @@ func (h *Handler) MarkRead(c *fiber.Ctx) error {
 // MarkAllRead marks all notifications of the user as read.
 // PATCH /farmer/notifications/read-all
 func (h *Handler) MarkAllRead(c *fiber.Ctx) error {
-	userID, ok := c.Locals("userID").(string)
+	userID, ok := c.Locals("user_id").(string)
 	if !ok || userID == "" {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"success": false,

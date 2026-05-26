@@ -15,10 +15,12 @@ class CustomerBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = Get.find<AuthService>();
     return Obx(() {
-      final isCustomer = auth.status.value == AuthStatus.customerActive;
+      final isCustomer = auth.status.value == AuthStatus.customerActive ||
+          (auth.status.value == AuthStatus.farmerActive &&
+              auth.isBrowsingAsCustomer.value);
       return NavigationBar(
         selectedIndex: current.index,
-        onDestinationSelected: (i) => _navigate(context, i, isCustomer),
+        onDestinationSelected: (i) => _navigate(context, i),
         destinations: [
           const NavigationDestination(
             icon: Icon(Icons.storefront_outlined),
@@ -45,8 +47,12 @@ class CustomerBottomNav extends StatelessWidget {
     });
   }
 
-  void _navigate(BuildContext context, int i, bool isCustomer) {
+  void _navigate(BuildContext context, int i) {
     if (i == current.index) return;
+    final auth = Get.find<AuthService>();
+    final isFarmerBrowsing = auth.status.value == AuthStatus.farmerActive &&
+        auth.isBrowsingAsCustomer.value;
+    final isCustomer = auth.status.value == AuthStatus.customerActive;
     switch (i) {
       case 0:
         context.go('/');
@@ -55,7 +61,9 @@ class CustomerBottomNav extends StatelessWidget {
       case 2:
         context.go('/favorites');
       case 3:
-        if (isCustomer) {
+        if (isFarmerBrowsing) {
+          context.push('/farmer/profile');
+        } else if (isCustomer) {
           context.go('/customer/profile');
         } else {
           context.push('/login');

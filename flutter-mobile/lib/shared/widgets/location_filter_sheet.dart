@@ -464,7 +464,6 @@ class _LocationTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Seçim indikatörü
             AnimatedContainer(
               duration: const Duration(milliseconds: 150),
               width: 20,
