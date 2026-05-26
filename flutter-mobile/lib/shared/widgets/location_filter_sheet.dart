@@ -63,18 +63,19 @@ class _LocationFilterSheetState extends State<_LocationFilterSheet> {
   }
 
   void _selectCity(String city) {
+    // Set _onDistrictPage synchronously — avoids 280ms header flicker
     setState(() {
       _city = city;
       _district = null;
+      _onDistrictPage = true;
       _searchCtrl.clear();
     });
-    _pageCtrl.animateToPage(1, duration: _kDuration, curve: _kCurve).then((_) {
-      if (mounted) setState(() => _onDistrictPage = true);
-    });
+    _pageCtrl.animateToPage(1, duration: _kDuration, curve: _kCurve);
   }
 
   void _backToCity() {
     setState(() => _onDistrictPage = false);
+    _searchCtrl.clear();
     _pageCtrl.animateToPage(0, duration: _kDuration, curve: _kCurve);
   }
 
@@ -85,21 +86,29 @@ class _LocationFilterSheetState extends State<_LocationFilterSheet> {
     );
   }
 
+  // Resets in-place — does NOT close the sheet
   void _clear() {
-    Navigator.pop(
-      context,
-      const LocationFilterResult(city: null, district: null),
-    );
+    setState(() {
+      _city = null;
+      _district = null;
+      _onDistrictPage = false;
+      _searchCtrl.clear();
+    });
+    _pageCtrl.animateToPage(0, duration: _kDuration, curve: _kCurve);
   }
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final mq = MediaQuery.of(context);
+    final bottomInset = mq.viewInsets.bottom;
+    // Subtract keyboard height so sheet never overflows
+    final sheetHeight =
+        (mq.size.height * 0.78 - bottomInset).clamp(280.0, mq.size.height * 0.9);
 
     return Padding(
       padding: EdgeInsets.only(bottom: bottomInset),
       child: Container(
-        height: MediaQuery.of(context).size.height * 0.78,
+        height: sheetHeight,
         decoration: const BoxDecoration(
           color: AppColors.surfaceContainerLowest,
           borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
@@ -124,24 +133,28 @@ class _LocationFilterSheetState extends State<_LocationFilterSheet> {
               padding: const EdgeInsets.fromLTRB(4, 4, 16, 0),
               child: Row(
                 children: [
-                  // Back button — animasyonlu görünüm/kaybolma
-                  AnimatedSize(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeOutCubic,
-                    child: _onDistrictPage
-                        ? IconButton(
-                            icon: const Icon(Icons.arrow_back),
-                            onPressed: _backToCity,
-                            color: AppColors.onSurface,
-                          )
-                        : const SizedBox(width: 12),
+                  // Fixed-width slot — AnimatedOpacity avoids layout shift
+                  SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: AnimatedOpacity(
+                      opacity: _onDistrictPage ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: IgnorePointer(
+                        ignoring: !_onDistrictPage,
+                        child: IconButton(
+                          icon: const Icon(Icons.arrow_back),
+                          onPressed: _backToCity,
+                          color: AppColors.onSurface,
+                        ),
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Breadcrumb
                         _Breadcrumb(
                           city: _city,
                           onDistrictPage: _onDistrictPage,
@@ -188,91 +201,86 @@ class _LocationFilterSheetState extends State<_LocationFilterSheet> {
 
             const SizedBox(height: 8),
 
-            // Search bar — sadece il adımında
-            AnimatedSize(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOutCubic,
-              child: _onDistrictPage
-                  ? const SizedBox.shrink()
-                  : Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                      child: TextField(
-                        controller: _searchCtrl,
-                        onChanged: (_) => setState(() {}),
-                        decoration: InputDecoration(
-                          hintText: 'İl ara...',
-                          prefixIcon: const Icon(Icons.search, size: 18),
-                          filled: true,
-                          fillColor: AppColors.surfaceContainerLow,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.pill),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding:
-                              const EdgeInsets.symmetric(vertical: 10),
-                        ),
-                      ),
-                    ),
+            // Search bar — visible on both pages, hint reflects current step
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: TextField(
+                controller: _searchCtrl,
+                decoration: InputDecoration(
+                  hintText: _onDistrictPage ? 'İlçe ara...' : 'İl ara...',
+                  prefixIcon: const Icon(Icons.search, size: 18),
+                  filled: true,
+                  fillColor: AppColors.surfaceContainerLow,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                ),
+              ),
             ),
 
-            // PageView — il / ilçe listeleri
+            // PageView — always 2 stable children; avoids child-count change bugs
             Expanded(
               child: PageView(
                 controller: _pageCtrl,
                 physics: const NeverScrollableScrollPhysics(),
                 children: [
-                  // Sayfa 0: İl listesi
-                  _CityPage(
-                    selected: _city,
-                    search: _searchCtrl.text,
-                    onSelect: _selectCity,
+                  // Page 0: İl listesi
+                  ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: _searchCtrl,
+                    builder: (_, val, __) => _CityPage(
+                      selected: _city,
+                      search: val.text,
+                      onSelect: _selectCity,
+                    ),
                   ),
-                  // Sayfa 1: İlçe listesi
-                  if (_city != null)
-                    _DistrictPage(
-                      city: _city!,
-                      selected: _district,
-                      onSelect: (d) => setState(() => _district = d),
-                    )
-                  else
-                    const SizedBox.shrink(),
+                  // Page 1: İlçe listesi — empty placeholder until city is chosen
+                  ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: _searchCtrl,
+                    builder: (_, val, __) {
+                      if (_city == null) return const SizedBox.shrink();
+                      return _DistrictPage(
+                        city: _city!,
+                        selected: _district,
+                        search: val.text,
+                        onSelect: (d) => setState(() => _district = d),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
 
-            // Apply butonu
+            // Apply button — no AnimatedSwitcher key churn
             SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                 child: SizedBox(
                   width: double.infinity,
                   height: 50,
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    child: ElevatedButton(
-                      key: ValueKey('$_city/$_district'),
-                      onPressed: _city == null ? null : _apply,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.onPrimary,
-                        disabledBackgroundColor: AppColors.surfaceContainerLow,
-                        disabledForegroundColor: AppColors.onSurfaceVariant,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppRadius.pill),
-                        ),
-                        elevation: 0,
+                  child: ElevatedButton(
+                    onPressed: _city == null ? null : _apply,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.onPrimary,
+                      disabledBackgroundColor: AppColors.surfaceContainerLow,
+                      disabledForegroundColor: AppColors.onSurfaceVariant,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
                       ),
-                      child: Text(
-                        _city == null
-                            ? 'İl Seçin'
-                            : _district == null
-                                ? '$_city — Tüm İlçeler'
-                                : '$_city / $_district',
-                        style: const TextStyle(
-                          fontFamily: 'PlusJakartaSans',
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      _city == null
+                          ? 'İl Seçin'
+                          : _district == null
+                              ? '$_city — Tüm İlçeler'
+                              : '$_city / $_district',
+                      style: const TextStyle(
+                        fontFamily: 'PlusJakartaSans',
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
                       ),
                     ),
                   ),
@@ -391,23 +399,34 @@ class _CityPage extends StatelessWidget {
 class _DistrictPage extends StatelessWidget {
   final String city;
   final String? selected;
+  final String search;
   final ValueChanged<String?> onSelect;
 
   const _DistrictPage({
     required this.city,
     required this.selected,
+    required this.search,
     required this.onSelect,
   });
 
   @override
   Widget build(BuildContext context) {
-    final districts = TurkeyLocations.districtsOf(city);
+    final allDistricts = TurkeyLocations.districtsOf(city);
+    final isFiltered = search.isNotEmpty;
+    final districts = isFiltered
+        ? allDistricts
+            .where((d) => d.toLowerCase().contains(search.toLowerCase()))
+            .toList()
+        : allDistricts;
+
+    // "Tüm İlçeler" is hidden while searching to avoid confusion
+    final extraRow = isFiltered ? 0 : 1;
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      itemCount: districts.length + 1,
+      itemCount: districts.length + extraRow,
       itemBuilder: (_, i) {
-        if (i == 0) {
+        if (!isFiltered && i == 0) {
           return _LocationTile(
             label: 'Tüm İlçeler',
             sublabel: city,
@@ -415,7 +434,7 @@ class _DistrictPage extends StatelessWidget {
             onTap: () => onSelect(null),
           );
         }
-        final d = districts[i - 1];
+        final d = districts[i - extraRow];
         return _LocationTile(
           label: d,
           isSelected: d == selected,
@@ -458,7 +477,6 @@ class _LocationTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Seçim indikatörü
             AnimatedContainer(
               duration: const Duration(milliseconds: 150),
               width: 20,

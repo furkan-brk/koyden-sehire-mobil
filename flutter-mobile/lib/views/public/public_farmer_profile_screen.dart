@@ -7,8 +7,11 @@ import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
+import 'package:koyden_sehire/core/services/auth_service.dart';
+import 'package:koyden_sehire/core/services/recent_views_service.dart';
 import 'package:koyden_sehire/core/utils/phone_formatter.dart';
 import 'package:koyden_sehire/core/utils/whatsapp_helper.dart';
+import 'package:koyden_sehire/models/auth/auth_state.dart';
 import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_mode_chip.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
@@ -45,6 +48,15 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
       ),
       tag: widget.farmerId,
     );
+    ever<FarmerProfile?>(_ctrl.profile, (p) {
+      if (p != null) {
+        Get.find<RecentViewsService>().addFarmer(
+          id: p.id,
+          title: p.displayName,
+          imageUrl: p.profileImageUrl,
+        );
+      }
+    });
   }
 
   @override
@@ -82,7 +94,13 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      bottomNavigationBar: const CustomerBottomNav(current: CustomerTab.producers),
+      bottomNavigationBar: Obx(() {
+        final status = Get.find<AuthService>().status.value;
+        if (status == AuthStatus.customerActive) {
+          return const CustomerBottomNav(current: CustomerTab.producers);
+        }
+        return const SizedBox.shrink();
+      }),
       body: Obx(() {
         if (_ctrl.isLoadingProfile.value && _ctrl.profile.value == null) {
           return const Scaffold(
@@ -140,7 +158,6 @@ class _ProfileBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final hasBio = profile.bio != null && profile.bio!.isNotEmpty;
-    final hasLongBio = hasBio && profile.bio!.length > 200;
 
     return CustomScrollView(
       controller: scrollController,
@@ -238,17 +255,6 @@ class _ProfileBody extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
               child: _BioParagraphs(bio: profile.bio!),
-            ),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
-        ],
-
-        // ── Üretim Felsefemiz (if long bio) ───────────────────────────
-        if (hasLongBio) ...[
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-              child: _PhilosophyCard(bio: profile.bio!),
             ),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
@@ -491,72 +497,6 @@ class _BioParagraphs extends StatelessWidget {
             ),
           )
           .toList(),
-    );
-  }
-}
-
-class _PhilosophyCard extends StatelessWidget {
-  final String bio;
-  const _PhilosophyCard({required this.bio});
-
-  String _extract(String bio) {
-    final parts = bio.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
-    return parts.length > 1 ? parts.last.trim() : bio.trim();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final quote = _extract(bio);
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md + 4),
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.4)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'ÜRETİM FELSEFEMİZ',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: cs.secondary,
-                  letterSpacing: 1.2,
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Stack(
-            children: [
-              Positioned(
-                top: 0,
-                left: 0,
-                child: Text(
-                  '"',
-                  style: TextStyle(
-                    fontSize: 48,
-                    height: 0.8,
-                    color: cs.secondary.withValues(alpha: 0.3),
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: 24),
-                child: Text(
-                  quote,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontStyle: FontStyle.italic,
-                        color: cs.onSurface,
-                        height: 1.55,
-                      ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 }

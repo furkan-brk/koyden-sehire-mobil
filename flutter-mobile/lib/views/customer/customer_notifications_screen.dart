@@ -12,9 +12,7 @@ class CustomerNotificationsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ctrl = Get.put(
-      CustomerNotificationsController(Get.find<NotificationRepository>()),
-    );
+    final ctrl = Get.find<CustomerNotificationsController>();
 
     return Scaffold(
       appBar: AppBar(

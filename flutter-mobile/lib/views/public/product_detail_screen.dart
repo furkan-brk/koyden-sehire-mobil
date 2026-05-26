@@ -19,6 +19,7 @@ import 'package:koyden_sehire/models/farmer_model.dart';
 import 'package:koyden_sehire/services/product_repository.dart';
 import 'package:koyden_sehire/models/product_model.dart';
 import 'package:koyden_sehire/controllers/public/product_detail_controller.dart';
+import 'package:koyden_sehire/core/services/recent_views_service.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final String productId;
@@ -41,6 +42,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       ),
       tag: widget.productId,
     );
+    ever<ProductModel?>(_ctrl.product, (p) {
+      if (p != null) {
+        Get.find<RecentViewsService>().addProduct(
+          id: p.id,
+          title: p.title,
+          imageUrl: p.imageUrls.isNotEmpty ? p.imageUrls.first : null,
+        );
+      }
+    });
   }
 
   @override

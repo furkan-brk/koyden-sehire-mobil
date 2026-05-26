@@ -130,7 +130,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
           ? f.copyWith(clearCity: true, clearDistrict: true)
           : f.copyWith(
               city: result.city,
-              district: result.district ?? '',
+              district: result.district,
               clearDistrict: result.district == null,
             ),
     );
