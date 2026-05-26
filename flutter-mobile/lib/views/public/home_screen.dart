@@ -29,7 +29,6 @@ class HomeScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        leading: const FarmerModeChip(),
         titleSpacing: AppSpacing.md,
         title: Row(
           children: [
@@ -58,6 +57,7 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
         actions: [
+          const FarmerModeChip(),
           Obx(() {
             final status = auth.status.value;
             final isFarmer = status == AuthStatus.farmerActive;
