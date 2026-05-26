@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/app/theme.dart';
-import 'package:koyden_sehire/core/utils/date_formatter.dart'; // AppFormatters.price
 import 'package:koyden_sehire/core/services/favorites_service.dart';
+import 'package:koyden_sehire/core/utils/date_formatter.dart';
 import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
@@ -104,7 +104,6 @@ class _Body extends StatelessWidget {
       product.district,
       if (product.village != null) product.village,
     ].whereType<String>().join(', ');
-
     return ListView(
       children: [
         ImageCarousel(imageUrls: product.imageUrls),
@@ -190,26 +189,26 @@ class _Body extends StatelessWidget {
               if (farmer != null) ...[
                 const SizedBox(height: 24),
                 _FarmerCard(farmer: farmer),
-                const SizedBox(height: 16),
-                if (product.isAvailable)
-                  AppButton(
-                    label: 'Üreticiyi Gör ve İletişime Geç',
-                    icon: const Icon(Icons.person_outline, color: Colors.white),
-                    onPressed: () => context.push('/farmers/${farmer.id}'),
-                  )
-                else
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerLow,
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                    child: const Text(
-                      'Bu ürün şu an tükenmiş.',
-                      style: TextStyle(color: AppColors.onSurfaceVariant),
-                    ),
-                  ),
               ],
+              const SizedBox(height: 16),
+              if (product.isAvailable && farmer != null)
+                AppButton(
+                  label: 'Üreticiyi Gör ve İletişime Geç',
+                  icon: const Icon(Icons.person_outline, color: Colors.white),
+                  onPressed: () => context.push('/farmers/${farmer.id}'),
+                )
+              else if (!product.isAvailable)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: const Text(
+                    'Bu ürün şu an tükenmiş.',
+                    style: TextStyle(color: AppColors.onSurfaceVariant),
+                  ),
+                ),
               const SizedBox(height: 24),
               Container(
                 padding: const EdgeInsets.all(AppSpacing.md - 4),

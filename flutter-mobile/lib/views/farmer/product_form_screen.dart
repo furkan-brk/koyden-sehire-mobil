@@ -190,6 +190,18 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
 
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
+    // Ürün konumu her zaman çiftçinin profil konumundan gelir; çiftçinin
+    // ürün başına farklı il/ilçe seçmesine izin verilmez.
+    final profile = Get.isRegistered<FarmerProfileController>()
+        ? Get.find<FarmerProfileController>().profile.value
+        : null;
+    if (profile != null) {
+      _formCtrl.patch((d) => d.copyWith(
+            city: profile.city,
+            district: profile.district,
+            village: profile.village,
+          ));
+    }
     final data = _formCtrl.data.value;
     if (data.categoryId == null) {
       context.snack('Kategori seçin', isError: true);
@@ -367,32 +379,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                         state.patch((d) => d.copyWith(stockStatus: v)),
                   ),
                   const SizedBox(height: 16),
-                  Text('Konum',
-                      style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 8),
-                  AppTextField(
-                    label: 'İl',
-                    initialValue: data.city,
-                    onChanged: (v) => state.patch((d) => d.copyWith(city: v)),
-                    validator: (v) => Validators.required(v, field: 'İl'),
-                  ),
-                  const SizedBox(height: 12),
-                  AppTextField(
-                    label: 'İlçe',
-                    initialValue: data.district,
-                    onChanged: (v) =>
-                        state.patch((d) => d.copyWith(district: v)),
-                    validator: (v) => Validators.required(v, field: 'İlçe'),
-                  ),
-                  const SizedBox(height: 12),
-                  AppTextField(
-                    label: 'Köy / Mahalle',
-                    initialValue: data.village,
-                    onChanged: (v) =>
-                        state.patch((d) => d.copyWith(village: v)),
-                    validator: (v) =>
-                        Validators.required(v, field: 'Köy/Mahalle'),
-                  ),
+                  const _LocationInfoCard(),
                   const SizedBox(height: 24),
                   AppButton(
                     label: widget.editingId == null
@@ -592,6 +579,72 @@ class _CategorySelectorState extends State<_CategorySelector> {
         ],
       ],
     );
+  }
+}
+
+class _LocationInfoCard extends StatelessWidget {
+  const _LocationInfoCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Obx(() {
+      final profile = Get.isRegistered<FarmerProfileController>()
+          ? Get.find<FarmerProfileController>().profile.value
+          : null;
+      final parts = <String>[
+        if ((profile?.city ?? '').isNotEmpty) profile!.city,
+        if ((profile?.district ?? '').isNotEmpty) profile!.district,
+        if ((profile?.village ?? '').isNotEmpty) profile!.village,
+      ];
+      final locationLine = parts.isEmpty ? '—' : parts.join(' / ');
+
+      return Container(
+        padding: const EdgeInsets.all(AppSpacing.md - 2),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: cs.outlineVariant),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.location_on_outlined,
+                size: 22, color: cs.primary),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'İlan Konumu',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Ürün konumu, çiftlik profilinizdeki konumdan otomatik alınır.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: cs.onSurfaceVariant,
+                          height: 1.4,
+                        ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    locationLine,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: cs.onSurface,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    });
   }
 }
 

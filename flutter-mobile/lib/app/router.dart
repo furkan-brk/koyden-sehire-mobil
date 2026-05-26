@@ -314,6 +314,12 @@ class AppRouter {
           path: '/customer/profile',
           builder: (_, __) => const CustomerProfileScreen(),
         ),
+        // Legacy route — old links/buttons may still target this; redirect
+        // to the canonical /favorites route which uses the real screen.
+        GoRoute(
+          path: '/customer/favorites',
+          redirect: (_, __) => '/favorites',
+        ),
         GoRoute(
           path: '/customer/notifications',
           builder: (_, __) => const CustomerNotificationsScreen(),

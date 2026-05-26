@@ -57,6 +57,17 @@ class CustomerProfileScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profilim'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Geri',
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/');
+            }
+          },
+        ),
         actions: [
           Obx(() {
             if (ctrl.isLoading.value || ctrl.profile.value == null) {
