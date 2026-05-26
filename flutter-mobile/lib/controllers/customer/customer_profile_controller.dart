@@ -34,7 +34,7 @@ class CustomerProfileController extends GetxController {
     }
   }
 
-  Future<bool> update({required String fullName, String? email}) async {
+  Future<bool> updateProfile({required String fullName, String? email}) async {
     isSaving.value = true;
     errorMessage.value = null;
     try {

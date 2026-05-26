@@ -53,9 +53,10 @@ class ApiClient {
 
   Future<T> delete<T>(
     String path, {
+    dynamic data,
     required T Function(dynamic) parse,
   }) =>
-      _request('DELETE', path, parse: parse);
+      _request('DELETE', path, data: data, parse: parse);
 
   Future<T> _request<T>(
     String method,

@@ -214,7 +214,7 @@ class _EditSheetState extends State<_EditSheet> {
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final email = _emailCtrl.text.trim();
-    final ok = await widget.ctrl.update(
+    final ok = await widget.ctrl.updateProfile(
       fullName: _nameCtrl.text.trim(),
       email: email.isEmpty ? null : email,
     );
