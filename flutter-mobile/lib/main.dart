@@ -8,6 +8,7 @@ import 'package:koyden_sehire/app/app.dart';
 import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/core/bindings/app_binding.dart';
 import 'package:koyden_sehire/core/services/push_notification_service.dart';
+import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,10 +23,14 @@ Future<void> main() async {
     );
   }
 
-  // Firebase must be initialised before AppBinding so PushNotificationService
-  // can call FirebaseMessaging.instance inside onInit().
-  await Firebase.initializeApp();
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  // Firebase — tüm platformlarda firebase_options.dart yapılandırması kullanılır.
+  // Web'de FCM background handler desteklenmez, sadece init yapılır.
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  if (!kIsWeb) {
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  }
 
   await initializeDateFormatting('tr_TR');
   // Register all global services/repositories before runApp so screens can

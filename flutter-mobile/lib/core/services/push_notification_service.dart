@@ -33,6 +33,7 @@ class PushNotificationService extends GetxService {
   @override
   Future<void> onInit() async {
     super.onInit();
+    if (kIsWeb) return; // Admin web paneli push bildirimi kullanmaz
     await _initLocalNotifications();
     await _requestPermission();
     _listenForeground();

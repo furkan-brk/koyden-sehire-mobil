@@ -197,10 +197,6 @@ class AppRouter {
           builder: (_, __) => const CustomerRegisterScreen(),
         ),
         GoRoute(
-          path: '/customer/profile',
-          builder: (_, __) => const CustomerProfileScreen(),
-        ),
-        GoRoute(
           path: '/admin',
           redirect: (_, __) => '/admin/dashboard',
         ),

@@ -78,7 +78,12 @@
       "Bash(winget install *)",
       "Bash(cloudflared tunnel *)",
       "PowerShell(Get-Command *)",
-      "Bash(xargs ls -la)"
+      "Bash(xargs ls -la)",
+      "Bash(adb devices *)",
+      "Bash(flutter devices *)",
+      "Bash(awk -F\"'\" '{print $2}')",
+      "Bash(flutter build *)",
+      "Bash(grep -v \"^$\")"
     ]
   }
 }
