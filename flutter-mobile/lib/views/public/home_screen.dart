@@ -106,7 +106,7 @@ class HomeScreen extends StatelessWidget {
             SliverToBoxAdapter(
               child: _SectionHeader(
                 title: 'Kategoriler',
-                onSeeAll: () => context.push('/products'),
+                onSeeAll: () => context.push('/products/categories'),
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.sm)),

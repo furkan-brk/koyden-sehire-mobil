@@ -35,6 +35,7 @@ import 'package:koyden_sehire/views/public/home_screen.dart';
 import 'package:koyden_sehire/views/public/product_detail_screen.dart';
 import 'package:koyden_sehire/views/public/favorites_screen.dart';
 import 'package:koyden_sehire/views/public/product_list_screen.dart';
+import 'package:koyden_sehire/views/public/product_category_screen.dart';
 import 'package:koyden_sehire/views/public/producers_list_screen.dart';
 import 'package:koyden_sehire/views/customer/customer_notifications_screen.dart';
 import 'package:koyden_sehire/views/customer/customer_profile_screen.dart';
@@ -168,6 +169,10 @@ class AppRouter {
           pageBuilder: (_, state) => const NoTransitionPage(child: ProducersListScreen()),
         ),
         // ── Public non-tab routes — keep slide transition
+        GoRoute(
+          path: '/products/categories',
+          builder: (_, __) => const ProductCategoryScreen(),
+        ),
         GoRoute(
           path: '/search',
           builder: (_, state) => ProductListScreen(
