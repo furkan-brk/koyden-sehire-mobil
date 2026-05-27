@@ -89,7 +89,7 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
         ],
       ),
-      bottomNavigationBar: const CustomerBottomNav(current: CustomerTab.market),
+      bottomNavigationBar: const CustomerBottomNav(current: CustomerTab.home),
       body: RefreshIndicator(
         onRefresh: () async {
           homeCtrl.load();
