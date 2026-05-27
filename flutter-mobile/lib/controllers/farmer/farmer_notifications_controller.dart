@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
+import 'package:koyden_sehire/core/errors/app_exception.dart';
 import 'package:koyden_sehire/models/notification_model.dart';
 import 'package:koyden_sehire/services/notification_repository.dart';
 
@@ -25,8 +27,12 @@ class FarmerNotificationsController extends GetxController {
       final res = await _repo.list(role: 'farmer');
       items.assignAll(res.items);
       unreadCount.value = res.unreadCount;
-    } catch (e) {
-      errorMessage.value = 'Bildirimler yüklenemedi';
+    } on AppException catch (e, st) {
+      debugPrint('[FarmerNotifications] load failed: $e\n$st');
+      errorMessage.value = e.message;
+    } catch (e, st) {
+      debugPrint('[FarmerNotifications] load unexpected: $e\n$st');
+      errorMessage.value = 'Bildirimler yüklenemedi. Lütfen tekrar deneyin.';
     } finally {
       isLoading.value = false;
     }
