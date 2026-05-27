@@ -1,17 +1,30 @@
 package auth
 
 import (
+	"context"
+	"log"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/koydensehire/backend/pkg/response"
 	"github.com/koydensehire/backend/pkg/validator"
 )
 
+// CustomerPushNotifier is the subset of notifications.PushService used by the auth handler.
+type CustomerPushNotifier interface {
+	CustomerRegistered(ctx context.Context, userID, name string) error
+}
+
 type Handler struct {
-	svc *Service
+	svc  *Service
+	push CustomerPushNotifier // nil = push disabled
 }
 
 func NewHandler(svc *Service) *Handler {
 	return &Handler{svc: svc}
+}
+
+func (h *Handler) SetPushNotifier(n CustomerPushNotifier) {
+	h.push = n
 }
 
 func (h *Handler) Login(c *fiber.Ctx) error {
@@ -60,6 +73,16 @@ func (h *Handler) RegisterCustomer(c *fiber.Ctx) error {
 	resp, err := h.svc.RegisterCustomer(&req)
 	if err != nil {
 		return response.Error(c, err)
+	}
+
+	if h.push != nil {
+		userID := resp.User.ID
+		name := resp.User.Name
+		go func() {
+			if err := h.push.CustomerRegistered(context.Background(), userID, name); err != nil {
+				log.Printf("[PUSH] CustomerRegistered failed for user=%s: %v", userID, err)
+			}
+		}()
 	}
 
 	return response.Success(c, resp, "Kayıt başarılı")

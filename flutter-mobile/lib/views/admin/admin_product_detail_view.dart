@@ -3,7 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/services/admin_repository.dart';
+import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
+import 'package:koyden_sehire/shared/widgets/app_button.dart';
+import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
+import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/views/admin/widgets/admin_status_badge.dart';
 import 'package:koyden_sehire/controllers/admin/admin_product_detail_controller.dart';
 
@@ -56,46 +61,47 @@ class _AdminProductDetailViewState
               )
             : const Text('Bu ürünü onaylamak istiyor musunuz?'),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('İptal')),
-          TextButton(
+          AppButton(
+            label: 'İptal',
+            variant: AppButtonVariant.text,
+            fullWidth: false,
+            onPressed: () => Navigator.pop(ctx, false),
+          ),
+          AppButton(
+            label: action == 'approve' ? 'Onayla' : 'Reddet',
+            variant: action == 'approve'
+                ? AppButtonVariant.primary
+                : AppButtonVariant.destructive,
+            fullWidth: false,
             onPressed: () => Navigator.pop(ctx, true),
-            style: action == 'reject'
-                ? TextButton.styleFrom(foregroundColor: Colors.red)
-                : null,
-            child: Text(action == 'approve' ? 'Onayla' : 'Reddet'),
           ),
         ],
       ),
-    );
+    ).then((result) {
+      reasonCtrl.dispose();
+      return result;
+    });
     if (confirmed == true && mounted) {
       final ok = await _ctrl.moderate(action,
           reason: action == 'reject' ? reasonCtrl.text : null);
       if (ok && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(
-                action == 'approve' ? 'Ürün onaylandı.' : 'Ürün reddedildi.')));
+        context.snack(action == 'approve' ? 'Ürün onaylandı.' : 'Ürün reddedildi.',
+            isError: action == 'reject');
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Obx(() {
       if (_ctrl.isLoading.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const AppLoading();
       }
       if (_ctrl.error.value.isNotEmpty) {
-        return Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(_ctrl.error.value),
-              TextButton(
-                  onPressed: _ctrl.load, child: const Text('Tekrar Dene')),
-            ],
-          ),
+        return AppErrorWidget(
+          message: _ctrl.error.value,
+          onRetry: _ctrl.load,
         );
       }
 
@@ -122,16 +128,15 @@ class _AdminProductDetailViewState
                   else ...[
                     TextButton.icon(
                       onPressed: () => _confirmModerate('reject'),
-                      icon: const Icon(Icons.close, color: Colors.red),
-                      label: const Text('Reddet',
-                          style: TextStyle(color: Colors.red)),
+                      icon: Icon(Icons.close, color: cs.error),
+                      label: Text('Reddet',
+                          style: TextStyle(color: cs.error)),
                     ),
                     TextButton.icon(
                       onPressed: () => _confirmModerate('approve'),
-                      icon: const Icon(Icons.check,
-                          color: Color(0xFF2D6A4F)),
-                      label: const Text('Onayla',
-                          style: TextStyle(color: Color(0xFF2D6A4F))),
+                      icon: Icon(Icons.check, color: cs.primary),
+                      label: Text('Onayla',
+                          style: TextStyle(color: cs.primary)),
                     ),
                   ],
                 ]
@@ -196,10 +201,10 @@ class _AdminProductDetailViewState
                       if (product.description != null &&
                           product.description!.isNotEmpty) ...[
                         const SizedBox(height: 8),
-                        const Text('Açıklama',
+                        Text('Açıklama',
                             style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey,
+                                color: cs.onSurfaceVariant,
                                 fontWeight: FontWeight.w500)),
                         const SizedBox(height: 4),
                         Text(product.description!),
@@ -223,6 +228,7 @@ class _Row extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
@@ -231,9 +237,9 @@ class _Row extends StatelessWidget {
           SizedBox(
             width: 110,
             child: Text(label,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 13,
-                    color: Colors.grey,
+                    color: cs.onSurfaceVariant,
                     fontWeight: FontWeight.w500)),
           ),
           Expanded(

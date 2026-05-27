@@ -3,7 +3,9 @@ package farmers
 import (
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	apperrors "github.com/koydensehire/backend/pkg/errors"
 )
@@ -214,6 +216,87 @@ func (r *Repository) SetFounding(id string, isFounding bool) error {
 		WHERE user_id = $2
 	`, isFounding, id)
 	return err
+}
+
+// GetProductStatsByFarmerID returns active/pending/passive counts in a single query.
+func (r *Repository) GetProductStatsByFarmerID(farmerID uuid.UUID) (active, pending, passive int, err error) {
+	rows, err := r.db.Query(`
+		SELECT status, COUNT(*) AS cnt
+		FROM products
+		WHERE farmer_id = $1 AND status IN ('active', 'pending', 'passive')
+		GROUP BY status
+	`, farmerID)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var status string
+		var cnt int
+		if err = rows.Scan(&status, &cnt); err != nil {
+			return
+		}
+		switch status {
+		case "active":
+			active = cnt
+		case "pending":
+			pending = cnt
+		case "passive":
+			passive = cnt
+		}
+	}
+	err = rows.Err()
+	return
+}
+
+// GetInviteStatsByFarmerID returns total quota and used count from the farmer's invite code.
+// A farmer has at most one invite code; if none exists the quota values are zero.
+func (r *Repository) GetInviteStatsByFarmerID(farmerID uuid.UUID) (totalQuota, usedQuota int, err error) {
+	err = r.db.QueryRow(`
+		SELECT COALESCE(SUM(max_uses), 0), COALESCE(SUM(used_count), 0)
+		FROM invite_codes
+		WHERE owner_user_id = $1
+	`, farmerID).Scan(&totalQuota, &usedQuota)
+	return
+}
+
+// GetRecentProductsByFarmerID returns the most recent products for the farmer.
+func (r *Repository) GetRecentProductsByFarmerID(farmerID uuid.UUID, limit int) ([]RecentProductItem, error) {
+	type row struct {
+		ID        uuid.UUID  `db:"id"`
+		Title     string     `db:"title"`
+		Status    string     `db:"status"`
+		CreatedAt time.Time  `db:"created_at"`
+		ImageURL  *string    `db:"image_url"`
+	}
+	var rows []row
+	err := r.db.Select(&rows, `
+		SELECT p.id, p.title, p.status, p.created_at,
+		       (SELECT pi.image_url FROM product_images pi
+		        WHERE pi.product_id = p.id
+		        ORDER BY pi.sort_order ASC
+		        LIMIT 1) AS image_url
+		FROM products p
+		WHERE p.farmer_id = $1
+		ORDER BY p.created_at DESC
+		LIMIT $2
+	`, farmerID, limit)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]RecentProductItem, len(rows))
+	for i, r := range rows {
+		items[i] = RecentProductItem{
+			ID:        r.ID,
+			Name:      r.Title,
+			Status:    r.Status,
+			CreatedAt: r.CreatedAt,
+		}
+		if r.ImageURL != nil {
+			items[i].ImageURL = *r.ImageURL
+		}
+	}
+	return items, nil
 }
 
 func (r *Repository) UpdateInviteQuota(id string, quota int) error {

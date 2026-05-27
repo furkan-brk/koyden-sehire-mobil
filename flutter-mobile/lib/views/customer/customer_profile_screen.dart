@@ -4,12 +4,17 @@ import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
+import 'package:koyden_sehire/controllers/customer/customer_notifications_controller.dart';
 import 'package:koyden_sehire/controllers/customer/customer_profile_controller.dart';
 import 'package:koyden_sehire/core/services/auth_service.dart';
 import 'package:koyden_sehire/core/services/recent_views_service.dart';
+import 'package:koyden_sehire/core/utils/date_formatter.dart';
 import 'package:koyden_sehire/core/utils/validators.dart' show Validators;
 import 'package:koyden_sehire/models/customer_profile_model.dart';
+import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
+import 'package:koyden_sehire/shared/utils/confirm_dialog.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
+import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/shared/widgets/app_text_field.dart';
@@ -73,36 +78,19 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
     );
     if (!mounted) return;
     if (ok) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(
-          content: Text('Profil güncellendi'),
-          behavior: SnackBarBehavior.floating,
-        ));
+      context.toast('Profil güncellendi');
     }
   }
 
   Future<void> _confirmLogout() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Çıkış Yap'),
-        content:
-            const Text('Çıkış yapmak istediğinize emin misiniz?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Vazgeç'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Çıkış Yap',
-                style: TextStyle(color: AppColors.error)),
-          ),
-        ],
-      ),
+    final ok = await showConfirmDialog(
+      context,
+      title: 'Çıkış Yap',
+      message: 'Hesabınızdan çıkmak istediğinize emin misiniz?',
+      confirmLabel: 'Çıkış Yap',
+      isDestructive: true,
     );
-    if (ok != true) return;
+    if (!ok) return;
     await Get.find<AuthService>().logout();
     if (mounted) context.go('/');
   }
@@ -286,18 +274,25 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
             }),
 
             // ── Bildirimler ───────────────────────────────────────────
-            _SectionHeader(
-              icon: Icons.notifications_outlined,
-              title: 'Bildirimler',
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _SectionHeader(
+                  icon: Icons.notifications_outlined,
+                  title: 'Bildirimler',
+                ),
+                TextButton(
+                  onPressed: () =>
+                      context.push('/customer/notifications'),
+                  child: const Text('Tümünü Gör'),
+                ),
+              ],
             ),
             const SizedBox(height: 10),
-            _NavCard(
-              icon: Icons.notifications_outlined,
-              iconColor: AppColors.primaryContainer,
-              label: 'Bildirimlerim',
-              subtitle:
-                  'Favori ürünler, üretici güncellemeleri ve platform duyuruları.',
-              onTap: () => context.push('/customer/notifications'),
+            _CustomerNotifPreviewCard(
+              onSeeAll: () =>
+                  context.push('/customer/notifications'),
             ),
             const SizedBox(height: 24),
 
@@ -566,6 +561,174 @@ class _RecentPlaceholder extends StatelessWidget {
         size: 18,
         color: AppColors.onSurfaceVariant,
       ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Customer notification preview card
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _CustomerNotifPreviewCard extends StatelessWidget {
+  final VoidCallback onSeeAll;
+
+  const _CustomerNotifPreviewCard({required this.onSeeAll});
+
+  (IconData, Color) _iconFor(String type) => switch (type) {
+        'product_approved' =>
+          (Icons.check_circle_outline, AppColors.success),
+        'product_rejected' => (Icons.cancel_outlined, AppColors.error),
+        'product_needs_edit' => (Icons.edit_outlined, AppColors.warning),
+        'account_approved' =>
+          (Icons.account_circle_outlined, AppColors.success),
+        _ => (Icons.campaign_outlined, AppColors.primaryContainer),
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    if (!Get.isRegistered<CustomerNotificationsController>()) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: AppColors.outlineVariant),
+        ),
+        child: const AppEmptyWidget(
+          message: 'Henüz bildirim yok.',
+          icon: Icons.notifications_none,
+        ),
+      );
+    }
+
+    final ctrl = Get.find<CustomerNotificationsController>();
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.outlineVariant),
+      ),
+      child: Obx(() {
+        final items = ctrl.items.take(3).toList();
+        final isEmpty = ctrl.items.isEmpty;
+        final isLoading = ctrl.isLoading.value && isEmpty;
+
+        if (isLoading) {
+          return const Padding(
+            padding: EdgeInsets.all(20),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        return Column(
+          children: [
+            if (isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 18),
+                child: AppEmptyWidget(
+                  message: 'Henüz bildirim yok.',
+                  icon: Icons.notifications_none,
+                ),
+              )
+            else
+              ...items.map((n) {
+                final (icon, color) = _iconFor(n.type);
+                return Column(
+                  children: [
+                    InkWell(
+                      onTap: () =>
+                          context.push('/customer/notifications'),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: color.withValues(alpha: 0.12),
+                                borderRadius:
+                                    BorderRadius.circular(8),
+                              ),
+                              alignment: Alignment.center,
+                              child: Icon(icon, size: 16, color: color),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    n.title,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: n.isRead
+                                          ? FontWeight.w500
+                                          : FontWeight.w700,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    AppFormatters.date(n.createdAt),
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (!n.isRead)
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.primaryContainer,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (n != items.last)
+                      const Divider(
+                          height: 1, indent: 16, endIndent: 16),
+                  ],
+                );
+              }),
+            const Divider(height: 1, thickness: 1),
+            InkWell(
+              onTap: onSeeAll,
+              borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(AppRadius.md)),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 12),
+                child: Row(
+                  children: [
+                    Icon(Icons.arrow_forward_ios,
+                        size: 13, color: AppColors.primaryContainer),
+                    SizedBox(width: 8),
+                    Text(
+                      'Tüm Bildirimleri Gör',
+                      style: TextStyle(
+                        color: AppColors.primaryContainer,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      }),
     );
   }
 }

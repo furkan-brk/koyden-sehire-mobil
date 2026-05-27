@@ -52,6 +52,7 @@ func (s *Service) GetInviteNetwork() (*InviteNetworkNode, error) {
 type ApproveResult struct {
 	UserID     string `json:"user_id"`
 	FarmerName string `json:"farmer_name"`
+	Phone      string `json:"phone"`
 	InviteCode string `json:"invite_code"`
 }
 
@@ -201,6 +202,7 @@ func (s *Service) ApproveApplication(appID, adminID string, req *ApproveApplicat
 	return &ApproveResult{
 		UserID:     userID,
 		FarmerName: app.FullName,
+		Phone:      app.Phone,
 		InviteCode: code,
 	}, nil
 }

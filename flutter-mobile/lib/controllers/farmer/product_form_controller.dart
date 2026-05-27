@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 
 import 'package:koyden_sehire/core/errors/app_exception.dart';
 import 'package:koyden_sehire/services/farmer_product_repository.dart';
+import 'package:koyden_sehire/models/product_form_config.dart';
 import 'package:koyden_sehire/models/farmer_product_model.dart';
 
 class ProductFormController extends GetxController {

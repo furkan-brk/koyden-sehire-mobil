@@ -14,6 +14,7 @@ class AppTextField extends StatelessWidget {
   final Widget? prefix;
   final Widget? suffix;
   final String? errorText;
+  final String? helperText;
   final bool enabled;
   final List<TextInputFormatter>? inputFormatters;
   final ValueChanged<String>? onChanged;
@@ -37,6 +38,7 @@ class AppTextField extends StatelessWidget {
     this.prefix,
     this.suffix,
     this.errorText,
+    this.helperText,
     this.enabled = true,
     this.inputFormatters,
     this.onChanged,
@@ -68,6 +70,7 @@ class AppTextField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
+        helperText: helperText,
         prefixIcon: prefix,
         suffixIcon: suffix,
         errorText: errorText,

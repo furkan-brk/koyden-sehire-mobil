@@ -11,6 +11,8 @@ import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_bottom_nav.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_mode_chip.dart';
+import 'package:koyden_sehire/shared/widgets/section_header.dart';
+import 'package:koyden_sehire/shared/widgets/status_badge.dart';
 import 'package:koyden_sehire/models/farmer_product_model.dart';
 import 'package:koyden_sehire/models/dashboard_model.dart';
 import 'package:koyden_sehire/controllers/farmer/dashboard_controller.dart';
@@ -146,19 +148,9 @@ class _Body extends StatelessWidget {
         const SizedBox(height: 16),
         _QuickActions(),
         const SizedBox(height: 24),
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                'Son Ürünlerim',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-            ),
-            TextButton(
-              onPressed: () => context.push('/farmer/products'),
-              child: const Text('Tümünü Gör'),
-            ),
-          ],
+        SectionHeader(
+          title: 'Son Ürünlerim',
+          onSeeAll: () => context.push('/farmer/products'),
         ),
         const SizedBox(height: 8),
         if (data.recentProducts.isEmpty)
@@ -314,7 +306,7 @@ class _RecentProductTile extends StatelessWidget {
                 ],
               ),
             ),
-            _StatusBadge(status: product.status),
+            StatusBadge(kind: StatusBadge.fromString(product.status)),
           ],
         ),
       ),
@@ -322,32 +314,3 @@ class _RecentProductTile extends StatelessWidget {
   }
 }
 
-class _StatusBadge extends StatelessWidget {
-  final String status;
-  const _StatusBadge({required this.status});
-  @override
-  Widget build(BuildContext context) {
-    final (label, color) = switch (status) {
-      'active' => ('Aktif', AppColors.success),
-      'pending' => ('Beklemede', AppColors.warning),
-      'rejected' => ('Reddedildi', AppColors.error),
-      'hidden' => ('Pasif', AppColors.onSurfaceVariant),
-      _ => (status, AppColors.onSurfaceVariant),
-    };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.w600,
-          fontSize: 11,
-        ),
-      ),
-    );
-  }
-}

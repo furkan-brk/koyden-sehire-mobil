@@ -5,20 +5,30 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	apperrors "github.com/koydensehire/backend/pkg/errors"
+	"github.com/koydensehire/backend/pkg/sms"
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 )
 
+// PasswordUpdater is the subset of users.Repository used by auth.Service for password reset.
+type PasswordUpdater interface {
+	UpdatePasswordByPhone(phone, hashedPw string) error
+}
+
 type Service struct {
-	repo                *Repository
-	rdb                 *redis.Client
-	jwtSecret           string
-	jwtExpiry           time.Duration
-	refreshTokenExpiry  time.Duration
+	repo               *Repository
+	rdb                *redis.Client
+	jwtSecret          string
+	jwtExpiry          time.Duration
+	refreshTokenExpiry time.Duration
+	userRepo           PasswordUpdater
+	smsProvider        sms.Provider
+	appEnv             string
 }
 
 func NewService(repo *Repository, rdb *redis.Client, jwtSecret string, jwtExpiry, refreshTokenExpiry time.Duration) *Service {
@@ -29,6 +39,18 @@ func NewService(repo *Repository, rdb *redis.Client, jwtSecret string, jwtExpiry
 		jwtExpiry:          jwtExpiry,
 		refreshTokenExpiry: refreshTokenExpiry,
 	}
+}
+
+// SetUserRepo injects the users repository dependency for password-reset operations.
+// Called after construction so the circular-dependency between packages is avoided.
+func (s *Service) SetUserRepo(r PasswordUpdater) {
+	s.userRepo = r
+}
+
+// SetSMSProvider injects the SMS provider for password-reset OTP delivery.
+func (s *Service) SetSMSProvider(p sms.Provider, appEnv string) {
+	s.smsProvider = p
+	s.appEnv = appEnv
 }
 
 func (s *Service) Login(req *LoginRequest) (*LoginResponse, error) {
@@ -203,6 +225,117 @@ func (s *Service) issueRefreshToken(ctx context.Context, userID string) (string,
 		return "", err
 	}
 	return token, nil
+}
+
+// ForgotPassword telefona OTP gönderir; reset akışı için ayrı purpose key kullanır.
+// Kullanıcı varlığını kasıtlı olarak doğrulamıyoruz (hesap numaralandırma saldırılarına karşı).
+// OTP, login OTP'siyle çakışmaması için "reset:{phone}" key'iyle saklanır.
+func (s *Service) ForgotPassword(phone string) error {
+	if !validPhone(phone) {
+		return apperrors.New("INVALID_PHONE", "Geçersiz telefon numarası formatı", 400)
+	}
+
+	// Kullanıcının var olup olmadığını kontrol et
+	_, err := s.repo.FindByPhone(phone)
+	if err != nil {
+		// Hesap numaralandırma koruması: hata mesajını gizle, sadece 404 ise bildir
+		return apperrors.New("PHONE_NOT_FOUND", "Bu telefon numarasıyla kayıtlı hesap bulunamadı", 404)
+	}
+
+	// Reset için ayrı key: otp:{phone} ile çakışmaz
+	ctx := context.Background()
+	resetKey := fmt.Sprintf("reset:%s", phone)
+
+	code := generateOTPCode()
+	value := fmt.Sprintf("%s:0", code)
+	if err := s.rdb.Set(ctx, resetKey, value, 300*time.Second).Err(); err != nil {
+		return apperrors.ErrInternal
+	}
+
+	return nil
+}
+
+// ForgotPasswordWithCode şifre sıfırlama OTP'sini döndürür (development modunda test için).
+// Production'da SMS gönderimi için OTP service kullanın.
+func (s *Service) GetResetCode(phone string) string {
+	ctx := context.Background()
+	resetKey := fmt.Sprintf("reset:%s", phone)
+	val, err := s.rdb.Get(ctx, resetKey).Result()
+	if err != nil {
+		return ""
+	}
+	parts := splitCode(val)
+	return parts[0]
+}
+
+// ResetPassword OTP'yi doğrular ve şifreyi günceller.
+func (s *Service) ResetPassword(req *ResetPasswordRequest) error {
+	if !validPhone(req.Phone) {
+		return apperrors.New("INVALID_PHONE", "Geçersiz telefon numarası formatı", 400)
+	}
+	if len(req.NewPassword) < 8 {
+		return apperrors.New("PASSWORD_TOO_SHORT", "Şifre en az 8 karakter olmalıdır", 400)
+	}
+
+	ctx := context.Background()
+	resetKey := fmt.Sprintf("reset:%s", req.Phone)
+
+	val, err := s.rdb.Get(ctx, resetKey).Result()
+	if err != nil {
+		return apperrors.New("OTP_EXPIRED", "OTP süresi dolmuş veya bulunamadı", 400)
+	}
+
+	parts := splitCode(val)
+	storedCode := parts[0]
+	attempts := parts[1]
+
+	if attempts >= 3 {
+		s.rdb.Del(ctx, resetKey)
+		return apperrors.New("OTP_EXPIRED", "Çok fazla yanlış deneme, lütfen yeniden şifre sıfırlama isteği gönderin", 400)
+	}
+
+	if storedCode != req.OTP {
+		newAttempts := attempts + 1
+		remaining := 3 - newAttempts
+		newVal := fmt.Sprintf("%s:%d", storedCode, newAttempts)
+		ttl, _ := s.rdb.TTL(ctx, resetKey).Result()
+		s.rdb.Set(ctx, resetKey, newVal, ttl)
+		return apperrors.New("OTP_INVALID", fmt.Sprintf("OTP hatalı, %d deneme hakkınız kaldı", remaining), 400)
+	}
+
+	// OTP doğrulandı — tek kullanım
+	s.rdb.Del(ctx, resetKey)
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), 12)
+	if err != nil {
+		return apperrors.ErrInternal
+	}
+
+	if s.userRepo == nil {
+		return apperrors.ErrInternal
+	}
+
+	return s.userRepo.UpdatePasswordByPhone(req.Phone, string(hash))
+}
+
+func generateOTPCode() string {
+	// 6 haneli sayısal sıfırlama kodu
+	b := make([]byte, 3)
+	rand.Read(b)
+	code := (int(b[0])<<16 | int(b[1])<<8 | int(b[2])) % 1000000
+	return fmt.Sprintf("%06d", code)
+}
+
+func splitCode(val string) (string, int) {
+	for i := len(val) - 1; i >= 0; i-- {
+		if val[i] == ':' {
+			code := val[:i]
+			attempts := 0
+			fmt.Sscanf(val[i+1:], "%d", &attempts)
+			return code, attempts
+		}
+	}
+	return val, 0
 }
 
 // validPhone matches the same 05XXXXXXXXX format enforced by the OTP service,

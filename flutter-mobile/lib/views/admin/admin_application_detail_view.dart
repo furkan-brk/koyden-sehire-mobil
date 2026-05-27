@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/models/admin/admin_application_model.dart';
 import 'package:koyden_sehire/services/admin_repository.dart';
+import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
+import 'package:koyden_sehire/shared/widgets/app_button.dart';
+import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
+import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/views/admin/widgets/admin_risk_badge.dart';
 import 'package:koyden_sehire/views/admin/widgets/admin_status_badge.dart';
 import 'package:koyden_sehire/controllers/admin/admin_application_detail_controller.dart';
@@ -57,24 +62,29 @@ class _AdminApplicationDetailViewState
           ],
         ),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('İptal')),
-          TextButton(
+          AppButton(
+            label: 'İptal',
+            variant: AppButtonVariant.text,
+            fullWidth: false,
+            onPressed: () => Navigator.pop(ctx, false),
+          ),
+          AppButton(
+            label: 'Reddet',
+            variant: AppButtonVariant.destructive,
+            fullWidth: false,
             onPressed: () => Navigator.pop(ctx, true),
-            style:
-                TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Reddet'),
           ),
         ],
       ),
-    );
+    ).then((result) {
+      reasonCtrl.dispose();
+      return result;
+    });
     if (confirmed == true && mounted) {
       final ok =
           await _ctrl.review('reject', reason: reasonCtrl.text);
       if (ok && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Başvuru reddedildi.')));
+        context.snack('Başvuru reddedildi.');
       }
     }
   }
@@ -86,12 +96,17 @@ class _AdminApplicationDetailViewState
         title: const Text('Başvuruyu Onayla'),
         content: const Text('Bu başvuruyu onaylamak istiyor musunuz?'),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('İptal')),
-          TextButton(
+          AppButton(
+            label: 'İptal',
+            variant: AppButtonVariant.text,
+            fullWidth: false,
+            onPressed: () => Navigator.pop(ctx, false),
+          ),
+          AppButton(
+            label: 'Onayla',
+            variant: AppButtonVariant.primary,
+            fullWidth: false,
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Onayla'),
           ),
         ],
       ),
@@ -99,28 +114,22 @@ class _AdminApplicationDetailViewState
     if (confirmed == true && mounted) {
       final ok = await _ctrl.review('approve');
       if (ok && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Başvuru onaylandı.')));
+        context.snack('Başvuru onaylandı.');
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Obx(() {
       if (_ctrl.isLoading.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const AppLoading();
       }
       if (_ctrl.error.value.isNotEmpty) {
-        return Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(_ctrl.error.value),
-              TextButton(
-                  onPressed: _ctrl.load, child: const Text('Tekrar Dene')),
-            ],
-          ),
+        return AppErrorWidget(
+          message: _ctrl.error.value,
+          onRetry: _ctrl.load,
         );
       }
 
@@ -147,16 +156,16 @@ class _AdminApplicationDetailViewState
                   else ...[
                     TextButton.icon(
                       onPressed: _confirmReject,
-                      icon: const Icon(Icons.close, color: Colors.red),
-                      label: const Text('Reddet',
-                          style: TextStyle(color: Colors.red)),
+                      icon: Icon(Icons.close, color: cs.error),
+                      label: Text('Reddet',
+                          style: TextStyle(color: cs.error)),
                     ),
                     TextButton.icon(
                       onPressed: _confirmApprove,
-                      icon: const Icon(Icons.check,
-                          color: Color(0xFF2D6A4F)),
-                      label: const Text('Onayla',
-                          style: TextStyle(color: Color(0xFF2D6A4F))),
+                      icon: Icon(Icons.check,
+                          color: cs.primary),
+                      label: Text('Onayla',
+                          style: TextStyle(color: cs.primary)),
                     ),
                   ],
                 ]
@@ -280,15 +289,16 @@ class _Field extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey,
+                  color: cs.onSurfaceVariant,
                   fontWeight: FontWeight.w500)),
           const SizedBox(height: 2),
           Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),

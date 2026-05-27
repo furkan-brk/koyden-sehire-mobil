@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/models/admin/admin_invite_network_model.dart';
 import 'package:koyden_sehire/services/admin_repository.dart';
+import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
+import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
+import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/controllers/admin/admin_invite_network_controller.dart';
 
 class AdminInviteNetworkView extends StatefulWidget {
@@ -33,6 +37,7 @@ class _AdminInviteNetworkViewState
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Column(
       children: [
         Padding(
@@ -48,7 +53,7 @@ class _AdminInviteNetworkViewState
                 style: Theme.of(context)
                     .textTheme
                     .bodySmall
-                    ?.copyWith(color: Colors.grey[600]),
+                    ?.copyWith(color: cs.onSurfaceVariant),
               ),
             ],
           ),
@@ -56,24 +61,17 @@ class _AdminInviteNetworkViewState
         Expanded(
           child: Obx(() {
             if (_ctrl.isLoading.value) {
-              return const Center(child: CircularProgressIndicator());
+              return const AppLoading();
             }
             if (_ctrl.error.value.isNotEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(_ctrl.error.value),
-                    TextButton(
-                        onPressed: _ctrl.load,
-                        child: const Text('Tekrar Dene')),
-                  ],
-                ),
+              return AppErrorWidget(
+                message: _ctrl.error.value,
+                onRetry: _ctrl.load,
               );
             }
             final root = _ctrl.root.value;
             if (root == null) {
-              return const Center(child: Text('Ağ verisi bulunamadı.'));
+              return const AppEmptyWidget(message: 'Ağ verisi bulunamadı.');
             }
             return RefreshIndicator(
               onRefresh: _ctrl.load,
@@ -102,13 +100,14 @@ class _NodeTreeState extends State<_NodeTree> {
   bool _expanded = true;
 
   Color _trustColor(double score) {
-    if (score >= 80) return const Color(0xFF10B981);
-    if (score >= 50) return const Color(0xFFF59E0B);
-    return const Color(0xFFE63946);
+    if (score >= 80) return AppColors.success;
+    if (score >= 50) return AppColors.warning;
+    return AppColors.error;
   }
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final node = widget.node;
     final hasChildren = node.invitees.isNotEmpty;
     final indentWidth = widget.depth * 20.0;
@@ -132,7 +131,7 @@ class _NodeTreeState extends State<_NodeTree> {
                       const Padding(
                         padding: EdgeInsets.only(right: 6),
                         child: Icon(Icons.hub,
-                            size: 16, color: Color(0xFF2D6A4F)),
+                            size: 16, color: AppColors.primary),
                       ),
                     Expanded(
                       child: Column(
@@ -145,8 +144,8 @@ class _NodeTreeState extends State<_NodeTree> {
                           ),
                           Text(
                             node.city,
-                            style: const TextStyle(
-                                fontSize: 11, color: Colors.grey),
+                            style: TextStyle(
+                                fontSize: 11, color: cs.onSurfaceVariant),
                           ),
                         ],
                       ),
@@ -156,15 +155,15 @@ class _NodeTreeState extends State<_NodeTree> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.grey[100],
+                          color: AppColors.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           node.inviteCode!,
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 10,
                               fontFamily: 'monospace',
-                              color: Colors.grey),
+                              color: cs.onSurfaceVariant),
                         ),
                       ),
                     const SizedBox(width: 8),
@@ -194,7 +193,7 @@ class _NodeTreeState extends State<_NodeTree> {
                               ? Icons.expand_less
                               : Icons.expand_more,
                           size: 18,
-                          color: Colors.grey,
+                          color: cs.onSurfaceVariant,
                         ),
                       ),
                     ],

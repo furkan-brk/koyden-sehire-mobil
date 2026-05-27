@@ -1,6 +1,8 @@
 package farmers
 
 import (
+	"context"
+	"log"
 	"math"
 	"strconv"
 	"strings"
@@ -9,12 +11,23 @@ import (
 	"github.com/koydensehire/backend/pkg/response"
 )
 
+// FarmerPushNotifier is the subset of notifications.PushService used by the farmers handler.
+type FarmerPushNotifier interface {
+	AccountSuspended(ctx context.Context, userID, phone string) error
+	AccountReactivated(ctx context.Context, userID string) error
+}
+
 type Handler struct {
-	svc *Service
+	svc  *Service
+	push FarmerPushNotifier // nil = push disabled
 }
 
 func NewHandler(svc *Service) *Handler {
 	return &Handler{svc: svc}
+}
+
+func (h *Handler) SetPushNotifier(n FarmerPushNotifier) {
+	h.push = n
 }
 
 func (h *Handler) ListPublic(c *fiber.Ctx) error {
@@ -81,8 +94,22 @@ func (h *Handler) AdminGetByID(c *fiber.Ctx) error {
 
 func (h *Handler) AdminSuspend(c *fiber.Ctx) error {
 	id := c.Params("id")
+	// Fetch farmer detail before suspending to obtain phone for SMS.
+	detail, _ := h.svc.GetAdminDetail(id)
 	if err := h.svc.Suspend(id); err != nil {
 		return response.Error(c, err)
+	}
+	if h.push != nil {
+		phone := ""
+		if detail != nil {
+			phone = detail.Phone
+		}
+		farmerID := id
+		go func() {
+			if err := h.push.AccountSuspended(context.Background(), farmerID, phone); err != nil {
+				log.Printf("[PUSH] AccountSuspended failed for user=%s: %v", farmerID, err)
+			}
+		}()
 	}
 	return response.Success(c, nil, "Çiftçi askıya alındı")
 }
@@ -91,6 +118,14 @@ func (h *Handler) AdminReactivate(c *fiber.Ctx) error {
 	id := c.Params("id")
 	if err := h.svc.Reactivate(id); err != nil {
 		return response.Error(c, err)
+	}
+	if h.push != nil {
+		farmerID := id
+		go func() {
+			if err := h.push.AccountReactivated(context.Background(), farmerID); err != nil {
+				log.Printf("[PUSH] AccountReactivated failed for user=%s: %v", farmerID, err)
+			}
+		}()
 	}
 	return response.Success(c, nil, "Çiftçi aktif edildi")
 }

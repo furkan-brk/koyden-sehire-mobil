@@ -11,6 +11,7 @@ import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_bottom_nav.dart';
+import 'package:koyden_sehire/shared/widgets/status_badge.dart';
 import 'package:koyden_sehire/models/invitation_model.dart';
 import 'package:koyden_sehire/controllers/farmer/invitation_controller.dart';
 
@@ -149,10 +150,15 @@ class _InvitedList extends StatelessWidget {
             style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
         ...invited.map((p) {
-          final (label, color) = switch (p.status) {
-            'approved' => ('Onaylandı', AppColors.success),
-            'rejected' => ('Reddedildi', AppColors.error),
-            _ => ('Beklemede', AppColors.warning),
+          final badgeKind = switch (p.status) {
+            'approved' => StatusKind.active,
+            'rejected' => StatusKind.rejected,
+            _ => StatusKind.pending,
+          };
+          final badgeLabel = switch (p.status) {
+            'approved' => 'Onaylandı',
+            'rejected' => 'Reddedildi',
+            _ => 'Beklemede',
           };
           return Container(
             margin: const EdgeInsets.only(bottom: 8),
@@ -183,22 +189,7 @@ class _InvitedList extends StatelessWidget {
                     ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      color: color,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 11,
-                    ),
-                  ),
-                ),
+                StatusBadge(kind: badgeKind, label: badgeLabel),
               ],
             ),
           );

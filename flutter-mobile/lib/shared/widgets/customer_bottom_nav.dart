@@ -80,7 +80,7 @@ class CustomerBottomNav extends StatelessWidget {
         } else if (isCustomer) {
           context.go('/customer/profile');
         } else {
-          context.push('/login');
+          context.go('/login');
         }
     }
   }

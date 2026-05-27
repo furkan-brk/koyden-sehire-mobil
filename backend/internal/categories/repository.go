@@ -47,10 +47,10 @@ func (r *Repository) GetSubcategoryIDs(parentID string) ([]string, error) {
 func (r *Repository) Create(req *CreateCategoryRequest) (*Category, error) {
 	var cat Category
 	err := r.db.Get(&cat, `
-		INSERT INTO categories (name, slug, parent_id, icon, sort_order)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO categories (name, slug, parent_id, icon, icon_name, color_hex, sort_order)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING *
-	`, req.Name, req.Slug, req.ParentID, req.Icon, req.SortOrder)
+	`, req.Name, req.Slug, req.ParentID, req.Icon, req.IconName, req.ColorHex, req.SortOrder)
 	return &cat, err
 }
 
@@ -58,10 +58,10 @@ func (r *Repository) Update(id string, req *UpdateCategoryRequest) (*Category, e
 	var cat Category
 	err := r.db.Get(&cat, `
 		UPDATE categories
-		SET name = $1, slug = $2, parent_id = $3, icon = $4, sort_order = $5, updated_at = NOW()
-		WHERE id = $6
+		SET name = $1, slug = $2, parent_id = $3, icon = $4, icon_name = $5, color_hex = $6, sort_order = $7, updated_at = NOW()
+		WHERE id = $8
 		RETURNING *
-	`, req.Name, req.Slug, req.ParentID, req.Icon, req.SortOrder, id)
+	`, req.Name, req.Slug, req.ParentID, req.Icon, req.IconName, req.ColorHex, req.SortOrder, id)
 	if err != nil {
 		return nil, apperrors.ErrNotFound
 	}

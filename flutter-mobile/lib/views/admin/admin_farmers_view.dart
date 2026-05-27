@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/services/admin_repository.dart';
+import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
+import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
+import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/views/admin/widgets/admin_status_badge.dart';
 import 'package:koyden_sehire/controllers/admin/admin_farmers_controller.dart';
 
@@ -32,13 +36,14 @@ class _AdminFarmersViewState extends State<AdminFarmersView> {
   }
 
   Color _trustColor(double score) {
-    if (score >= 80) return const Color(0xFF10B981);
-    if (score >= 50) return const Color(0xFFF59E0B);
-    return const Color(0xFFE63946);
+    if (score >= 80) return AppColors.success;
+    if (score >= 50) return AppColors.warning;
+    return AppColors.error;
   }
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Column(
       children: [
         Padding(
@@ -54,7 +59,7 @@ class _AdminFarmersViewState extends State<AdminFarmersView> {
                 style: Theme.of(context)
                     .textTheme
                     .bodySmall
-                    ?.copyWith(color: Colors.grey[600]),
+                    ?.copyWith(color: cs.onSurfaceVariant),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -72,23 +77,17 @@ class _AdminFarmersViewState extends State<AdminFarmersView> {
         Expanded(
           child: Obx(() {
             if (_ctrl.isLoading.value) {
-              return const Center(child: CircularProgressIndicator());
+              return const AppLoading();
             }
             if (_ctrl.error.value.isNotEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(_ctrl.error.value),
-                    TextButton(
-                        onPressed: _ctrl.load, child: const Text('Tekrar Dene')),
-                  ],
-                ),
+              return AppErrorWidget(
+                message: _ctrl.error.value,
+                onRetry: _ctrl.load,
               );
             }
             final items = _ctrl.filteredItems;
             if (items.isEmpty) {
-              return const Center(child: Text('Üretici bulunamadı.'));
+              return const AppEmptyWidget(message: 'Henüz üretici bulunmuyor.');
             }
             return RefreshIndicator(
               onRefresh: _ctrl.load,
@@ -123,10 +122,10 @@ class _AdminFarmersViewState extends State<AdminFarmersView> {
                             ),
                           ),
                           if (farmer.isFoundingFarmer)
-                            const Padding(
-                              padding: EdgeInsets.only(right: 8),
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8),
                               child: Icon(Icons.star,
-                                  size: 16, color: Color(0xFFF59E0B)),
+                                  size: 16, color: AppColors.warning),
                             ),
                           AdminStatusBadge(status: farmer.status),
                         ],
@@ -138,30 +137,30 @@ class _AdminFarmersViewState extends State<AdminFarmersView> {
                           Row(
                             children: [
                               Icon(Icons.location_on_outlined,
-                                  size: 12, color: Colors.grey[500]),
+                                  size: 12, color: cs.onSurfaceVariant),
                               const SizedBox(width: 2),
                               Text(
                                 '${farmer.city}, ${farmer.district}',
                                 style: TextStyle(
-                                    fontSize: 12, color: Colors.grey[500]),
+                                    fontSize: 12, color: cs.onSurfaceVariant),
                               ),
                               const SizedBox(width: 12),
                               Icon(Icons.inventory_2_outlined,
-                                  size: 12, color: Colors.grey[500]),
+                                  size: 12, color: cs.onSurfaceVariant),
                               const SizedBox(width: 2),
                               Text(
                                 '${farmer.productCount} ürün',
                                 style: TextStyle(
-                                    fontSize: 12, color: Colors.grey[500]),
+                                    fontSize: 12, color: cs.onSurfaceVariant),
                               ),
                               const SizedBox(width: 12),
                               Icon(Icons.people_outline,
-                                  size: 12, color: Colors.grey[500]),
+                                  size: 12, color: cs.onSurfaceVariant),
                               const SizedBox(width: 2),
                               Text(
                                 '${farmer.usedInvites}/${farmer.inviteQuota}',
                                 style: TextStyle(
-                                    fontSize: 12, color: Colors.grey[500]),
+                                    fontSize: 12, color: cs.onSurfaceVariant),
                               ),
                             ],
                           ),

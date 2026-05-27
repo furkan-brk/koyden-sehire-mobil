@@ -8,12 +8,14 @@ import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/core/utils/validators.dart';
 import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
+import 'package:koyden_sehire/shared/utils/confirm_dialog.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/shared/widgets/app_text_field.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_bottom_nav.dart';
 import 'package:koyden_sehire/models/category_model.dart';
+import 'package:koyden_sehire/models/product_form_config.dart';
 import 'package:koyden_sehire/controllers/public/category_controller.dart';
 import 'package:koyden_sehire/controllers/farmer/farmer_profile_controller.dart';
 import 'package:koyden_sehire/services/farmer_product_repository.dart';
@@ -42,25 +44,13 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     final data = _formCtrl.data.value;
     final isDirty = data.title.isNotEmpty || data.imageUrls.isNotEmpty;
     if (!isDirty) return true;
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Değişiklikler kaybolacak'),
-        content: const Text(
-            'Çıkmak istediğinize emin misiniz? Girdiğiniz bilgiler kaybolabilir.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('İptal'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Çık'),
-          ),
-        ],
-      ),
+    return showConfirmDialog(
+      context,
+      title: 'Formu Kapat',
+      message: 'Kaydedilmemiş değişiklikler kaybolacak.',
+      confirmLabel: 'Çık',
+      isDestructive: true,
     );
-    return result ?? false;
   }
 
   void _handleBack() async {
@@ -314,14 +304,41 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               final state = _formCtrl;
               final data = state.data.value;
               final catCtrl = Get.find<CategoryController>();
+
+              // ── Tamamlanma durumu ──────────────────────────────────────
+              final isPhotosComplete = data.imageUrls.isNotEmpty;
+              final isCategoryComplete = data.categoryId != null;
+              final isBasicInfoComplete = data.title.trim().isNotEmpty &&
+                  data.description.trim().isNotEmpty;
+              final isPricingComplete = data.price.isNotEmpty &&
+                  (double.tryParse(data.price.replaceAll(',', '.')) ?? 0) > 0;
+              // Stok durumu her zaman bir değere sahip (default: 'available')
+              const isStockComplete = true;
+
+              final completedCount = [
+                isCategoryComplete,
+                isBasicInfoComplete,
+                isPricingComplete,
+                isStockComplete,
+              ].where((b) => b).length;
+
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Fotoğraflar
+                  // ── İlerleme Çubuğu ─────────────────────────────────
+                  _FormProgressChip(
+                    completed: completedCount,
+                    total: ProductFormConfig.requiredSectionCount,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+
+                  // ── Fotoğraflar ──────────────────────────────────────
                   _SectionCard(
                     title:
-                        'Fotoğraflar (${data.imageUrls.length}/${AppConstants.maxProductImages})',
-                    icon: Icons.photo_library_outlined,
+                        '${ProductFormConfig.photos.title} (${data.imageUrls.length}/${AppConstants.maxProductImages})',
+                    icon: ProductFormConfig.photos.icon,
+                    subtitle: ProductFormConfig.photos.subtitle,
+                    isComplete: isPhotosComplete,
                     child: _ImagePickerSection(
                       imageUrls: data.imageUrls,
                       isUploading: state.isUploadingImage.value,
@@ -331,10 +348,12 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                   ),
                   const SizedBox(height: AppSpacing.sm + 4),
 
-                  // Kategori
+                  // ── Kategori ─────────────────────────────────────────
                   _SectionCard(
-                    title: 'Kategori',
-                    icon: Icons.category_outlined,
+                    title: ProductFormConfig.category.title,
+                    icon: ProductFormConfig.category.icon,
+                    subtitle: ProductFormConfig.category.subtitle,
+                    isComplete: isCategoryComplete,
                     child: catCtrl.isLoading.value
                         ? const Center(
                             child: Padding(
@@ -356,17 +375,20 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                   ),
                   const SizedBox(height: AppSpacing.sm + 4),
 
-                  // Ürün Bilgileri
+                  // ── Ürün Bilgileri ───────────────────────────────────
                   _SectionCard(
-                    title: 'Ürün Bilgileri',
-                    icon: Icons.inventory_2_outlined,
+                    title: ProductFormConfig.basicInfo.title,
+                    icon: ProductFormConfig.basicInfo.icon,
+                    subtitle: ProductFormConfig.basicInfo.subtitle,
+                    isComplete: isBasicInfoComplete,
                     child: Column(
                       children: [
                         AppTextField(
-                          label: 'Ürün Adı',
-                          hint: 'Günlük Köy Çileği',
+                          label: ProductFormConfig.titleField.label,
+                          hint: ProductFormConfig.titleField.hint,
+                          helperText: ProductFormConfig.titleField.helperText,
                           initialValue: data.title,
-                          maxLength: 255,
+                          maxLength: ProductFormConfig.titleField.maxLength,
                           onChanged: (v) =>
                               state.patch((d) => d.copyWith(title: v)),
                           validator: (v) =>
@@ -374,8 +396,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                         ),
                         const SizedBox(height: AppSpacing.sm + 4),
                         AppTextField(
-                          label: 'Açıklama',
-                          hint: 'Ürününüzü tanıtın...',
+                          label: ProductFormConfig.descriptionField.label,
+                          hint: ProductFormConfig.descriptionField.hint,
                           initialValue: data.description,
                           maxLines: 5,
                           onChanged: (v) =>
@@ -388,15 +410,19 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                   ),
                   const SizedBox(height: AppSpacing.sm + 4),
 
-                  // Fiyat & Birim
+                  // ── Fiyat & Birim ────────────────────────────────────
                   _SectionCard(
-                    title: 'Fiyat & Birim',
-                    icon: Icons.payments_outlined,
+                    title: ProductFormConfig.pricing.title,
+                    icon: ProductFormConfig.pricing.icon,
+                    subtitle: ProductFormConfig.pricing.subtitle,
+                    isComplete: isPricingComplete,
                     child: Row(
                       children: [
                         Expanded(
                           child: AppTextField(
-                            label: 'Fiyat',
+                            label: ProductFormConfig.priceField.label,
+                            hint: ProductFormConfig.priceField.hint,
+                            helperText: ProductFormConfig.priceField.helperText,
                             prefix: const Padding(
                               padding: EdgeInsets.all(12),
                               child: Text('₺',
@@ -433,10 +459,12 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                   ),
                   const SizedBox(height: AppSpacing.sm + 4),
 
-                  // Stok Durumu
+                  // ── Stok Durumu ──────────────────────────────────────
                   _SectionCard(
-                    title: 'Stok Durumu',
-                    icon: Icons.layers_outlined,
+                    title: ProductFormConfig.stock.title,
+                    icon: ProductFormConfig.stock.icon,
+                    subtitle: ProductFormConfig.stock.subtitle,
+                    isComplete: isStockComplete,
                     child: _StockToggle(
                       current: data.stockStatus,
                       onChanged: (v) =>
@@ -445,7 +473,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                   ),
                   const SizedBox(height: AppSpacing.sm + 4),
 
-                  // Konum
+                  // ── Konum ────────────────────────────────────────────
                   const _LocationInfoCard(),
                   const SizedBox(height: AppSpacing.lg),
 
@@ -466,16 +494,83 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   }
 }
 
+// ─── Form Progress Chip ───────────────────────────────────────────────────────
+
+class _FormProgressChip extends StatelessWidget {
+  final int completed;
+  final int total;
+
+  const _FormProgressChip({required this.completed, required this.total});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDone = completed >= total;
+    final progress = total > 0 ? completed / total : 0.0;
+    final progressColor = isDone ? Colors.green.shade600 : cs.primary;
+    final label = isDone
+        ? 'Göndermeye hazır ✓'
+        : '$completed / $total zorunlu bölüm tamamlandı';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md, vertical: AppSpacing.sm + 2),
+      decoration: BoxDecoration(
+        color: isDone
+            ? Colors.green.shade50
+            : cs.primaryContainer.withOpacity(0.35),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                isDone ? Icons.check_circle : Icons.radio_button_unchecked,
+                size: 14,
+                color: progressColor,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: progressColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 4,
+              backgroundColor: cs.outlineVariant.withOpacity(0.4),
+              color: progressColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ─── Section Card ─────────────────────────────────────────────────────────────
 
 class _SectionCard extends StatelessWidget {
   final String title;
   final IconData icon;
+  final String subtitle;
+  final bool isComplete;
   final Widget child;
 
   const _SectionCard({
     required this.title,
     required this.icon,
+    required this.subtitle,
+    required this.isComplete,
     required this.child,
   });
 
@@ -492,18 +587,33 @@ class _SectionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Başlık satırı
           Row(
             children: [
               Icon(icon, size: 16, color: cs.primary),
               const SizedBox(width: 6),
-              Text(
-                title,
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w700),
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
               ),
+              if (isComplete)
+                Icon(Icons.check_circle,
+                    size: 16, color: Colors.green.shade600),
             ],
+          ),
+          // Alt açıklama
+          const SizedBox(height: 3),
+          Text(
+            subtitle,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: cs.onSurfaceVariant,
+                  height: 1.3,
+                ),
           ),
           const SizedBox(height: AppSpacing.sm + 4),
           child,
@@ -748,7 +858,7 @@ class _LocationInfoCard extends StatelessWidget {
                           size: 14, color: cs.primary),
                       const SizedBox(width: 4),
                       Text(
-                        'İlan Konumu',
+                        ProductFormConfig.location.title,
                         style: Theme.of(context)
                             .textTheme
                             .titleSmall
@@ -758,7 +868,7 @@ class _LocationInfoCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Ürün konumu, çiftlik profilinizdeki konumdan otomatik alınır.',
+                    ProductFormConfig.location.subtitle,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: cs.onSurfaceVariant,
                           height: 1.4,

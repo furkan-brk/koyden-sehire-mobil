@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/models/admin/admin_category_model.dart';
 import 'package:koyden_sehire/services/admin_repository.dart';
+import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
+import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/controllers/admin/admin_categories_controller.dart';
 
 class AdminCategoriesView extends StatefulWidget {
@@ -32,20 +35,15 @@ class _AdminCategoriesViewState
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Obx(() {
       if (_ctrl.isLoading.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const AppLoading();
       }
       if (_ctrl.error.value.isNotEmpty) {
-        return Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(_ctrl.error.value),
-              TextButton(
-                  onPressed: _ctrl.load, child: const Text('Tekrar Dene')),
-            ],
-          ),
+        return AppErrorWidget(
+          message: _ctrl.error.value,
+          onRetry: _ctrl.load,
         );
       }
 
@@ -72,7 +70,7 @@ class _AdminCategoriesViewState
                       style: Theme.of(context)
                           .textTheme
                           .bodySmall
-                          ?.copyWith(color: Colors.grey[600]),
+                          ?.copyWith(color: cs.onSurfaceVariant),
                     ),
                   ],
                 ),
@@ -100,6 +98,7 @@ class _CategoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: Column(
@@ -109,11 +108,11 @@ class _CategoryTile extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: const Color(0xFF2D6A4F).withValues(alpha: 0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(Icons.category_outlined,
-                  size: 18, color: Color(0xFF2D6A4F)),
+                  size: 18, color: AppColors.primary),
             ),
             title: Text(category.name,
                 style: const TextStyle(fontWeight: FontWeight.w600)),
@@ -124,7 +123,7 @@ class _CategoryTile extends StatelessWidget {
                   Text(
                     '${category.children.length} alt kategori',
                     style: TextStyle(
-                        fontSize: 12, color: Colors.grey[500]),
+                        fontSize: 12, color: cs.onSurfaceVariant),
                   ),
                 const SizedBox(width: 4),
                 _StatusDot(active: category.active),
@@ -138,8 +137,8 @@ class _CategoryTile extends StatelessWidget {
                     const EdgeInsets.only(left: 32, bottom: 4, right: 12),
                 child: ListTile(
                   dense: true,
-                  leading: const Icon(Icons.subdirectory_arrow_right,
-                      size: 16, color: Colors.grey),
+                  leading: Icon(Icons.subdirectory_arrow_right,
+                      size: 16, color: cs.onSurfaceVariant),
                   title: Text(child.name,
                       style: const TextStyle(fontSize: 14)),
                   trailing: _StatusDot(active: child.active),
@@ -162,7 +161,7 @@ class _StatusDot extends StatelessWidget {
       width: 8,
       height: 8,
       decoration: BoxDecoration(
-        color: active ? Colors.green : Colors.grey,
+        color: active ? AppColors.success : AppColors.outlineVariant,
         shape: BoxShape.circle,
       ),
     );

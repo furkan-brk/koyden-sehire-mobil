@@ -2,8 +2,11 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/models/admin/admin_dashboard_model.dart';
 import 'package:koyden_sehire/services/admin_repository.dart';
+import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
+import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/views/admin/widgets/admin_stat_card.dart';
 import 'package:koyden_sehire/controllers/admin/admin_dashboard_controller.dart';
 
@@ -33,25 +36,15 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Obx(() {
       if (_ctrl.isLoading.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const AppLoading();
       }
       if (_ctrl.error.value.isNotEmpty) {
-        return Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
-              const SizedBox(height: 8),
-              Text(_ctrl.error.value),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _ctrl.load,
-                child: const Text('Tekrar Dene'),
-              ),
-            ],
-          ),
+        return AppErrorWidget(
+          message: _ctrl.error.value,
+          onRetry: _ctrl.load,
         );
       }
 
@@ -76,7 +69,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                 style: Theme.of(context)
                     .textTheme
                     .bodySmall
-                    ?.copyWith(color: Colors.grey[600]),
+                    ?.copyWith(color: cs.onSurfaceVariant),
               ),
               const SizedBox(height: 20),
               _StatsGrid(stats: data.stats),
@@ -153,6 +146,7 @@ class _ApplicationsChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -171,8 +165,8 @@ class _ApplicationsChart extends StatelessWidget {
                   gridData: FlGridData(
                     drawVerticalLine: false,
                     horizontalInterval: 1,
-                    getDrawingHorizontalLine: (_) => const FlLine(
-                      color: Color(0xFFE5E7EB),
+                    getDrawingHorizontalLine: (_) => FlLine(
+                      color: AppColors.outlineVariant,
                       strokeWidth: 1,
                     ),
                   ),
@@ -196,8 +190,8 @@ class _ApplicationsChart extends StatelessWidget {
                           }
                           return Text(
                             points[i].name,
-                            style: const TextStyle(
-                                fontSize: 10, color: Colors.grey),
+                            style: TextStyle(
+                                fontSize: 10, color: cs.onSurfaceVariant),
                           );
                         },
                       ),
@@ -213,13 +207,12 @@ class _ApplicationsChart extends StatelessWidget {
                               e.key.toDouble(), e.value.value))
                           .toList(),
                       isCurved: true,
-                      color: const Color(0xFF10B981),
+                      color: AppColors.success,
                       barWidth: 3,
                       dotData: const FlDotData(show: true),
                       belowBarData: BarAreaData(
                         show: true,
-                        color:
-                            const Color(0xFF10B981).withValues(alpha: 0.1),
+                        color: AppColors.success.withValues(alpha: 0.1),
                       ),
                     ),
                   ],

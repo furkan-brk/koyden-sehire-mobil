@@ -10,6 +10,7 @@ import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_bottom_nav.dart';
+import 'package:koyden_sehire/shared/widgets/status_badge.dart';
 import 'package:koyden_sehire/models/farmer_product_model.dart';
 import 'package:koyden_sehire/controllers/farmer/my_products_controller.dart';
 
@@ -186,7 +187,7 @@ class _MyProductCard extends StatelessWidget {
                       spacing: 6,
                       runSpacing: 4,
                       children: [
-                        _StatusBadge(status: product.status),
+                        StatusBadge(kind: StatusBadge.fromString(product.status)),
                         if (product.status == 'active')
                           _StockBadge(stockStatus: product.stockStatus),
                       ],
@@ -275,37 +276,6 @@ class _MyProductCard extends StatelessWidget {
             ),
           ],
         ],
-      ),
-    );
-  }
-}
-
-class _StatusBadge extends StatelessWidget {
-  final String status;
-  const _StatusBadge({required this.status});
-
-  @override
-  Widget build(BuildContext context) {
-    final (label, color) = switch (status) {
-      'active' => ('Aktif', AppColors.success),
-      'pending' => ('Beklemede', AppColors.warning),
-      'rejected' => ('Reddedildi', AppColors.error),
-      'hidden' => ('Pasif', AppColors.onSurfaceVariant),
-      _ => (status, AppColors.onSurfaceVariant),
-    };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.w600,
-          fontSize: 12,
-        ),
       ),
     );
   }

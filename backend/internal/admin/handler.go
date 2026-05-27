@@ -2,6 +2,7 @@ package admin
 
 import (
 	"context"
+	"log"
 	"math"
 	"strconv"
 	"time"
@@ -33,15 +34,26 @@ type ApplicationListItem struct {
 	CreatedAt       time.Time `db:"created_at"        json:"created_at"`
 }
 
+// AppPushNotifier is the subset of notifications.PushService used by the admin handler.
+type AppPushNotifier interface {
+	ApplicationApproved(ctx context.Context, userID, name, phone string) error
+	ApplicationRejected(ctx context.Context, userID, name, phone, reason string) error
+}
+
 type Handler struct {
 	svc       *Service
 	db        *sqlx.DB
 	notifSvc  *notifications.Service
 	auditRepo *audit.Repository
+	push      AppPushNotifier // nil = push disabled
 }
 
 func NewHandler(svc *Service, db *sqlx.DB, notifSvc *notifications.Service, auditRepo *audit.Repository) *Handler {
 	return &Handler{svc: svc, db: db, notifSvc: notifSvc, auditRepo: auditRepo}
+}
+
+func (h *Handler) SetPushNotifier(n AppPushNotifier) {
+	h.push = n
 }
 
 func (h *Handler) Dashboard(c *fiber.Ctx) error {
@@ -161,6 +173,13 @@ func (h *Handler) ApproveApplication(c *fiber.Ctx) error {
 	}
 
 	go h.notifSvc.ApplicationApproved(id, result.FarmerName, "")
+	if h.push != nil {
+		go func() {
+			if err := h.push.ApplicationApproved(context.Background(), result.UserID, result.FarmerName, result.Phone); err != nil {
+				log.Printf("[PUSH] ApplicationApproved failed for user=%s: %v", result.UserID, err)
+			}
+		}()
+	}
 
 	return response.Success(c, result, "Başvuru onaylandı")
 }
@@ -217,6 +236,16 @@ func (h *Handler) RejectApplication(c *fiber.Ctx) error {
 	}
 
 	go h.notifSvc.ApplicationRejected(id, app.FullName, app.Phone, req.RejectionReason)
+	if h.push != nil {
+		rejPhone := app.Phone
+		rejName := app.FullName
+		rejReason := req.RejectionReason
+		go func() {
+			if err := h.push.ApplicationRejected(context.Background(), "", rejName, rejPhone, rejReason); err != nil {
+				log.Printf("[PUSH] ApplicationRejected failed for phone=%s: %v", rejPhone, err)
+			}
+		}()
+	}
 
 	go func() {
 		reason := req.RejectionReason

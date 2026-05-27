@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:koyden_sehire/app/theme.dart';
+
 class AdminStatCard extends StatelessWidget {
   final String title;
   final int value;
@@ -18,7 +20,8 @@ class AdminStatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = color ?? const Color(0xFF2D6A4F);
+    final cs = Theme.of(context).colorScheme;
+    final c = color ?? AppColors.primary;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -32,7 +35,7 @@ class AdminStatCard extends StatelessWidget {
                   child: Text(
                     title,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[600],
+                          color: cs.onSurfaceVariant,
                           fontWeight: FontWeight.w500,
                         ),
                   ),
@@ -61,7 +64,7 @@ class AdminStatCard extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                  color: AppColors.success.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -69,7 +72,7 @@ class AdminStatCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF10B981),
+                    color: AppColors.success,
                   ),
                 ),
               ),

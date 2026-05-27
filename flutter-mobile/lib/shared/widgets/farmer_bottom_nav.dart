@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:koyden_sehire/core/services/auth_service.dart';
 import 'package:koyden_sehire/models/auth/auth_state.dart';
+import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
 
 enum FarmerTab { dashboard, products, invites, profile }
 
@@ -27,30 +28,46 @@ class FarmerBottomNav extends StatelessWidget {
           ),
           NavigationDestination(
             icon: isSuspended
-                ? const Opacity(
-                    opacity: 0.4,
-                    child: Icon(Icons.shopping_bag_outlined),
+                ? const Semantics(
+                    label: 'Hesap askıda — bu sekme kullanılamıyor',
+                    excludeSemantics: true,
+                    child: Opacity(
+                      opacity: 0.4,
+                      child: Icon(Icons.shopping_bag_outlined),
+                    ),
                   )
                 : const Icon(Icons.shopping_bag_outlined),
             selectedIcon: isSuspended
-                ? const Opacity(
-                    opacity: 0.4,
-                    child: Icon(Icons.shopping_bag),
+                ? const Semantics(
+                    label: 'Hesap askıda — bu sekme kullanılamıyor',
+                    excludeSemantics: true,
+                    child: Opacity(
+                      opacity: 0.4,
+                      child: Icon(Icons.shopping_bag),
+                    ),
                   )
                 : const Icon(Icons.shopping_bag),
             label: 'Ürünlerim',
           ),
           NavigationDestination(
             icon: isSuspended
-                ? const Opacity(
-                    opacity: 0.4,
-                    child: Icon(Icons.card_giftcard_outlined),
+                ? const Semantics(
+                    label: 'Hesap askıda — bu sekme kullanılamıyor',
+                    excludeSemantics: true,
+                    child: Opacity(
+                      opacity: 0.4,
+                      child: Icon(Icons.card_giftcard_outlined),
+                    ),
                   )
                 : const Icon(Icons.card_giftcard_outlined),
             selectedIcon: isSuspended
-                ? const Opacity(
-                    opacity: 0.4,
-                    child: Icon(Icons.card_giftcard),
+                ? const Semantics(
+                    label: 'Hesap askıda — bu sekme kullanılamıyor',
+                    excludeSemantics: true,
+                    child: Opacity(
+                      opacity: 0.4,
+                      child: Icon(Icons.card_giftcard),
+                    ),
                   )
                 : const Icon(Icons.card_giftcard),
             label: 'Davetler',
@@ -68,11 +85,7 @@ class FarmerBottomNav extends StatelessWidget {
   void _navigate(BuildContext context, int i, bool isSuspended) {
     if (i == current.index) return;
     if (isSuspended && (i == FarmerTab.products.index || i == FarmerTab.invites.index)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Hesabınız askıda. Bu özelliği kullanamazsınız.'),
-        ),
-      );
+      context.snack('Hesabınız askıya alınmıştır.', isError: true);
       return;
     }
     switch (i) {

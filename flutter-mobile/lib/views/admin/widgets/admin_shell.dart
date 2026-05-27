@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/core/services/auth_service.dart';
 
 class AdminShell extends StatelessWidget {
@@ -44,7 +45,7 @@ class _AdminDrawer extends StatelessWidget {
         children: [
           DrawerHeader(
             decoration: const BoxDecoration(
-              color: Color(0xFF2D6A4F),
+              color: AppColors.primary,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -140,21 +141,22 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final isActive = currentLocation.startsWith(route);
     return ListTile(
       leading: Icon(
         icon,
-        color: isActive ? const Color(0xFF2D6A4F) : null,
+        color: isActive ? cs.primary : null,
       ),
       title: Text(
         label,
         style: TextStyle(
           fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-          color: isActive ? const Color(0xFF2D6A4F) : null,
+          color: isActive ? cs.primary : null,
         ),
       ),
       selected: isActive,
-      selectedTileColor: const Color(0xFF2D6A4F).withValues(alpha: 0.08),
+      selectedTileColor: cs.primary.withValues(alpha: 0.08),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       onTap: () {
         context.go(route);

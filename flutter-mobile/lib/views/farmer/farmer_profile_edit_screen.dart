@@ -10,6 +10,7 @@ import 'package:koyden_sehire/core/utils/date_formatter.dart';
 import 'package:koyden_sehire/core/utils/phone_formatter.dart';
 import 'package:koyden_sehire/core/utils/validators.dart';
 import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
+import 'package:koyden_sehire/shared/utils/confirm_dialog.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_loading.dart';
@@ -88,25 +89,14 @@ class _FarmerProfileEditScreenState extends State<FarmerProfileEditScreen> {
   }
 
   Future<void> _confirmLogout() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Çıkış Yap'),
-        content: const Text('Çıkış yapmak istediğinize emin misiniz?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Vazgeç'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Çıkış Yap',
-                style: TextStyle(color: AppColors.error)),
-          ),
-        ],
-      ),
+    final ok = await showConfirmDialog(
+      context,
+      title: 'Çıkış Yap',
+      message: 'Hesabınızdan çıkmak istediğinize emin misiniz?',
+      confirmLabel: 'Çıkış Yap',
+      isDestructive: true,
     );
-    if (ok != true) return;
+    if (!ok) return;
     await Get.find<AuthService>().logout();
     if (mounted) context.go('/');
   }

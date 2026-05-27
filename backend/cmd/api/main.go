@@ -119,13 +119,14 @@ func main() {
 	fcmClient := notifications.NewFCMClient(cfg.FCM.ProjectID, cfg.FCM.ServiceAccountJSON)
 	dtRepo := device_tokens.NewRepository(db)
 	notifRepo := notifications.NewNotifRepository(db)
-	pushSvc := notifications.NewPushService(dtRepo, notifRepo, fcmClient)
+	pushSvc := notifications.NewPushService(dtRepo, notifRepo, fcmClient, smsProvider)
 	dtHandler := device_tokens.NewHandler(dtRepo)
 	notifHandler := notifications.NewHandler(notifRepo)
 
 	authRepo := auth.NewRepository(db)
 	authSvc := auth.NewService(authRepo, rdb, cfg.JWT.Secret, cfg.JWT.AccessTokenExpiry, cfg.JWT.RefreshTokenExpiry)
 	authHandler := auth.NewHandler(authSvc)
+	authHandler.SetPushNotifier(pushSvc)
 
 	otpRepo := otp.NewRepository(db)
 	otpSvc := otp.NewService(otpRepo, rdb, smsProvider, cfg.OTP.ExpirySeconds, cfg.OTP.MaxAttempts, cfg.OTP.ResendCooldownSeconds, cfg.App.Env)
@@ -153,6 +154,7 @@ func main() {
 	farmerRepo := farmers.NewRepository(db)
 	farmerSvc := farmers.NewService(farmerRepo)
 	farmerHandler := farmers.NewHandler(farmerSvc)
+	farmerHandler.SetPushNotifier(pushSvc)
 
 	uploadSvc := uploads.NewService(storageProvider)
 	uploadHandler := uploads.NewHandler(uploadSvc)
@@ -166,6 +168,7 @@ func main() {
 	adminRepo := admin.NewRepository(db)
 	adminSvc := admin.NewService(adminRepo, db, storageProvider, cfg.App.Env, auditRepo)
 	adminHandler := admin.NewHandler(adminSvc, db, notifSvc, auditRepo)
+	adminHandler.SetPushNotifier(pushSvc)
 
 	app := fiber.New(fiber.Config{
 		ErrorHandler: func(c *fiber.Ctx, err error) error {

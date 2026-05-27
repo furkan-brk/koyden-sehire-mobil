@@ -18,4 +18,12 @@ const (
 	TypeProductRejected = "product_rejected"
 	TypeNewProduct      = "new_product"
 	TypeAnnouncement    = "announcement"
+
+	TypeApplicationApproved = "application_approved"
+	TypeApplicationRejected = "application_rejected"
+	TypeAccountSuspended    = "account_suspended"
+	TypeAccountReactivated  = "account_reactivated"
+	TypeNewCustomer         = "new_customer"
+	TypeProductHidden       = "product_hidden"
+	TypeInviteUsed          = "invite_used"
 )

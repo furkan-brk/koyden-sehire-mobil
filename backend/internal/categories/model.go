@@ -8,6 +8,8 @@ type Category struct {
 	Slug      string    `db:"slug" json:"slug"`
 	ParentID  *string   `db:"parent_id" json:"parent_id"`
 	Icon      *string   `db:"icon" json:"icon"`
+	IconName  string    `db:"icon_name" json:"icon_name"`
+	ColorHex  string    `db:"color_hex" json:"color_hex"`
 	SortOrder int       `db:"sort_order" json:"sort_order"`
 	IsActive  bool      `db:"is_active" json:"is_active"`
 	CreatedAt time.Time `db:"created_at" json:"created_at"`

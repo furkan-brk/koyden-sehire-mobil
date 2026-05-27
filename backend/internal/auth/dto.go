@@ -29,3 +29,13 @@ type UserInfo struct {
 	Role   string `json:"role"`
 	Status string `json:"status"`
 }
+
+type ForgotPasswordRequest struct {
+	Phone string `json:"phone" validate:"required"`
+}
+
+type ResetPasswordRequest struct {
+	Phone       string `json:"phone" validate:"required"`
+	OTP         string `json:"otp" validate:"required"`
+	NewPassword string `json:"new_password" validate:"required,min=8"`
+}

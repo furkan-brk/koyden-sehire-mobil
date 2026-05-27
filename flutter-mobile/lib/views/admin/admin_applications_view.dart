@@ -3,6 +3,9 @@ import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:koyden_sehire/services/admin_repository.dart';
+import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
+import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
+import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/views/admin/widgets/admin_risk_badge.dart';
 import 'package:koyden_sehire/views/admin/widgets/admin_status_badge.dart';
 import 'package:koyden_sehire/controllers/admin/admin_applications_controller.dart';
@@ -37,6 +40,7 @@ class _AdminApplicationsViewState
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Column(
       children: [
         Padding(
@@ -52,7 +56,7 @@ class _AdminApplicationsViewState
                 style: Theme.of(context)
                     .textTheme
                     .bodySmall
-                    ?.copyWith(color: Colors.grey[600]),
+                    ?.copyWith(color: cs.onSurfaceVariant),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -70,23 +74,17 @@ class _AdminApplicationsViewState
         Expanded(
           child: Obx(() {
             if (_ctrl.isLoading.value) {
-              return const Center(child: CircularProgressIndicator());
+              return const AppLoading();
             }
             if (_ctrl.error.value.isNotEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(_ctrl.error.value),
-                    TextButton(
-                        onPressed: _ctrl.load, child: const Text('Tekrar Dene')),
-                  ],
-                ),
+              return AppErrorWidget(
+                message: _ctrl.error.value,
+                onRetry: _ctrl.load,
               );
             }
             final items = _ctrl.filteredItems;
             if (items.isEmpty) {
-              return const Center(child: Text('Başvuru bulunamadı.'));
+              return const AppEmptyWidget(message: 'Henüz başvuru bulunmuyor.');
             }
             return RefreshIndicator(
               onRefresh: _ctrl.load,
@@ -117,26 +115,26 @@ class _AdminApplicationsViewState
                         children: [
                           const SizedBox(height: 4),
                           Text(app.businessName,
-                              style: TextStyle(color: Colors.grey[600])),
+                              style: TextStyle(color: cs.onSurfaceVariant)),
                           const SizedBox(height: 2),
                           Row(
                             children: [
                               Icon(Icons.location_on_outlined,
-                                  size: 12, color: Colors.grey[500]),
+                                  size: 12, color: cs.onSurfaceVariant),
                               const SizedBox(width: 2),
                               Text(
                                 '${app.city}, ${app.district}',
                                 style: TextStyle(
-                                    fontSize: 12, color: Colors.grey[500]),
+                                    fontSize: 12, color: cs.onSurfaceVariant),
                               ),
                               const SizedBox(width: 12),
                               Icon(Icons.calendar_today_outlined,
-                                  size: 12, color: Colors.grey[500]),
+                                  size: 12, color: cs.onSurfaceVariant),
                               const SizedBox(width: 2),
                               Text(
                                 AppFormatters.date(app.createdAt),
                                 style: TextStyle(
-                                    fontSize: 12, color: Colors.grey[500]),
+                                    fontSize: 12, color: cs.onSurfaceVariant),
                               ),
                               if (app.riskLevel != null) ...[
                                 const SizedBox(width: 8),

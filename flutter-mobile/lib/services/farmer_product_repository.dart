@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import 'package:koyden_sehire/core/api/api_client.dart';
 import 'package:koyden_sehire/core/api/api_endpoints.dart';
+import 'package:koyden_sehire/models/product_form_config.dart';
 import 'package:koyden_sehire/models/farmer_product_model.dart';
 
 class FarmerProductRepository {

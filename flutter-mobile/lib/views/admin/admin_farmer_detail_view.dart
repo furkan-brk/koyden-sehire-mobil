@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/models/admin/admin_farmer_model.dart';
 import 'package:koyden_sehire/services/admin_repository.dart';
+import 'package:koyden_sehire/shared/widgets/app_button.dart';
+import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
+import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/controllers/admin/admin_farmer_detail_controller.dart';
 
 class AdminFarmerDetailView extends StatefulWidget {
@@ -33,9 +37,9 @@ class _AdminFarmerDetailViewState
   }
 
   Color _trustColor(double score) {
-    if (score >= 80) return const Color(0xFF10B981);
-    if (score >= 50) return const Color(0xFFF59E0B);
-    return const Color(0xFFE63946);
+    if (score >= 80) return AppColors.success;
+    if (score >= 50) return AppColors.warning;
+    return AppColors.error;
   }
 
   void _showQuotaDialog(AdminFarmerDetail farmer) {
@@ -50,10 +54,16 @@ class _AdminFarmerDetailViewState
           decoration: const InputDecoration(labelText: 'Kota'),
         ),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('İptal')),
-          ElevatedButton(
+          AppButton(
+            label: 'İptal',
+            variant: AppButtonVariant.text,
+            fullWidth: false,
+            onPressed: () => Navigator.pop(context),
+          ),
+          AppButton(
+            label: 'Kaydet',
+            variant: AppButtonVariant.primary,
+            fullWidth: false,
             onPressed: () {
               final q = int.tryParse(ctrl.text);
               if (q != null) {
@@ -61,28 +71,22 @@ class _AdminFarmerDetailViewState
                 Navigator.pop(context);
               }
             },
-            child: const Text('Kaydet'),
           ),
         ],
       ),
-    );
+    ).then((_) => ctrl.dispose());
   }
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
       if (_ctrl.isLoading.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const AppLoading();
       }
       if (_ctrl.error.value.isNotEmpty) {
-        return Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(_ctrl.error.value),
-              TextButton(onPressed: _ctrl.load, child: const Text('Tekrar Dene')),
-            ],
-          ),
+        return AppErrorWidget(
+          message: _ctrl.error.value,
+          onRetry: _ctrl.load,
         );
       }
       final farmer = _ctrl.farmer.value;
@@ -105,23 +109,22 @@ class _AdminFarmerDetailViewState
                 onEditQuota: () => _showQuotaDialog(farmer),
               ),
               const SizedBox(height: 16),
-              Obx(() => SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _ctrl.isActioning.value
-                          ? null
-                          : _ctrl.toggleStatus,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: farmer.isActive
-                            ? const Color(0xFFE63946)
-                            : const Color(0xFF10B981),
-                      ),
-                      icon: Icon(farmer.isActive
+              Obx(() => AppButton(
+                    label: farmer.isActive
+                        ? 'Hesabı Askıya Al'
+                        : 'Hesabı Aktifleştir',
+                    variant: farmer.isActive
+                        ? AppButtonVariant.destructive
+                        : AppButtonVariant.primary,
+                    isLoading: _ctrl.isActioning.value,
+                    onPressed: _ctrl.isActioning.value
+                        ? null
+                        : _ctrl.toggleStatus,
+                    icon: Icon(
+                      farmer.isActive
                           ? Icons.block
-                          : Icons.check_circle_outline),
-                      label: Text(farmer.isActive
-                          ? 'Hesabı Askıya Al'
-                          : 'Hesabı Aktifleştir'),
+                          : Icons.check_circle_outline,
+                      size: 18,
                     ),
                   )),
             ],
@@ -152,7 +155,7 @@ class _InfoCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   const Chip(
                     label: Text('Kurucu', style: TextStyle(fontSize: 11)),
-                    backgroundColor: Color(0xFFFEF3C7),
+                    backgroundColor: AppColors.secondaryContainer,
                     padding: EdgeInsets.zero,
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
@@ -167,8 +170,8 @@ class _InfoCard extends StatelessWidget {
                 label: 'Durum',
                 value: farmer.isActive ? 'Aktif' : 'Askıda',
                 valueColor: farmer.isActive
-                    ? const Color(0xFF10B981)
-                    : const Color(0xFFE63946)),
+                    ? AppColors.success
+                    : AppColors.error),
           ],
         ),
       ),
@@ -283,6 +286,7 @@ class _Row extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -290,7 +294,7 @@ class _Row extends StatelessWidget {
           SizedBox(
             width: 130,
             child: Text(label,
-                style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
           ),
           Expanded(
             child: Text(
@@ -312,12 +316,13 @@ class _Metric extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          Text(label, style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
           Text(value,
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
         ],

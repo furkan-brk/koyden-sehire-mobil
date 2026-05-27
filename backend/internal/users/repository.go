@@ -52,3 +52,54 @@ func (r *Repository) UpdateCustomerProfile(userID string, req *UpdateCustomerPro
 	`, req.FullName, req.Email, userID)
 	return err
 }
+
+// UpdatePasswordByPhone bcrypt hash'lenmiş yeni şifreyi telefon numarasına göre günceller.
+// Telefon bulunamazsa PHONE_NOT_FOUND hatası döner.
+func (r *Repository) UpdatePasswordByPhone(phone, hashedPw string) error {
+	res, err := r.db.Exec(`
+		UPDATE users
+		SET password_hash = $1, updated_at = NOW()
+		WHERE phone = $2 AND deleted_at IS NULL
+	`, hashedPw, phone)
+	if err != nil {
+		return apperrors.ErrInternal
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return apperrors.ErrInternal
+	}
+	if rows == 0 {
+		return apperrors.New("PHONE_NOT_FOUND", "Bu telefon numarasıyla kayıtlı hesap bulunamadı", 404)
+	}
+	return nil
+}
+
+// SoftDeleteUser kullanıcıyı deleted_at alanını doldurarak soft-delete yapar.
+func (r *Repository) SoftDeleteUser(userID string) error {
+	res, err := r.db.Exec(`
+		UPDATE users
+		SET deleted_at = NOW(), updated_at = NOW()
+		WHERE id = $1 AND deleted_at IS NULL
+	`, userID)
+	if err != nil {
+		return apperrors.ErrInternal
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return apperrors.ErrInternal
+	}
+	if rows == 0 {
+		return apperrors.ErrNotFound
+	}
+	return nil
+}
+
+// FindPasswordHashByID kullanıcının mevcut şifre hash'ini döner (şifre doğrulaması için).
+func (r *Repository) FindPasswordHashByID(userID string) (string, error) {
+	var hash string
+	err := r.db.Get(&hash, "SELECT password_hash FROM users WHERE id = $1 AND deleted_at IS NULL", userID)
+	if err != nil {
+		return "", apperrors.ErrNotFound
+	}
+	return hash, nil
+}
