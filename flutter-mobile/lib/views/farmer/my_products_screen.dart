@@ -58,6 +58,7 @@ class _MyProductsScreenState extends State<MyProductsScreen>
         bottom: TabBar(
           controller: _tab,
           isScrollable: true,
+          tabAlignment: TabAlignment.start,
           tabs: _tabs.map((t) => Tab(text: t.$1)).toList(),
         ),
       ),
@@ -79,6 +80,7 @@ class _MyProductsScreenState extends State<MyProductsScreen>
         }
         if (ctrl.items.isEmpty) {
           return AppEmptyWidget(
+            icon: Icons.inventory_2_outlined,
             message: 'Henüz ürün eklemediniz.',
             action: TextButton.icon(
               onPressed: () => context.push('/farmer/products/new'),
@@ -90,9 +92,15 @@ class _MyProductsScreenState extends State<MyProductsScreen>
         return RefreshIndicator(
           onRefresh: ctrl.refresh,
           child: ListView.separated(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md + 80,
+            ),
             itemCount: ctrl.items.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            separatorBuilder: (_, __) =>
+                const SizedBox(height: AppSpacing.sm + 4),
             itemBuilder: (_, i) => _MyProductCard(product: ctrl.items[i]),
           ),
         );
@@ -107,121 +115,165 @@ class _MyProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.outlineVariant),
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        boxShadow: AppShadows.soft,
       ),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.sm + 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Ürün görseli
               ClipRRect(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppRadius.md),
                 child: SizedBox(
-                  width: 64,
-                  height: 64,
+                  width: 80,
+                  height: 80,
                   child: product.imageUrls.isEmpty
                       ? Container(
-                          color: AppColors.surfaceContainerLow,
-                          child: const Icon(Icons.image_outlined,
-                              color: AppColors.onSurfaceVariant),
+                          color: cs.surfaceContainerLow,
+                          alignment: Alignment.center,
+                          child: Icon(
+                            Icons.image_outlined,
+                            color: cs.onSurfaceVariant,
+                            size: 28,
+                          ),
                         )
                       : CachedNetworkImage(
                           imageUrl: product.imageUrls.first,
                           fit: BoxFit.cover,
+                          errorWidget: (_, __, ___) => Container(
+                            color: cs.surfaceContainerLow,
+                            alignment: Alignment.center,
+                            child: Icon(Icons.broken_image_outlined,
+                                color: cs.onSurfaceVariant),
+                          ),
                         ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.sm + 4),
+              // Ürün bilgileri
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       product.title,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    Text(
-                      AppFormatters.price(product.price, product.unit),
-                      style: const TextStyle(color: AppColors.primary),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
                     const SizedBox(height: 4),
-                    _StatusBadge(status: product.status),
+                    Text(
+                      AppFormatters.price(product.price, product.unit),
+                      style: TextStyle(
+                        color: cs.primary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        fontFamily: 'PlusJakartaSans',
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        _StatusBadge(status: product.status),
+                        if (product.status == 'active')
+                          _StockBadge(stockStatus: product.stockStatus),
+                      ],
+                    ),
                   ],
+                ),
+              ),
+              // Düzenle ikonu (sağ üst)
+              const SizedBox(width: AppSpacing.xs),
+              InkWell(
+                onTap: () =>
+                    context.push('/farmer/products/${product.id}/edit'),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: cs.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                  child: Icon(
+                    Icons.edit_outlined,
+                    size: 18,
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
               ),
             ],
           ),
+
+          // Admin notu
           if (product.adminNote != null && product.adminNote!.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm + 4, vertical: AppSpacing.sm),
               decoration: BoxDecoration(
                 color: AppColors.error.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Icon(Icons.info_outline,
-                      size: 16, color: AppColors.error),
-                  const SizedBox(width: 6),
+                      size: 15, color: AppColors.error),
+                  const SizedBox(width: AppSpacing.xs + 2),
                   Expanded(
                     child: Text(
                       product.adminNote!,
                       style: const TextStyle(
-                          fontSize: 12, color: AppColors.error),
+                          fontSize: 12, color: AppColors.error, height: 1.4),
                     ),
                   ),
                 ],
               ),
             ),
           ],
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              if (product.status == 'active')
-                Expanded(
-                  child: OutlinedButton.icon(
-                    icon: Icon(
-                      product.stockStatus == 'available'
-                          ? Icons.check_circle_outline
-                          : Icons.remove_circle_outline,
-                      size: 18,
-                    ),
-                    label: Text(
-                      product.stockStatus == 'available'
-                          ? 'Mevcut'
-                          : 'Tükendi',
-                    ),
-                    onPressed: () async {
-                      final next = product.stockStatus == 'available'
-                          ? 'out_of_stock'
-                          : 'available';
-                      final ok = await Get.find<MyProductsController>()
-                          .setStockStatus(product.id, next);
-                      if (!context.mounted) return;
-                      if (ok) context.toast('Stok durumu güncellendi');
-                    },
-                  ),
+
+          // Stok durumu değiştir (sadece aktif ürünlerde)
+          if (product.status == 'active') ...[
+            const SizedBox(height: AppSpacing.sm),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                icon: Icon(
+                  product.stockStatus == 'available'
+                      ? Icons.remove_circle_outline
+                      : Icons.check_circle_outline,
+                  size: 17,
                 ),
-              if (product.status == 'active') const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.edit_outlined, size: 18),
-                  label: const Text('Düzenle'),
-                  onPressed: () => context
-                      .push('/farmer/products/${product.id}/edit'),
+                label: Text(
+                  product.stockStatus == 'available'
+                      ? 'Tükendi Olarak İşaretle'
+                      : 'Mevcut Olarak İşaretle',
+                  style: const TextStyle(fontSize: 13),
                 ),
+                onPressed: () async {
+                  final next = product.stockStatus == 'available'
+                      ? 'out_of_stock'
+                      : 'available';
+                  final ok = await Get.find<MyProductsController>()
+                      .setStockStatus(product.id, next);
+                  if (!context.mounted) return;
+                  if (ok) context.toast('Stok durumu güncellendi');
+                },
               ),
-            ],
-          ),
+            ),
+          ],
         ],
       ),
     );
@@ -231,6 +283,7 @@ class _MyProductCard extends StatelessWidget {
 class _StatusBadge extends StatelessWidget {
   final String status;
   const _StatusBadge({required this.status});
+
   @override
   Widget build(BuildContext context) {
     final (label, color) = switch (status) {
@@ -241,17 +294,44 @@ class _StatusBadge extends StatelessWidget {
       _ => (status, AppColors.onSurfaceVariant),
     };
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: Text(
         label,
         style: TextStyle(
           color: color,
           fontWeight: FontWeight.w600,
-          fontSize: 11,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+}
+
+class _StockBadge extends StatelessWidget {
+  final String stockStatus;
+  const _StockBadge({required this.stockStatus});
+
+  @override
+  Widget build(BuildContext context) {
+    final isAvailable = stockStatus == 'available';
+    final color =
+        isAvailable ? AppColors.success : AppColors.onSurfaceVariant;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
+      child: Text(
+        isAvailable ? 'Stokta Var' : 'Tükendi',
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w500,
+          fontSize: 12,
         ),
       ),
     );

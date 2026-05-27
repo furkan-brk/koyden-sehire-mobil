@@ -134,14 +134,17 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       bytes = await picked.readAsBytes();
     } catch (_) {
       if (!mounted) return;
-      context.snack('Fotoğraf okunamadı. Lütfen tekrar deneyin.', isError: true);
+      context.snack('Fotoğraf okunamadı. Lütfen tekrar deneyin.',
+          isError: true);
       return;
     }
 
     final ext = picked.name.split('.').last.toLowerCase();
-    final contentType = ext == 'png' ? 'image/png'
-        : ext == 'webp' ? 'image/webp'
-        : 'image/jpeg';
+    final contentType = ext == 'png'
+        ? 'image/png'
+        : ext == 'webp'
+            ? 'image/webp'
+            : 'image/jpeg';
     final filename = '${DateTime.now().millisecondsSinceEpoch}_product.$ext';
 
     final ok = await _formCtrl.uploadImage(
@@ -162,10 +165,24 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   void _showImageSourceSheet() {
     showModalBottomSheet(
       context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      ),
       builder: (_) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.outlineVariant,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            const SizedBox(height: 8),
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
               title: const Text('Galeriden Seç'),
@@ -182,6 +199,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 _pickImage(ImageSource.camera);
               },
             ),
+            const SizedBox(height: 8),
           ],
         ),
       ),
@@ -190,8 +208,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
 
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    // Ürün konumu her zaman çiftçinin profil konumundan gelir; çiftçinin
-    // ürün başına farklı il/ilçe seçmesine izin verilmez.
     final profile = Get.isRegistered<FarmerProfileController>()
         ? Get.find<FarmerProfileController>().profile.value
         : null;
@@ -286,7 +302,12 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       bottomNavigationBar: const FarmerBottomNav(current: FarmerTab.products),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.xl,
+          ),
           child: Form(
             key: _formKey,
             child: Obx(() {
@@ -296,91 +317,138 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _ImagePickerSection(
-                    imageUrls: data.imageUrls,
-                    isUploading: state.isUploadingImage.value,
-                    onAdd: _showImageSourceSheet,
-                    onRemove: (i) => state.removeImage(i),
-                  ),
-                  const SizedBox(height: 16),
-                  if (catCtrl.isLoading.value)
-                    const Center(child: CircularProgressIndicator())
-                  else if (catCtrl.error.value != null)
-                    const Text(
-                      'Kategoriler yüklenemedi',
-                      style: TextStyle(color: AppColors.onSurfaceVariant),
-                    )
-                  else
-                    _CategorySelector(
-                      categories: catCtrl.categories,
-                      selected: data,
+                  // Fotoğraflar
+                  _SectionCard(
+                    title:
+                        'Fotoğraflar (${data.imageUrls.length}/${AppConstants.maxProductImages})',
+                    icon: Icons.photo_library_outlined,
+                    child: _ImagePickerSection(
+                      imageUrls: data.imageUrls,
+                      isUploading: state.isUploadingImage.value,
+                      onAdd: _showImageSourceSheet,
+                      onRemove: (i) => state.removeImage(i),
                     ),
-                  const SizedBox(height: 12),
-                  AppTextField(
-                    label: 'Ürün Adı',
-                    hint: 'Günlük Köy Çileği',
-                    initialValue: data.title,
-                    maxLength: 255,
-                    onChanged: (v) => state.patch((d) => d.copyWith(title: v)),
-                    validator: (v) => Validators.required(v, field: 'Ürün adı'),
                   ),
-                  const SizedBox(height: 12),
-                  AppTextField(
-                    label: 'Açıklama',
-                    hint: 'Ürününüzü tanıtın...',
-                    initialValue: data.description,
-                    maxLines: 5,
-                    onChanged: (v) =>
-                        state.patch((d) => d.copyWith(description: v)),
-                    validator: (v) =>
-                        Validators.required(v, field: 'Açıklama'),
+                  const SizedBox(height: AppSpacing.sm + 4),
+
+                  // Kategori
+                  _SectionCard(
+                    title: 'Kategori',
+                    icon: Icons.category_outlined,
+                    child: catCtrl.isLoading.value
+                        ? const Center(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              child:
+                                  CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          )
+                        : catCtrl.error.value != null
+                            ? const Text(
+                                'Kategoriler yüklenemedi',
+                                style: TextStyle(
+                                    color: AppColors.onSurfaceVariant),
+                              )
+                            : _CategorySelector(
+                                categories: catCtrl.categories,
+                                selected: data,
+                              ),
                   ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: AppTextField(
-                          label: 'Fiyat',
-                          prefix: const Padding(
-                            padding: EdgeInsets.all(12),
-                            child: Text('₺',
-                                style: TextStyle(fontWeight: FontWeight.w600)),
-                          ),
-                          keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
-                          initialValue: data.price,
+                  const SizedBox(height: AppSpacing.sm + 4),
+
+                  // Ürün Bilgileri
+                  _SectionCard(
+                    title: 'Ürün Bilgileri',
+                    icon: Icons.inventory_2_outlined,
+                    child: Column(
+                      children: [
+                        AppTextField(
+                          label: 'Ürün Adı',
+                          hint: 'Günlük Köy Çileği',
+                          initialValue: data.title,
+                          maxLength: 255,
                           onChanged: (v) =>
-                              state.patch((d) => d.copyWith(price: v)),
-                          validator: Validators.positiveNumber,
+                              state.patch((d) => d.copyWith(title: v)),
+                          validator: (v) =>
+                              Validators.required(v, field: 'Ürün adı'),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: data.unit,
-                          decoration:
-                              const InputDecoration(labelText: 'Birim'),
-                          items: productUnits
-                              .map((u) => DropdownMenuItem(
-                                  value: u, child: Text(u)))
-                              .toList(),
-                          onChanged: (v) {
-                            if (v == null) return;
-                            state.patch((d) => d.copyWith(unit: v));
-                          },
+                        const SizedBox(height: AppSpacing.sm + 4),
+                        AppTextField(
+                          label: 'Açıklama',
+                          hint: 'Ürününüzü tanıtın...',
+                          initialValue: data.description,
+                          maxLines: 5,
+                          onChanged: (v) =>
+                              state.patch((d) => d.copyWith(description: v)),
+                          validator: (v) =>
+                              Validators.required(v, field: 'Açıklama'),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  _StockToggle(
-                    current: data.stockStatus,
-                    onChanged: (v) =>
-                        state.patch((d) => d.copyWith(stockStatus: v)),
+                  const SizedBox(height: AppSpacing.sm + 4),
+
+                  // Fiyat & Birim
+                  _SectionCard(
+                    title: 'Fiyat & Birim',
+                    icon: Icons.payments_outlined,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: AppTextField(
+                            label: 'Fiyat',
+                            prefix: const Padding(
+                              padding: EdgeInsets.all(12),
+                              child: Text('₺',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w600)),
+                            ),
+                            keyboardType:
+                                const TextInputType.numberWithOptions(
+                                    decimal: true),
+                            initialValue: data.price,
+                            onChanged: (v) =>
+                                state.patch((d) => d.copyWith(price: v)),
+                            validator: Validators.positiveNumber,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm + 4),
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            value: data.unit,
+                            decoration: const InputDecoration(
+                                labelText: 'Birim'),
+                            items: productUnits
+                                .map((u) => DropdownMenuItem(
+                                    value: u, child: Text(u)))
+                                .toList(),
+                            onChanged: (v) {
+                              if (v == null) return;
+                              state.patch((d) => d.copyWith(unit: v));
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.sm + 4),
+
+                  // Stok Durumu
+                  _SectionCard(
+                    title: 'Stok Durumu',
+                    icon: Icons.layers_outlined,
+                    child: _StockToggle(
+                      current: data.stockStatus,
+                      onChanged: (v) =>
+                          state.patch((d) => d.copyWith(stockStatus: v)),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm + 4),
+
+                  // Konum
                   const _LocationInfoCard(),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppSpacing.lg),
+
                   AppButton(
                     label: widget.editingId == null
                         ? 'Ürünü Yayına Gönder'
@@ -398,6 +466,55 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   }
 }
 
+// ─── Section Card ─────────────────────────────────────────────────────────────
+
+class _SectionCard extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Widget child;
+
+  const _SectionCard({
+    required this.title,
+    required this.icon,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        boxShadow: AppShadows.soft,
+      ),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: cs.primary),
+              const SizedBox(width: 6),
+              Text(
+                title,
+                style: Theme.of(context)
+                    .textTheme
+                    .titleSmall
+                    ?.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm + 4),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Image Picker ──────────────────────────────────────────────────────────────
+
 class _ImagePickerSection extends StatelessWidget {
   final List<String> imageUrls;
   final bool isUploading;
@@ -413,70 +530,57 @@ class _ImagePickerSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Ürün Fotoğrafları (${imageUrls.length}/${AppConstants.maxProductImages})',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 90,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: imageUrls.length + 1,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
-            itemBuilder: (_, i) {
-              if (i == imageUrls.length) {
-                return _AddImageTile(
-                  onTap: isUploading ? null : onAdd,
-                  isUploading: isUploading,
-                );
-              }
-              return Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: SizedBox(
-                      width: 90,
-                      height: 90,
-                      child: CachedNetworkImage(
-                        imageUrl: imageUrls[i],
-                        fit: BoxFit.cover,
-                        errorWidget: (_, __, ___) => Container(
-                          color: AppColors.surfaceContainerLow,
-                          alignment: Alignment.center,
-                          child: const Icon(Icons.broken_image_outlined),
-                        ),
-                      ),
+    return SizedBox(
+      height: 104,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: imageUrls.length + 1,
+        separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+        itemBuilder: (_, i) {
+          if (i == imageUrls.length) {
+            return _AddImageTile(
+              onTap: isUploading ? null : onAdd,
+              isUploading: isUploading,
+            );
+          }
+          return Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                child: SizedBox(
+                  width: 104,
+                  height: 104,
+                  child: CachedNetworkImage(
+                    imageUrl: imageUrls[i],
+                    fit: BoxFit.cover,
+                    errorWidget: (_, __, ___) => Container(
+                      color: AppColors.surfaceContainerLow,
+                      alignment: Alignment.center,
+                      child: const Icon(Icons.broken_image_outlined),
                     ),
                   ),
-                  Positioned(
-                    top: 4,
-                    right: 4,
-                    child: GestureDetector(
-                      onTap: () => onRemove(i),
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Colors.black54,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.close,
-                          size: 14,
-                          color: Colors.white,
-                        ),
-                      ),
+                ),
+              ),
+              Positioned(
+                top: 4,
+                right: 4,
+                child: GestureDetector(
+                  onTap: () => onRemove(i),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.black54,
+                      shape: BoxShape.circle,
                     ),
+                    child: const Icon(Icons.close,
+                        size: 14, color: Colors.white),
                   ),
-                ],
-              );
-            },
-          ),
-        ),
-      ],
+                ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }
@@ -485,38 +589,58 @@ class _AddImageTile extends StatelessWidget {
   final VoidCallback? onTap;
   final bool isUploading;
   const _AddImageTile({required this.onTap, required this.isUploading});
+
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return InkWell(
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(AppRadius.md),
       onTap: onTap,
       child: Container(
-        width: 90,
-        height: 90,
+        width: 104,
+        height: 104,
         decoration: BoxDecoration(
-          color: AppColors.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AppColors.outlineVariant),
+          color: cs.surfaceContainer,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: cs.outlineVariant),
         ),
         alignment: Alignment.center,
         child: isUploading
-            ? const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
+            ? SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: cs.primary),
               )
-            : const Icon(Icons.add_a_photo_outlined,
-                color: AppColors.onSurfaceVariant),
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.add_a_photo_outlined,
+                      color: cs.onSurfaceVariant, size: 24),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Fotoğraf Ekle',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: cs.onSurfaceVariant,
+                      fontFamily: 'PlusJakartaSans',
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
 }
+
+// ─── Category Selector ────────────────────────────────────────────────────────
 
 class _CategorySelector extends StatefulWidget {
   final List<CategoryModel> categories;
   final ProductFormData selected;
   const _CategorySelector(
       {required this.categories, required this.selected});
+
   @override
   State<_CategorySelector> createState() => _CategorySelectorState();
 }
@@ -550,7 +674,8 @@ class _CategorySelectorState extends State<_CategorySelector> {
           value: _mainId,
           decoration: const InputDecoration(labelText: 'Ana Kategori'),
           items: roots
-              .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
+              .map((c) =>
+                  DropdownMenuItem(value: c.id, child: Text(c.name)))
               .toList(),
           onChanged: (v) {
             setState(() => _mainId = v);
@@ -560,7 +685,7 @@ class _CategorySelectorState extends State<_CategorySelector> {
           },
         ),
         if (subs.isNotEmpty) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.sm + 4),
           DropdownButtonFormField<String>(
             value: subs.any((s) => s.id == widget.selected.categoryId)
                 ? widget.selected.categoryId
@@ -582,6 +707,8 @@ class _CategorySelectorState extends State<_CategorySelector> {
   }
 }
 
+// ─── Location Info Card ───────────────────────────────────────────────────────
+
 class _LocationInfoCard extends StatelessWidget {
   const _LocationInfoCard();
 
@@ -602,25 +729,32 @@ class _LocationInfoCard extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(AppSpacing.md - 2),
         decoration: BoxDecoration(
-          color: cs.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: cs.outlineVariant),
+          color: AppColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          boxShadow: AppShadows.soft,
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.location_on_outlined,
-                size: 22, color: cs.primary),
+            Icon(Icons.location_on_outlined, size: 20, color: cs.primary),
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'İlan Konumu',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                  Row(
+                    children: [
+                      Icon(Icons.place_outlined,
+                          size: 14, color: cs.primary),
+                      const SizedBox(width: 4),
+                      Text(
+                        'İlan Konumu',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleSmall
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -648,10 +782,13 @@ class _LocationInfoCard extends StatelessWidget {
   }
 }
 
+// ─── Stock Toggle ─────────────────────────────────────────────────────────────
+
 class _StockToggle extends StatelessWidget {
   final String current;
   final ValueChanged<String> onChanged;
   const _StockToggle({required this.current, required this.onChanged});
+
   @override
   Widget build(BuildContext context) {
     return SegmentedButton<String>(

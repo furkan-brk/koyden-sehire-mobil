@@ -5,7 +5,14 @@ import 'package:go_router/go_router.dart';
 import 'package:koyden_sehire/core/services/auth_service.dart';
 import 'package:koyden_sehire/models/auth/auth_state.dart';
 
-enum CustomerTab { market, producers, favorites, profile }
+/// Customer bottom navigation tabs.
+///
+/// [home] → `/` (HomeScreen, landing with hero/categories/featured)
+/// [market] → `/products` (ProductListScreen, full searchable catalogue)
+/// [producers] → `/producers`
+/// [favorites] → `/favorites`
+/// [profile] → `/customer/profile` (or /login when logged out)
+enum CustomerTab { home, market, producers, favorites, profile }
 
 class CustomerBottomNav extends StatelessWidget {
   final CustomerTab current;
@@ -22,6 +29,11 @@ class CustomerBottomNav extends StatelessWidget {
         selectedIndex: current.index,
         onDestinationSelected: (i) => _navigate(context, i),
         destinations: [
+          const NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Ana Sayfa',
+          ),
           const NavigationDestination(
             icon: Icon(Icons.storefront_outlined),
             selectedIcon: Icon(Icons.storefront),
@@ -57,10 +69,12 @@ class CustomerBottomNav extends StatelessWidget {
       case 0:
         context.go('/');
       case 1:
-        context.go('/producers');
+        context.go('/products');
       case 2:
-        context.go('/favorites');
+        context.go('/producers');
       case 3:
+        context.go('/favorites');
+      case 4:
         if (isFarmerBrowsing) {
           context.push('/farmer/profile');
         } else if (isCustomer) {

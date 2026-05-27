@@ -22,7 +22,7 @@ func NewPushService(tokenRepo *device_tokens.Repository, notifRepo *NotifReposit
 func (s *PushService) ProductApproved(farmerID, productTitle string) {
 	s.sendToUser(farmerID,
 		TypeProductApproved,
-		"Ürününüz Onaylandı ✓",
+		"Ürününüz Onaylandı",
 		productTitle+" artık alıcılara görünüyor.",
 		map[string]string{"type": TypeProductApproved},
 	)

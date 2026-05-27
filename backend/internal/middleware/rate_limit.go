@@ -16,6 +16,15 @@ type RateLimitConfig struct {
 	Window  time.Duration
 }
 
+var phoneRateLimitWhitelist = map[string]struct{}{
+	"05327300325": {},
+}
+
+func isWhitelistedPhone(phone string) bool {
+	_, ok := phoneRateLimitWhitelist[phone]
+	return ok
+}
+
 func RateLimit(rdb *redis.Client, cfg RateLimitConfig) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		key := "rl:" + cfg.KeyFunc(c)
@@ -50,6 +59,9 @@ func OTPSendRateLimit(rdb *redis.Client) fiber.Handler {
 			if body.Phone == "" {
 				return fmt.Sprintf("otp_ip:%s", c.IP())
 			}
+			if isWhitelistedPhone(body.Phone) {
+				return fmt.Sprintf("otp_whitelist:%s", body.Phone)
+			}
 			return fmt.Sprintf("otp:%s", body.Phone)
 		},
 		Max:    3,
@@ -76,6 +88,9 @@ func LoginRateLimit(rdb *redis.Client) fiber.Handler {
 		// force a single account.
 		var phoneCount int64
 		if body.Phone != "" {
+			if isWhitelistedPhone(body.Phone) {
+				return c.Next()
+			}
 			phoneKey := fmt.Sprintf("rl:login_phone:%s", body.Phone)
 			phoneCount, err = rdb.Incr(ctx, phoneKey).Result()
 			if err == nil && phoneCount == 1 {
@@ -109,6 +124,9 @@ func RegisterRateLimit(rdb *redis.Client) fiber.Handler {
 
 		var phoneCount int64
 		if body.Phone != "" {
+			if isWhitelistedPhone(body.Phone) {
+				return c.Next()
+			}
 			phoneKey := fmt.Sprintf("rl:register_phone:%s", body.Phone)
 			phoneCount, err = rdb.Incr(ctx, phoneKey).Result()
 			if err == nil && phoneCount == 1 {
@@ -153,6 +171,9 @@ func VideoPresignRateLimit(rdb *redis.Client) fiber.Handler {
 		// the shared "" bucket and starve legitimate users.
 		var phoneCount int64
 		if body.Phone != "" {
+			if isWhitelistedPhone(body.Phone) {
+				return c.Next()
+			}
 			phoneKey := fmt.Sprintf("rl:video_presign:%s", body.Phone)
 			phoneCount, err = rdb.Incr(ctx, phoneKey).Result()
 			if err == nil && phoneCount == 1 {

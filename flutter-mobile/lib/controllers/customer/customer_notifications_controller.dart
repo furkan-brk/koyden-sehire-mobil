@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
+import 'package:koyden_sehire/core/errors/app_exception.dart';
 import 'package:koyden_sehire/models/notification_model.dart';
 import 'package:koyden_sehire/services/notification_repository.dart';
 
@@ -25,8 +27,12 @@ class CustomerNotificationsController extends GetxController {
       final res = await _repo.list(role: 'customer');
       items.assignAll(res.items);
       unreadCount.value = res.unreadCount;
-    } catch (_) {
-      errorMessage.value = 'Bildirimler yüklenemedi';
+    } on AppException catch (e, st) {
+      debugPrint('[CustomerNotifications] load failed: $e\n$st');
+      errorMessage.value = e.message;
+    } catch (e, st) {
+      debugPrint('[CustomerNotifications] load unexpected: $e\n$st');
+      errorMessage.value = 'Bildirimler yüklenemedi. Lütfen tekrar deneyin.';
     } finally {
       isLoading.value = false;
     }

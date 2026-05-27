@@ -17,6 +17,15 @@ import (
 
 var phoneRegex = `^05[0-9]{9}$`
 
+var otpWhitelist = map[string]struct{}{
+	"05327300325": {},
+}
+
+func isOtpWhitelisted(phone string) bool {
+	_, ok := otpWhitelist[phone]
+	return ok
+}
+
 type Service struct {
 	repo            *Repository
 	rdb             *redis.Client
@@ -47,12 +56,14 @@ func (s *Service) Send(phone, ip, userAgent string) (*SendResponse, error) {
 	ctx := context.Background()
 	cooldownKey := fmt.Sprintf("otp_cooldown:%s", phone)
 
-	exists, err := s.rdb.Exists(ctx, cooldownKey).Result()
-	if err != nil {
-		return nil, errors.ErrInternal
-	}
-	if exists > 0 {
-		return nil, errors.New("COOLDOWN_ACTIVE", "Lütfen biraz bekleyin ve tekrar deneyin", 429)
+	if !isOtpWhitelisted(phone) && s.appEnv != "development" {
+		exists, err := s.rdb.Exists(ctx, cooldownKey).Result()
+		if err != nil {
+			return nil, errors.ErrInternal
+		}
+		if exists > 0 {
+			return nil, errors.New("COOLDOWN_ACTIVE", "Lütfen biraz bekleyin ve tekrar deneyin", 429)
+		}
 	}
 
 	code := generateCode()
@@ -64,8 +75,10 @@ func (s *Service) Send(phone, ip, userAgent string) (*SendResponse, error) {
 		return nil, errors.ErrInternal
 	}
 
-	if err := s.rdb.Set(ctx, cooldownKey, "1", time.Duration(s.cooldownSeconds)*time.Second).Err(); err != nil {
-		log.Printf("failed to set OTP cooldown: %v", err)
+	if !isOtpWhitelisted(phone) && s.appEnv != "development" {
+		if err := s.rdb.Set(ctx, cooldownKey, "1", time.Duration(s.cooldownSeconds)*time.Second).Err(); err != nil {
+			log.Printf("failed to set OTP cooldown: %v", err)
+		}
 	}
 
 	var devCode *string

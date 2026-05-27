@@ -87,22 +87,31 @@ class PushNotificationService extends GetxService {
         // Web'de flutter_local_notifications desteklenmez — SnackBar göster
         scaffoldMessengerKey.currentState?.showSnackBar(
           SnackBar(
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
+            content: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  notification.title ?? 'Bildirim',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                const Icon(Icons.notifications, color: Colors.white, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        notification.title ?? 'Bildirim',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      if ((notification.body ?? '').isNotEmpty)
+                        Text(
+                          notification.body!,
+                          style: const TextStyle(color: Colors.white70, fontSize: 13),
+                        ),
+                    ],
                   ),
                 ),
-                if ((notification.body ?? '').isNotEmpty)
-                  Text(
-                    notification.body!,
-                    style: const TextStyle(color: Colors.white70),
-                  ),
               ],
             ),
             backgroundColor: const Color(0xFF2E7D32),
