@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/core/utils/date_formatter.dart';
 import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
-import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_bottom_nav.dart';
@@ -63,8 +62,14 @@ class _MyProductsScreenState extends State<MyProductsScreen>
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/farmer/products/new'),
-        icon: const Icon(Icons.add),
-        label: const Text('Yeni Ürün'),
+        backgroundColor: AppColors.primaryContainer,
+        foregroundColor: Colors.white,
+        elevation: 4,
+        icon: const Icon(Icons.add_circle_outline),
+        label: const Text(
+          'Yeni Ürün',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
       ),
       body: Obx(() {
         final ctrl = Get.find<MyProductsController>();
@@ -78,25 +83,97 @@ class _MyProductsScreenState extends State<MyProductsScreen>
           );
         }
         if (ctrl.items.isEmpty) {
-          return AppEmptyWidget(
-            message: 'Henüz ürün eklemediniz.',
-            action: TextButton.icon(
-              onPressed: () => context.push('/farmer/products/new'),
-              icon: const Icon(Icons.add),
-              label: const Text('İlk ürününüzü ekleyin'),
+          return RefreshIndicator(
+            onRefresh: ctrl.refresh,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.7,
+                  child: _EmptyProductsState(
+                    onAdd: () => context.push('/farmer/products/new'),
+                  ),
+                ),
+              ],
             ),
           );
         }
         return RefreshIndicator(
           onRefresh: ctrl.refresh,
           child: ListView.separated(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
             itemCount: ctrl.items.length,
             separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (_, i) => _MyProductCard(product: ctrl.items[i]),
           ),
         );
       }),
+    );
+  }
+}
+
+class _EmptyProductsState extends StatelessWidget {
+  final VoidCallback onAdd;
+  const _EmptyProductsState({required this.onAdd});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                color: cs.secondaryContainer,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.local_florist_outlined,
+                size: 48,
+                color: AppColors.primaryContainer,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Henüz ürün yok',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'İlk ürününüzü ekleyerek müşterilerle\nbuluşmaya başlayın.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                    height: 1.5,
+                  ),
+            ),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primaryContainer,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 14,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+              ),
+              onPressed: onAdd,
+              icon: const Icon(Icons.add_circle_outline),
+              label: const Text('İlk ürününüzü ekleyin'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -109,32 +186,20 @@ class _MyProductCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: AppColors.outlineVariant),
+        boxShadow: AppShadows.soft,
       ),
       padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: SizedBox(
-                  width: 64,
-                  height: 64,
-                  child: product.imageUrls.isEmpty
-                      ? Container(
-                          color: AppColors.surfaceContainerLow,
-                          child: const Icon(Icons.image_outlined,
-                              color: AppColors.onSurfaceVariant),
-                        )
-                      : CachedNetworkImage(
-                          imageUrl: product.imageUrls.first,
-                          fit: BoxFit.cover,
-                        ),
-                ),
+              _ProductThumb(
+                imageUrls: product.imageUrls,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -143,16 +208,33 @@ class _MyProductCard extends StatelessWidget {
                   children: [
                     Text(
                       product.title,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    Text(
-                      AppFormatters.price(product.price, product.unit),
-                      style: const TextStyle(color: AppColors.primary),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
                     ),
                     const SizedBox(height: 4),
-                    _StatusBadge(status: product.status),
+                    Text(
+                      AppFormatters.price(product.price, product.unit),
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(
+                            color: AppColors.primaryContainer,
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        _StatusBadge(status: product.status),
+                        if (product.status == 'active')
+                          _StockBadge(stockStatus: product.stockStatus),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -233,27 +315,147 @@ class _StatusBadge extends StatelessWidget {
   const _StatusBadge({required this.status});
   @override
   Widget build(BuildContext context) {
-    final (label, color) = switch (status) {
-      'active' => ('Aktif', AppColors.success),
-      'pending' => ('Beklemede', AppColors.warning),
-      'rejected' => ('Reddedildi', AppColors.error),
-      'hidden' => ('Pasif', AppColors.onSurfaceVariant),
-      _ => (status, AppColors.onSurfaceVariant),
+    final (label, color, icon) = switch (status) {
+      'active' => ('Aktif', AppColors.success, Icons.check_circle),
+      'pending' => ('Beklemede', AppColors.warning, Icons.hourglass_bottom),
+      'rejected' => ('Reddedildi', AppColors.error, Icons.cancel_outlined),
+      'hidden' => ('Pasif', AppColors.onSurfaceVariant, Icons.visibility_off_outlined),
+      _ => (status, AppColors.onSurfaceVariant, Icons.info_outline),
     };
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.w600,
-          fontSize: 11,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w600,
+              fontSize: 11,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StockBadge extends StatelessWidget {
+  final String stockStatus;
+  const _StockBadge({required this.stockStatus});
+  @override
+  Widget build(BuildContext context) {
+    final isAvailable = stockStatus == 'available';
+    final color = isAvailable ? AppColors.primaryContainer : AppColors.onSurfaceVariant;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isAvailable ? Icons.inventory_2_outlined : Icons.remove_shopping_cart_outlined,
+            size: 12,
+            color: color,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            isAvailable ? 'Stokta' : 'Tükendi',
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w600,
+              fontSize: 11,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProductThumb extends StatelessWidget {
+  final List<String> imageUrls;
+  const _ProductThumb({required this.imageUrls});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          child: SizedBox(
+            width: 88,
+            height: 88,
+            child: imageUrls.isEmpty
+                ? Container(
+                    color: AppColors.surfaceContainerLow,
+                    alignment: Alignment.center,
+                    child: const Icon(
+                      Icons.image_outlined,
+                      color: AppColors.onSurfaceVariant,
+                      size: 32,
+                    ),
+                  )
+                : CachedNetworkImage(
+                    imageUrl: imageUrls.first,
+                    fit: BoxFit.cover,
+                    placeholder: (_, __) => Container(
+                      color: AppColors.surfaceContainerLow,
+                    ),
+                    errorWidget: (_, __, ___) => Container(
+                      color: AppColors.surfaceContainerLow,
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        Icons.broken_image_outlined,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+          ),
         ),
-      ),
+        if (imageUrls.length > 1)
+          Positioned(
+            right: 4,
+            bottom: 4,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.65),
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.photo_library_outlined,
+                    color: Colors.white,
+                    size: 10,
+                  ),
+                  const SizedBox(width: 3),
+                  Text(
+                    '${imageUrls.length}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
