@@ -8,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/core/services/google_geocoding_service.dart';
 import 'package:koyden_sehire/models/selected_location.dart';
+import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
 
 class SelectLocationScreen extends StatefulWidget {
@@ -116,11 +117,9 @@ class _SelectLocationScreenState extends State<SelectLocationScreen>
       if (perm == LocationPermission.denied ||
           perm == LocationPermission.deniedForever) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content:
-                  Text('Konum izni verilmedi. Ayarlardan izin verebilirsiniz.'),
-            ),
+          context.snack(
+            'Konum izni verilmedi. Ayarlardan izin verebilirsiniz.',
+            isError: true,
           );
         }
         return;
@@ -133,9 +132,7 @@ class _SelectLocationScreenState extends State<SelectLocationScreen>
       _onMapMoved(newCenter);
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Konum alÄ±namadÄ±')),
-        );
+        context.snack('Konum alınamadı', isError: true);
       }
     } finally {
       if (mounted) setState(() => _isLocating = false);

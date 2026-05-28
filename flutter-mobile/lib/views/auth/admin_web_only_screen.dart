@@ -37,6 +37,7 @@ class AdminWebOnlyScreen extends StatelessWidget {
               const SizedBox(height: 32),
               AppButton(
                 label: 'Çıkış Yap',
+                variant: AppButtonVariant.destructive,
                 onPressed: () async {
                   await Get.find<AuthService>().logout();
                   if (context.mounted) context.go('/');

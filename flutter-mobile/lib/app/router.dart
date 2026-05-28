@@ -18,8 +18,10 @@ import 'package:koyden_sehire/views/admin/admin_products_view.dart';
 import 'package:koyden_sehire/views/admin/widgets/admin_shell.dart';
 import 'package:koyden_sehire/views/auth/admin_login_screen.dart';
 import 'package:koyden_sehire/views/auth/customer_register_screen.dart';
+import 'package:koyden_sehire/views/auth/forgot_password_screen.dart';
 import 'package:koyden_sehire/views/auth/login_screen.dart';
 import 'package:koyden_sehire/views/auth/register_choice_screen.dart';
+import 'package:koyden_sehire/views/auth/reset_password_screen.dart';
 import 'package:koyden_sehire/models/auth/auth_state.dart';
 import 'package:koyden_sehire/views/farmer_application/application_form_screen.dart';
 import 'package:koyden_sehire/views/farmer_application/application_success_screen.dart';
@@ -59,6 +61,8 @@ const _publicRoutes = {
   '/register',
   '/register/customer',
   '/otp',
+  '/forgot-password',
+  '/reset-password',
 };
 
 bool _isPublic(String path) {
@@ -204,6 +208,16 @@ class AppRouter {
         GoRoute(
           path: '/register',
           builder: (_, __) => const RegisterChoiceScreen(),
+        ),
+        GoRoute(
+          path: '/forgot-password',
+          builder: (_, __) => const ForgotPasswordScreen(),
+        ),
+        GoRoute(
+          path: '/reset-password',
+          builder: (_, state) => ResetPasswordScreen(
+            phone: state.uri.queryParameters['phone'] ?? '',
+          ),
         ),
         GoRoute(
           path: '/register/customer',

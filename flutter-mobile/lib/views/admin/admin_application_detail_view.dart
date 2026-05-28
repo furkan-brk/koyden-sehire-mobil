@@ -76,13 +76,14 @@ class _AdminApplicationDetailViewState
           ),
         ],
       ),
-    ).then((result) {
-      reasonCtrl.dispose();
-      return result;
-    });
+    );
+    final reason = reasonCtrl.text; // dispose öncesi yakala
+    reasonCtrl.dispose();
     if (confirmed == true && mounted) {
-      final ok = await _ctrl.review('reject', reason: reasonCtrl.text);
-      if (ok && mounted) context.snack('Başvuru reddedildi.');
+      final ok = await _ctrl.review('reject', reason: reason);
+      if (ok && mounted) {
+        context.snack('Başvuru reddedildi.');
+      }
     }
   }
 

@@ -19,6 +19,10 @@ class ApiEndpoints {
   static const String otpSend = '/otp/send';
   static const String otpVerify = '/otp/verify';
 
+  // Password reset
+  static const String forgotPassword = '/auth/forgot-password';
+  static const String resetPassword = '/auth/reset-password';
+
   // Farmer application
   static const String farmerApplications = '/farmer-applications';
   static const String applicationVideoPresignedUrl =

@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
+	"github.com/koydensehire/backend/internal/middleware"
 	"github.com/koydensehire/backend/pkg/response"
 )
 
@@ -142,6 +144,25 @@ func (h *Handler) AdminSetFounding(c *fiber.Ctx) error {
 		return response.Error(c, err)
 	}
 	return response.Success(c, nil, "Kurucu çiftçi durumu güncellendi")
+}
+
+// GetDashboard handles GET /api/v1/farmer/dashboard.
+// farmerID is extracted from the JWT claim set by RequireAuth middleware.
+func (h *Handler) GetDashboard(c *fiber.Ctx) error {
+	rawID, ok := c.Locals(middleware.UserIDKey).(string)
+	if !ok || rawID == "" {
+		return response.Unauthorized(c, "Kimlik doğrulama gerekli")
+	}
+	farmerID, err := uuid.Parse(rawID)
+	if err != nil {
+		return response.Unauthorized(c, "Geçersiz kullanıcı kimliği")
+	}
+
+	data, err := h.svc.GetDashboard(farmerID)
+	if err != nil {
+		return response.Error(c, err)
+	}
+	return response.Success(c, data, "")
 }
 
 func (h *Handler) AdminUpdateInviteQuota(c *fiber.Ctx) error {

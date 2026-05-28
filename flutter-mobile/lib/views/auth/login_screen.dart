@@ -151,7 +151,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: () => setState(() => _obscure = !_obscure),
                   ),
                 ),
-                const SizedBox(height: 24),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => context.push('/forgot-password'),
+                    child: const Text('Şifremi Unuttum'),
+                  ),
+                ),
+                const SizedBox(height: 8),
                 Obx(() => AppButton(
                       label: 'Giriş Yap',
                       isLoading: _auth.isSubmitting.value,

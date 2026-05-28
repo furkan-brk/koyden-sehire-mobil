@@ -31,6 +31,9 @@ const (
 	ActionCategoryCreated Action = "CATEGORY_CREATED"
 	ActionCategoryUpdated Action = "CATEGORY_UPDATED"
 	ActionCategoryDeleted Action = "CATEGORY_DELETED"
+
+	// KVKK: kullanıcı kendi hesabını siler
+	ActionAccountDeleted Action = "ACCOUNT_DELETED"
 )
 
 // TargetType etkilenen kaynak tipini belirtir.
@@ -41,6 +44,7 @@ const (
 	TargetProduct     TargetType = "product"
 	TargetFarmer      TargetType = "farmer"
 	TargetCategory    TargetType = "category"
+	TargetUser        TargetType = "user"
 )
 
 // Entry tek bir audit log kaydını temsil eder.

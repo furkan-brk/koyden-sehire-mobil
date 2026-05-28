@@ -87,3 +87,35 @@ func (h *Handler) RegisterCustomer(c *fiber.Ctx) error {
 
 	return response.Success(c, resp, "Kayıt başarılı")
 }
+
+func (h *Handler) ForgotPassword(c *fiber.Ctx) error {
+	var req ForgotPasswordRequest
+	if err := c.BodyParser(&req); err != nil {
+		return response.BadRequest(c, "Geçersiz istek gövdesi")
+	}
+	if err := validator.Validate(&req); err != nil {
+		return response.BadRequest(c, "Telefon numarası zorunludur")
+	}
+
+	if err := h.svc.ForgotPassword(req.Phone); err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.Success(c, nil, "Şifre sıfırlama kodu gönderildi")
+}
+
+func (h *Handler) ResetPassword(c *fiber.Ctx) error {
+	var req ResetPasswordRequest
+	if err := c.BodyParser(&req); err != nil {
+		return response.BadRequest(c, "Geçersiz istek gövdesi")
+	}
+	if err := validator.Validate(&req); err != nil {
+		return response.BadRequest(c, "Telefon, OTP ve yeni şifre zorunludur")
+	}
+
+	if err := h.svc.ResetPassword(&req); err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.Success(c, nil, "Şifre başarıyla güncellendi")
+}
