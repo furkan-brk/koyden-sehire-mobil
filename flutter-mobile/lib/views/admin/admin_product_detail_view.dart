@@ -77,7 +77,7 @@ class _AdminProductDetailViewState
         ],
       ),
     );
-    final reason = reasonCtrl.text; // dispose öncesi yakala
+    final reason = reasonCtrl.text;
     reasonCtrl.dispose();
     if (confirmed == true && mounted) {
       final ok = await _ctrl.moderate(action, reason: action == 'reject' ? reason : null);
@@ -208,10 +208,24 @@ class _AdminProductDetailViewState
                   child: _ImageGallery(imageUrls: product.imageUrls),
                 ),
                 const SizedBox(width: 20),
-                // Right: product info
+                // Right: product info + farmer card
                 Expanded(
                   flex: 3,
-                  child: _ProductInfoCard(product: product, cs: cs),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _ProductInfoCard(product: product, cs: cs),
+                      if (product.farmer != null) ...[
+                        const SizedBox(height: 16),
+                        _FarmerCard(
+                          farmer: product.farmer!,
+                          cs: cs,
+                          onNavigate: () => context.go(
+                              '/admin/farmers/${product.farmer!.id}'),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -285,6 +299,15 @@ class _AdminProductDetailViewState
               ),
             const SizedBox(height: 16),
             _ProductInfoCard(product: product, cs: cs),
+            if (product.farmer != null) ...[
+              const SizedBox(height: 12),
+              _FarmerCard(
+                farmer: product.farmer!,
+                cs: cs,
+                onNavigate: () => context
+                    .go('/admin/farmers/${product.farmer!.id}'),
+              ),
+            ],
           ],
         ),
       ),
@@ -374,16 +397,48 @@ class _ProductInfoCard extends StatelessWidget {
               ],
             ),
             const Divider(height: 24),
-            _Row('Fiyat', '${product.price} ₺ / ${product.unit}'),
-            _Row('Şehir', product.city),
-            if (product.district != null)
-              _Row('İlçe', product.district!),
+            _Row('Fiyat', '${product.price} ₺ / ${product.unit}', cs),
+            _Row('Şehir', product.city, cs),
+            if (product.district != null && product.district!.isNotEmpty)
+              _Row('İlçe', product.district!, cs),
+            if (product.village != null && product.village!.isNotEmpty)
+              _Row('Köy / Mahalle', product.village!, cs),
             if (product.category != null)
-              _Row('Kategori', product.category!.name),
-            if (product.farmer != null) ...[
-              _Row('Üretici', product.farmer!.displayName),
-              if (product.farmer!.city != null)
-                _Row('Üretici Şehri', product.farmer!.city!),
+              _Row(
+                  'Kategori',
+                  product.category!.parentName != null
+                      ? '${product.category!.parentName} › ${product.category!.name}'
+                      : product.category!.name,
+                  cs),
+            if (product.stockStatus != null && product.stockStatus!.isNotEmpty)
+              _Row('Stok Durumu', _stockLabel(product.stockStatus!), cs),
+            if (product.rejectionReason != null &&
+                product.rejectionReason!.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                      color: AppColors.error.withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Red Sebebi',
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.error,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.3)),
+                    const SizedBox(height: 4),
+                    Text(product.rejectionReason!,
+                        style: const TextStyle(fontSize: 13)),
+                  ],
+                ),
+              ),
             ],
             if (product.description != null &&
                 product.description!.isNotEmpty) ...[
@@ -403,16 +458,135 @@ class _ProductInfoCard extends StatelessWidget {
       ),
     );
   }
+
+  String _stockLabel(String s) {
+    switch (s) {
+      case 'in_stock':
+        return 'Stokta var';
+      case 'out_of_stock':
+        return 'Stokta yok';
+      default:
+        return s;
+    }
+  }
+}
+
+class _FarmerCard extends StatelessWidget {
+  final dynamic farmer;
+  final ColorScheme cs;
+  final VoidCallback onNavigate;
+  const _FarmerCard(
+      {required this.farmer,
+      required this.cs,
+      required this.onNavigate});
+
+  @override
+  Widget build(BuildContext context) {
+    final location = [
+      if (farmer.city != null && farmer.city!.isNotEmpty) farmer.city!,
+      if (farmer.district != null && farmer.district!.isNotEmpty)
+        farmer.district!,
+    ].join(', ');
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.person_outlined,
+                    size: 16, color: cs.onSurfaceVariant),
+                const SizedBox(width: 6),
+                Text(
+                  'Ürünü Oluşturan Üretici',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ],
+            ),
+            const Divider(height: 20),
+            if (farmer.fullName.isNotEmpty)
+              _Row('Adı Soyadı', farmer.fullName, cs),
+            if (farmer.displayName.isNotEmpty)
+              _Row('Görünen Ad', farmer.displayName, cs),
+            if (farmer.phone.isNotEmpty)
+              _Row('Telefon', farmer.phone, cs),
+            if (location.isNotEmpty)
+              _Row('Konum', location, cs),
+            _Row(
+              'Durum',
+              _statusLabel(farmer.status),
+              cs,
+              valueColor: _statusColor(farmer.status),
+            ),
+            if (farmer.isFoundingFarmer) ...[
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  const Icon(Icons.star, size: 13, color: AppColors.warning),
+                  const SizedBox(width: 4),
+                  Text('Kurucu Üretici',
+                      style: TextStyle(
+                          fontSize: 12, color: cs.onSurfaceVariant)),
+                ],
+              ),
+            ],
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: onNavigate,
+              icon: const Icon(Icons.open_in_new, size: 15),
+              label: const Text('Üretici Profiline Git'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: Size.zero,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 10),
+                textStyle: const TextStyle(
+                    fontSize: 13, fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _statusLabel(String s) {
+    switch (s) {
+      case 'active':
+        return 'Aktif';
+      case 'suspended':
+        return 'Askıya Alındı';
+      case 'pending':
+        return 'Beklemede';
+      default:
+        return s;
+    }
+  }
+
+  Color _statusColor(String s) {
+    switch (s) {
+      case 'active':
+        return AppColors.success;
+      case 'suspended':
+        return AppColors.error;
+      default:
+        return AppColors.warning;
+    }
+  }
 }
 
 class _Row extends StatelessWidget {
   final String label;
   final String value;
-  const _Row(this.label, this.value);
+  final ColorScheme cs;
+  final Color? valueColor;
+  const _Row(this.label, this.value, this.cs, {this.valueColor});
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
@@ -428,8 +602,10 @@ class _Row extends StatelessWidget {
           ),
           Expanded(
               child: Text(value,
-                  style: const TextStyle(
-                      fontSize: 13, fontWeight: FontWeight.w500))),
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: valueColor))),
         ],
       ),
     );

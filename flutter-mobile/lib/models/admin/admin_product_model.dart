@@ -1,15 +1,23 @@
 class AdminProductFarmer {
   final String id;
+  final String fullName;
   final String displayName;
+  final String phone;
   final String? city;
+  final String? district;
+  final String status;
   final bool isVerified;
   final bool isFoundingFarmer;
   final String? profileImageUrl;
 
   const AdminProductFarmer({
     required this.id,
+    required this.fullName,
     required this.displayName,
+    required this.phone,
     this.city,
+    this.district,
+    required this.status,
     required this.isVerified,
     required this.isFoundingFarmer,
     this.profileImageUrl,
@@ -18,8 +26,12 @@ class AdminProductFarmer {
   factory AdminProductFarmer.fromJson(Map<String, dynamic> json) {
     return AdminProductFarmer(
       id: json['id']?.toString() ?? '',
+      fullName: json['full_name']?.toString() ?? '',
       displayName: json['display_name']?.toString() ?? '',
+      phone: json['phone']?.toString() ?? '',
       city: json['city']?.toString(),
+      district: json['district']?.toString(),
+      status: json['status']?.toString() ?? 'active',
       isVerified: json['is_verified'] == true,
       isFoundingFarmer: json['is_founding_farmer'] == true,
       profileImageUrl: json['profile_image_url']?.toString(),
@@ -59,8 +71,10 @@ class AdminProduct {
   final String unit;
   final String city;
   final String? district;
+  final String? village;
   final String status;
   final String? stockStatus;
+  final String? rejectionReason;
   final DateTime? createdAt;
   final List<String> imageUrls;
   final AdminProductFarmer? farmer;
@@ -74,8 +88,10 @@ class AdminProduct {
     required this.unit,
     required this.city,
     this.district,
+    this.village,
     required this.status,
     this.stockStatus,
+    this.rejectionReason,
     this.createdAt,
     this.imageUrls = const [],
     this.farmer,
@@ -107,8 +123,10 @@ class AdminProduct {
       unit: json['unit']?.toString() ?? '',
       city: json['city']?.toString() ?? '',
       district: json['district']?.toString(),
+      village: json['village']?.toString(),
       status: json['status']?.toString() ?? 'pending',
       stockStatus: json['stock_status']?.toString(),
+      rejectionReason: json['admin_note']?.toString(),
       createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
       imageUrls: images,
       farmer: farmerJson != null

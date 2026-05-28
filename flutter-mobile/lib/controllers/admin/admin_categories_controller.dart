@@ -17,7 +17,6 @@ class AdminCategoriesController extends GetxController {
     load();
   }
 
-
   Future<void> load() async {
     isLoading.value = true;
     error.value = '';
@@ -28,5 +27,43 @@ class AdminCategoriesController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  Future<bool> addSubcategory(String parentId, String name) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return false;
+    try {
+      await _repo.createSubcategory(
+        parentId: parentId,
+        name: trimmed,
+        slug: _toSlug(trimmed),
+      );
+      await load();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static String _toSlug(String input) {
+    const trMap = {
+      'ç': 'c', 'Ç': 'c',
+      'ş': 's', 'Ş': 's',
+      'ğ': 'g', 'Ğ': 'g',
+      'ı': 'i', 'İ': 'i',
+      'ö': 'o', 'Ö': 'o',
+      'ü': 'u', 'Ü': 'u',
+    };
+    final buffer = StringBuffer();
+    for (final rune in input.runes) {
+      final ch = String.fromCharCode(rune);
+      buffer.write(trMap[ch] ?? ch);
+    }
+    return buffer.toString()
+        .toLowerCase()
+        .replaceAll(RegExp(r'\s+'), '-')
+        .replaceAll(RegExp(r'[^a-z0-9\-]'), '')
+        .replaceAll(RegExp(r'-{2,}'), '-')
+        .replaceAll(RegExp(r'^-+|-+$'), '');
   }
 }

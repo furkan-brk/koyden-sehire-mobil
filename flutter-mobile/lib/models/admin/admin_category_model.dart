@@ -21,7 +21,7 @@ class AdminCategory {
       id: json['id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
       parentId: json['parent_id']?.toString(),
-      active: json['active'] == true,
+      active: json['is_active'] == true,
       sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
       children: (childrenRaw ?? [])
           .map((e) =>

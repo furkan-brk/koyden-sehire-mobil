@@ -445,6 +445,201 @@ func (r *Repository) GetImages(productID string) ([]ProductImage, error) {
 	return images, nil
 }
 
+func (r *Repository) GetAdminProductByID(id string) (*AdminProductDetail, error) {
+	query := `
+		SELECT
+			p.id, p.farmer_id, p.title, p.description,
+			p.price, p.unit, p.city, p.district, p.village,
+			p.status, p.stock_status, p.admin_note, p.created_at,
+			u.full_name AS farmer_full_name,
+			u.phone    AS farmer_phone,
+			u.status   AS farmer_status,
+			fp.display_name      AS farmer_display_name,
+			fp.city              AS farmer_city,
+			fp.district          AS farmer_district,
+			COALESCE(fp.is_verified,        false) AS farmer_is_verified,
+			COALESCE(fp.is_founding_farmer, false) AS farmer_is_founding_farmer,
+			fp.profile_image_url AS farmer_profile_image_url,
+			c.id   AS category_id,
+			c.name AS category_name,
+			c.slug AS category_slug,
+			pc.id   AS parent_category_id,
+			pc.name AS parent_category_name,
+			pc.slug AS parent_category_slug,
+			COALESCE(
+				json_agg(
+					json_build_object('url', pi.image_url, 'sort_order', pi.sort_order)
+					ORDER BY pi.sort_order
+				) FILTER (WHERE pi.id IS NOT NULL),
+				'[]'
+			) AS images
+		FROM products p
+		LEFT JOIN users           u  ON u.id          = p.farmer_id
+		LEFT JOIN farmer_profiles fp ON fp.user_id    = p.farmer_id
+		LEFT JOIN categories      c  ON c.id          = p.category_id
+		LEFT JOIN categories      pc ON pc.id         = c.parent_id
+		LEFT JOIN product_images  pi ON pi.product_id = p.id
+		WHERE p.id = $1
+		GROUP BY
+			p.id, p.farmer_id, p.title, p.description,
+			p.price, p.unit, p.city, p.district, p.village,
+			p.status, p.stock_status, p.admin_note, p.created_at,
+			u.full_name, u.phone, u.status,
+			fp.display_name, fp.city, fp.district,
+			fp.is_verified, fp.is_founding_farmer, fp.profile_image_url,
+			c.id, c.name, c.slug,
+			pc.id, pc.name, pc.slug
+	`
+	var row AdminProductRow
+	if err := r.db.QueryRowx(query, id).StructScan(&row); err != nil {
+		return nil, apperrors.ErrNotFound
+	}
+	d := mapAdminRowToDetail(row)
+	return &d, nil
+}
+
+func (r *Repository) ListAdminProducts(page, limit int) ([]AdminProductDetail, int, error) {
+	var total int
+	if err := r.db.Get(&total, "SELECT COUNT(*) FROM products"); err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * limit
+	query := `
+		SELECT
+			p.id, p.farmer_id, p.title, p.description,
+			p.price, p.unit, p.city, p.district, p.village,
+			p.status, p.stock_status, p.admin_note, p.created_at,
+			u.full_name AS farmer_full_name,
+			u.phone    AS farmer_phone,
+			u.status   AS farmer_status,
+			fp.display_name      AS farmer_display_name,
+			fp.city              AS farmer_city,
+			fp.district          AS farmer_district,
+			COALESCE(fp.is_verified,        false) AS farmer_is_verified,
+			COALESCE(fp.is_founding_farmer, false) AS farmer_is_founding_farmer,
+			fp.profile_image_url AS farmer_profile_image_url,
+			c.id   AS category_id,
+			c.name AS category_name,
+			c.slug AS category_slug,
+			pc.id   AS parent_category_id,
+			pc.name AS parent_category_name,
+			pc.slug AS parent_category_slug,
+			COALESCE(
+				json_agg(
+					json_build_object('url', pi.image_url, 'sort_order', pi.sort_order)
+					ORDER BY pi.sort_order
+				) FILTER (WHERE pi.id IS NOT NULL),
+				'[]'
+			) AS images
+		FROM products p
+		LEFT JOIN users           u  ON u.id          = p.farmer_id
+		LEFT JOIN farmer_profiles fp ON fp.user_id    = p.farmer_id
+		LEFT JOIN categories      c  ON c.id          = p.category_id
+		LEFT JOIN categories      pc ON pc.id         = c.parent_id
+		LEFT JOIN product_images  pi ON pi.product_id = p.id
+		GROUP BY
+			p.id, p.farmer_id, p.title, p.description,
+			p.price, p.unit, p.city, p.district, p.village,
+			p.status, p.stock_status, p.admin_note, p.created_at,
+			u.full_name, u.phone, u.status,
+			fp.display_name, fp.city, fp.district,
+			fp.is_verified, fp.is_founding_farmer, fp.profile_image_url,
+			c.id, c.name, c.slug,
+			pc.id, pc.name, pc.slug
+		ORDER BY p.created_at DESC
+		LIMIT $1 OFFSET $2
+	`
+
+	rows, err := r.db.Queryx(query, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var products []AdminProductDetail
+	for rows.Next() {
+		var row AdminProductRow
+		if err := rows.StructScan(&row); err != nil {
+			return nil, 0, err
+		}
+		products = append(products, mapAdminRowToDetail(row))
+	}
+	if products == nil {
+		products = []AdminProductDetail{}
+	}
+	return products, total, nil
+}
+
+func mapAdminRowToDetail(row AdminProductRow) AdminProductDetail {
+	var images []ImageItem
+	if len(row.ImagesJSON) > 0 {
+		json.Unmarshal(row.ImagesJSON, &images)
+	}
+	if images == nil {
+		images = []ImageItem{}
+	}
+
+	var cat *CategoryInfo
+	if row.CategoryID != nil {
+		c := CategoryInfo{
+			ID:   *row.CategoryID,
+			Name: derefStr(row.CategoryName),
+			Slug: derefStr(row.CategorySlug),
+		}
+		if row.ParentCategoryID != nil {
+			c.Parent = &ParentInfo{
+				ID:   *row.ParentCategoryID,
+				Name: derefStr(row.ParentCategoryName),
+				Slug: derefStr(row.ParentCategorySlug),
+			}
+		}
+		cat = &c
+	}
+
+	var farmer *AdminProductFarmerInfo
+	if row.FarmerFullName != nil {
+		farmer = &AdminProductFarmerInfo{
+			ID:               row.FarmerID,
+			FullName:         derefStr(row.FarmerFullName),
+			DisplayName:      derefStr(row.FarmerDisplayName),
+			Phone:            derefStr(row.FarmerPhone),
+			City:             derefStr(row.FarmerCity),
+			District:         derefStr(row.FarmerDistrict),
+			Status:           derefStr(row.FarmerStatus),
+			IsVerified:       row.FarmerIsVerified,
+			IsFoundingFarmer: row.FarmerIsFoundingFarmer,
+			ProfileImageURL:  row.FarmerProfileImageURL,
+		}
+	}
+
+	return AdminProductDetail{
+		ID:          row.ID,
+		FarmerID:    row.FarmerID,
+		Title:       row.Title,
+		Description: row.Description,
+		Price:       row.Price,
+		Unit:        row.Unit,
+		City:        row.City,
+		District:    row.District,
+		Village:     row.Village,
+		Status:      row.Status,
+		StockStatus: row.StockStatus,
+		AdminNote:   row.AdminNote,
+		CreatedAt:   row.CreatedAt,
+		Images:      images,
+		Category:    cat,
+		Farmer:      farmer,
+	}
+}
+
+func derefStr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
 func mapRowToPublicProduct(row PublicProductRow) PublicProduct {
 	var images []ImageItem
 	if len(row.ImagesJSON) > 0 {

@@ -17,4 +17,6 @@ type ProductRepository interface {
 	AdminHide(id string) error
 	AdminDelete(id string) error
 	ListAll(page, limit int) ([]Product, int, error)
+	GetAdminProductByID(id string) (*AdminProductDetail, error)
+	ListAdminProducts(page, limit int) ([]AdminProductDetail, int, error)
 }

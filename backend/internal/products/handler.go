@@ -150,7 +150,7 @@ func (h *Handler) AdminList(c *fiber.Ctx) error {
 		limit = 100
 	}
 
-	products, total, err := h.svc.ListAll(page, limit)
+	products, total, err := h.svc.ListAdminProducts(page, limit)
 	if err != nil {
 		return response.Error(c, err)
 	}
@@ -166,7 +166,7 @@ func (h *Handler) AdminList(c *fiber.Ctx) error {
 
 func (h *Handler) AdminGetByID(c *fiber.Ctx) error {
 	id := c.Params("id")
-	p, err := h.svc.GetByID(id)
+	p, err := h.svc.GetAdminProductByID(id)
 	if err != nil {
 		return response.Error(c, err)
 	}

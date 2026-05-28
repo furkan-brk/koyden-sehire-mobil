@@ -191,6 +191,25 @@ class AdminRepository {
     );
   }
 
+  Future<void> createSubcategory({
+    required String parentId,
+    required String name,
+    required String slug,
+  }) async {
+    await _client.post<void>(
+      ApiEndpoints.adminCategories,
+      data: {
+        'name': name,
+        'slug': slug,
+        'parent_id': parentId,
+        'icon_name': '',
+        'color_hex': '#4CAF50',
+        'sort_order': 0,
+      },
+      parse: (_) {},
+    );
+  }
+
   Future<List<AdminCategory>> getCategories() async {
     return _client.get<List<AdminCategory>>(
       ApiEndpoints.adminCategories,

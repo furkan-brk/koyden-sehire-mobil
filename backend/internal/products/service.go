@@ -174,6 +174,14 @@ func (s *Service) ListAll(page, limit int) ([]Product, int, error) {
 	return s.repo.ListAll(page, limit)
 }
 
+func (s *Service) GetAdminProductByID(id string) (*AdminProductDetail, error) {
+	return s.repo.GetAdminProductByID(id)
+}
+
+func (s *Service) ListAdminProducts(page, limit int) ([]AdminProductDetail, int, error) {
+	return s.repo.ListAdminProducts(page, limit)
+}
+
 var allowedImageExts = map[string]bool{
 	".jpg":  true,
 	".jpeg": true,
