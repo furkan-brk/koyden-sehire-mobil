@@ -32,6 +32,7 @@ import (
 	"github.com/koydensehire/backend/internal/notifications"
 	"github.com/koydensehire/backend/internal/otp"
 	"github.com/koydensehire/backend/internal/products"
+	"github.com/koydensehire/backend/internal/reports"
 	"github.com/koydensehire/backend/internal/uploads"
 	"github.com/koydensehire/backend/internal/users"
 	"github.com/koydensehire/backend/pkg/sms"
@@ -125,6 +126,7 @@ func main() {
 
 	authRepo := auth.NewRepository(db)
 	authSvc := auth.NewService(authRepo, rdb, cfg.JWT.Secret, cfg.JWT.AccessTokenExpiry, cfg.JWT.RefreshTokenExpiry)
+	authSvc.SetSMSProvider(smsProvider, cfg.App.Env)
 	authHandler := auth.NewHandler(authSvc)
 	authHandler.SetPushNotifier(pushSvc)
 
@@ -164,11 +166,21 @@ func main() {
 	favSvc := favorites.NewService(favRepo)
 	favHandler := favorites.NewHandler(favSvc)
 
+	reportRepo := reports.NewRepository(db)
+	reportSvc := reports.NewService(reportRepo)
+	reportHandler := reports.NewHandler(reportSvc)
+
 	auditRepo := audit.NewRepository(db)
 	adminRepo := admin.NewRepository(db)
 	adminSvc := admin.NewService(adminRepo, db, storageProvider, cfg.App.Env, auditRepo)
 	adminHandler := admin.NewHandler(adminSvc, db, notifSvc, auditRepo)
 	adminHandler.SetPushNotifier(pushSvc)
+
+	// Password reset: auth service'e users repository'yi inject et
+	authSvc.SetUserRepo(userRepo)
+
+	// Account deletion: users service'e audit repo ve Redis'i inject et
+	userSvc.SetDeps(auditRepo, rdb)
 
 	app := fiber.New(fiber.Config{
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
@@ -221,6 +233,8 @@ func main() {
 	api.Post("/auth/login", middleware.LoginRateLimit(rdb), authHandler.Login)
 	api.Post("/auth/refresh", authHandler.Refresh)
 	api.Post("/auth/register/customer", middleware.RegisterRateLimit(rdb), authHandler.RegisterCustomer)
+	api.Post("/auth/forgot-password", middleware.ForgotPasswordRateLimit(rdb), authHandler.ForgotPassword)
+	api.Post("/auth/reset-password", authHandler.ResetPassword)
 	api.Get("/categories", catHandler.List)
 	api.Get("/products", productHandler.List)
 	api.Get("/products/:id", productHandler.GetByID)
@@ -239,11 +253,12 @@ func main() {
 	api.Post("/farmer-applications", appHandler.Create)
 	api.Post("/uploads/application-video/presigned-url", middleware.VideoPresignRateLimit(rdb), appHandler.VideoPresign)
 
+	// Reports — public route, JWT optional, IP rate-limited (3/hour)
+	api.Post("/reports", middleware.ReportRateLimit(rdb), middleware.OptionalAuth(db, cfg.JWT.Secret), reportHandler.Submit)
+
 	fm := []fiber.Handler{requireAuth, requireFarmer, requireActive}
 	farmer := api.Group("/farmer")
-	farmer.Get("/dashboard", append(fm, func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{"success": true, "data": fiber.Map{"message": "Çiftçi paneline hoş geldiniz"}})
-	})...)
+	farmer.Get("/dashboard", append(fm, farmerHandler.GetDashboard)...)
 	farmer.Get("/profile", append(fm, userHandler.GetProfile)...)
 	farmer.Put("/profile", append(fm, userHandler.UpdateProfile)...)
 	farmer.Get("/products", append(fm, productHandler.FarmerList)...)
@@ -259,6 +274,7 @@ func main() {
 	farmer.Get("/notifications", append(fm, notifHandler.List)...)
 	farmer.Patch("/notifications/read-all", append(fm, notifHandler.MarkAllRead)...)
 	farmer.Patch("/notifications/:id/read", append(fm, notifHandler.MarkRead)...)
+	farmer.Delete("/account", append(fm, userHandler.DeleteFarmerAccount)...)
 
 	cm := []fiber.Handler{requireAuth, requireCustomer, requireActive}
 	customerGroup := api.Group("/customer")
@@ -272,6 +288,7 @@ func main() {
 	customerGroup.Get("/favorites", append(cm, favHandler.List)...)
 	customerGroup.Post("/favorites/:productId", append(cm, favHandler.Add)...)
 	customerGroup.Delete("/favorites/:productId", append(cm, favHandler.Remove)...)
+	customerGroup.Delete("/account", append(cm, userHandler.DeleteCustomerAccount)...)
 
 	adminGroup := api.Group("/admin", requireAuth, requireAdmin)
 	adminGroup.Get("/dashboard", adminHandler.Dashboard)
@@ -299,6 +316,8 @@ func main() {
 	adminGroup.Put("/categories/:id", catHandler.Update)
 	adminGroup.Delete("/categories/:id", catHandler.Delete)
 	adminGroup.Get("/audit-logs", adminHandler.ListAuditLogs)
+	adminGroup.Get("/reports", reportHandler.AdminList)
+	adminGroup.Patch("/reports/:id/review", reportHandler.AdminReview)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)

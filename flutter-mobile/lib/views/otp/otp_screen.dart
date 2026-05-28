@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 
@@ -22,19 +23,47 @@ class OtpScreen extends StatefulWidget {
 class _OtpScreenState extends State<OtpScreen> {
   String _code = '';
   late final OtpController _ctrl;
+  final OtpInputController _otpInput = OtpInputController();
+  Worker? _errorWorker;
 
   @override
   void initState() {
     super.initState();
     // Lazily register the controller for this route.
     _ctrl = Get.put(OtpController(Get.find<OtpRepository>()));
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _ctrl.send(widget.phone);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _ctrl.send(widget.phone);
+      await _tryPasteFromClipboard();
     });
+    // Shake whenever verify produces an error message.
+    _errorWorker = ever<String?>(_ctrl.errorMessage, (msg) {
+      if (msg != null && mounted) _otpInput.shake();
+    });
+  }
+
+  Future<void> _tryPasteFromClipboard() async {
+    try {
+      final data = await Clipboard.getData(Clipboard.kTextPlain);
+      final text = data?.text ?? '';
+      final digits = text.replaceAll(RegExp(r'\D'), '');
+      if (digits.length == AppConstants.otpLength && mounted) {
+        _otpInput.setValue(digits);
+        setState(() => _code = digits);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Panodan yapıştırıldı'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (_) {
+      // Clipboard access can fail silently on some platforms — ignore.
+    }
   }
 
   @override
   void dispose() {
+    _errorWorker?.dispose();
     Get.delete<OtpController>();
     super.dispose();
   }
@@ -52,6 +81,7 @@ class _OtpScreenState extends State<OtpScreen> {
   @override
   Widget build(BuildContext context) {
     final masked = PhoneFormatter.mask(widget.phone);
+    const totalCooldown = AppConstants.otpResendCooldownSeconds;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Telefon Doğrulama')),
@@ -73,6 +103,7 @@ class _OtpScreenState extends State<OtpScreen> {
               const SizedBox(height: 32),
               Obx(() => OtpInput(
                     length: AppConstants.otpLength,
+                    controller: _otpInput,
                     onChanged: (v) => setState(() => _code = v),
                     onCompleted: (_) => _verify(),
                     enabled: !_ctrl.isVerifying.value,
@@ -87,24 +118,44 @@ class _OtpScreenState extends State<OtpScreen> {
                         : null,
                   )),
               const SizedBox(height: 16),
-              Center(
-                child: Obx(() {
-                  final cooldown = _ctrl.cooldownSeconds.value;
-                  if (cooldown > 0) {
-                    return Text(
-                      'Kodu tekrar gönder ($cooldown)',
-                      style:
-                          const TextStyle(color: AppColors.onSurfaceVariant),
-                    );
-                  }
-                  return TextButton(
+              Obx(() {
+                final cooldown = _ctrl.cooldownSeconds.value;
+                if (cooldown > 0) {
+                  final progress =
+                      ((totalCooldown - cooldown) / totalCooldown)
+                          .clamp(0.0, 1.0);
+                  return Column(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          minHeight: 6,
+                          backgroundColor: AppColors.outlineVariant,
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            AppColors.primary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Kodu tekrar gönder ($cooldown sn)',
+                        style: const TextStyle(
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  );
+                }
+                return Center(
+                  child: TextButton(
                     onPressed: _ctrl.isSending.value
                         ? null
                         : () => _ctrl.send(widget.phone),
                     child: const Text('Kodu Tekrar Gönder'),
-                  );
-                }),
-              ),
+                  ),
+                );
+              }),
             ],
           ),
         ),

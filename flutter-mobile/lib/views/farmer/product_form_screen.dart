@@ -13,7 +13,6 @@ import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/shared/widgets/app_text_field.dart';
-import 'package:koyden_sehire/shared/widgets/farmer_bottom_nav.dart';
 import 'package:koyden_sehire/models/category_model.dart';
 import 'package:koyden_sehire/models/product_form_config.dart';
 import 'package:koyden_sehire/controllers/public/category_controller.dart';
@@ -281,7 +280,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         title: Text(widget.editingId == null ? 'Yeni Ürün' : 'Ürünü Düzenle'),
         leading: BackButton(onPressed: _handleBack),
       ),
-      bottomNavigationBar: const FarmerBottomNav(current: FarmerTab.products),
+      // Pushed route — BottomNav gösterilmez; tab değişimi form verisini kaybettirirdi.
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(

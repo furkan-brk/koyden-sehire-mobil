@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 
+import 'package:koyden_sehire/controllers/auth/forgot_password_controller.dart';
 import 'package:koyden_sehire/controllers/customer/customer_profile_controller.dart';
 import 'package:koyden_sehire/core/services/push_notification_service.dart';
 import 'package:koyden_sehire/services/admin_repository.dart';
@@ -28,6 +29,7 @@ import 'package:koyden_sehire/controllers/public/product_list_controller.dart';
 import 'package:koyden_sehire/core/api/api_client.dart';
 import 'package:koyden_sehire/core/services/auth_service.dart';
 import 'package:koyden_sehire/core/services/connectivity_service.dart';
+import 'package:koyden_sehire/core/services/draft_service.dart';
 import 'package:koyden_sehire/core/services/favorites_service.dart';
 import 'package:koyden_sehire/core/storage/secure_storage_service.dart';
 import 'package:koyden_sehire/services/favorites_repository.dart';
@@ -49,6 +51,8 @@ class AppBinding extends Bindings {
     Get.put<AuthService>(authService, permanent: true);
 
     Get.put<ConnectivityService>(ConnectivityService(), permanent: true);
+
+    Get.put<DraftService>(DraftService(), permanent: true);
 
     final apiClient = ApiClient(
       storage,
@@ -199,6 +203,10 @@ class AppBinding extends Bindings {
     );
     Get.lazyPut<CustomerNotificationsController>(
       () => CustomerNotificationsController(Get.find<NotificationRepository>()),
+      fenix: true,
+    );
+    Get.lazyPut<ForgotPasswordController>(
+      () => ForgotPasswordController(Get.find<AuthRepository>()),
       fenix: true,
     );
   }

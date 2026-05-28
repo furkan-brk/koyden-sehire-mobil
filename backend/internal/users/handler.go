@@ -85,3 +85,47 @@ func (h *Handler) UpdateCustomerProfile(c *fiber.Ctx) error {
 
 	return response.Success(c, profile, "Profil güncellendi")
 }
+
+// DeleteFarmerAccount farmer hesabını siler (KVKK).
+func (h *Handler) DeleteFarmerAccount(c *fiber.Ctx) error {
+	userID, _ := c.Locals(middleware.UserIDKey).(string)
+	if userID == "" {
+		return response.Unauthorized(c, "Kimlik doğrulama gerekli")
+	}
+
+	var req DeleteAccountRequest
+	if err := c.BodyParser(&req); err != nil {
+		return response.BadRequest(c, "Geçersiz istek gövdesi")
+	}
+	if err := validator.Validate(&req); err != nil {
+		return response.BadRequest(c, "Şifre zorunludur")
+	}
+
+	if err := h.svc.DeleteAccount(userID, "farmer", req.Password); err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.Success(c, nil, "Hesabınız başarıyla silindi")
+}
+
+// DeleteCustomerAccount customer hesabını siler (KVKK).
+func (h *Handler) DeleteCustomerAccount(c *fiber.Ctx) error {
+	userID, _ := c.Locals(middleware.UserIDKey).(string)
+	if userID == "" {
+		return response.Unauthorized(c, "Kimlik doğrulama gerekli")
+	}
+
+	var req DeleteAccountRequest
+	if err := c.BodyParser(&req); err != nil {
+		return response.BadRequest(c, "Geçersiz istek gövdesi")
+	}
+	if err := validator.Validate(&req); err != nil {
+		return response.BadRequest(c, "Şifre zorunludur")
+	}
+
+	if err := h.svc.DeleteAccount(userID, "customer", req.Password); err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.Success(c, nil, "Hesabınız başarıyla silindi")
+}

@@ -7,12 +7,12 @@ import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/core/services/auth_service.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
-import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/shared/widgets/category_chip.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_card.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_mode_chip.dart';
 import 'package:koyden_sehire/shared/widgets/product_card.dart';
 import 'package:koyden_sehire/shared/widgets/customer_bottom_nav.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:koyden_sehire/shared/widgets/shimmer_product_card.dart';
 import 'package:koyden_sehire/models/auth/auth_state.dart';
 import 'package:koyden_sehire/models/category_model.dart';
@@ -81,7 +81,7 @@ class HomeScreen extends StatelessWidget {
               return const SizedBox.shrink();
             } else {
               return TextButton.icon(
-                onPressed: () => context.push('/login'),
+                onPressed: () => context.go('/login'),
                 icon: const Icon(Icons.login_outlined, size: 18),
                 label: const Text('Giriş'),
               );
@@ -115,10 +115,7 @@ class HomeScreen extends StatelessWidget {
             SliverToBoxAdapter(
               child: Obx(() {
                 if (catCtrl.isLoading.value) {
-                  return const SizedBox(
-                    height: 48,
-                    child: AppLoading(),
-                  );
+                  return const _CategoryShimmer();
                 }
                 if (catCtrl.error.value != null) {
                   return const SizedBox(
@@ -358,6 +355,40 @@ class _CategoryRow extends StatelessWidget {
   }
 }
 
+/// Pill-shaped shimmer chips that mimic the category row while loading.
+class _CategoryShimmer extends StatelessWidget {
+  const _CategoryShimmer();
+
+  static const _widths = [88.0, 104.0, 76.0, 96.0, 82.0];
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return SizedBox(
+      height: 48,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        itemCount: _widths.length,
+        separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+        itemBuilder: (_, i) => Shimmer.fromColors(
+          baseColor: cs.surfaceContainerLow,
+          highlightColor: cs.surfaceContainerHigh,
+          child: Container(
+            width: _widths[i],
+            height: 36,
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _HorizontalShimmer extends StatelessWidget {
   const _HorizontalShimmer();
 
@@ -506,7 +537,7 @@ class _GuestCtaCard extends StatelessWidget {
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => context.push('/login'),
+                    onPressed: () => context.go('/login'),
                     icon: const Icon(Icons.login_outlined, size: 18),
                     label: const Text('Üretici Girişi'),
                   ),

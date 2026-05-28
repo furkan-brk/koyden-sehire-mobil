@@ -55,4 +55,32 @@ class AuthRepository {
       parse: (_) {},
     );
   }
+
+  /// Triggers a password-reset OTP to be sent to [phone]. The backend
+  /// must respond identically regardless of whether the number is on file
+  /// to avoid leaking account existence.
+  Future<void> forgotPassword(String phone) async {
+    await _api.post<void>(
+      ApiEndpoints.forgotPassword,
+      data: {'phone': phone},
+      parse: (_) {},
+    );
+  }
+
+  /// Completes the password-reset flow with the OTP delivered to [phone].
+  Future<void> resetPassword({
+    required String phone,
+    required String otp,
+    required String newPassword,
+  }) async {
+    await _api.post<void>(
+      ApiEndpoints.resetPassword,
+      data: {
+        'phone': phone,
+        'otp': otp,
+        'new_password': newPassword,
+      },
+      parse: (_) {},
+    );
+  }
 }

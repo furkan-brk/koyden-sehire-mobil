@@ -360,12 +360,7 @@ Future<void> _showReportDialog(BuildContext context, String productId) async {
                   ? null
                   : () async {
                       if (selectedKey == 'other' && noteCtrl.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(
-                            content: Text('Lütfen bir açıklama girin'),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
+                        ctx.snack('Lütfen bir açıklama girin', isError: true);
                         return;
                       }
                       setState(() => submitting = true);

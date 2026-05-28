@@ -70,12 +70,11 @@ class _AdminProductDetailViewState extends State<AdminProductDetailView> {
           ),
         ],
       ),
-    ).then((result) {
-      reasonCtrl.dispose();
-      return result;
-    });
+    );
+    final reason = reasonCtrl.text; // dispose öncesi yakala
+    reasonCtrl.dispose();
     if (confirmed == true && mounted) {
-      final ok = await _ctrl.moderate(action, reason: action == 'reject' ? reasonCtrl.text : null);
+      final ok = await _ctrl.moderate(action, reason: action == 'reject' ? reason : null);
       if (ok && mounted) {
         context.snack(action == 'approve' ? 'Ürün onaylandı.' : 'Ürün reddedildi.', isError: action == 'reject');
       }

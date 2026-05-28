@@ -601,7 +601,7 @@ class _CustomerNotifPreviewCard extends StatelessWidget {
         if (isLoading) {
           return const Padding(
             padding: EdgeInsets.all(20),
-            child: Center(child: CircularProgressIndicator()),
+            child: AppLoading(),
           );
         }
 

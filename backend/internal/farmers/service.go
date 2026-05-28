@@ -1,11 +1,69 @@
 package farmers
 
+import (
+	"fmt"
+	"time"
+
+	"github.com/google/uuid"
+)
+
 type Service struct {
 	repo *Repository
 }
 
 func NewService(repo *Repository) *Service {
 	return &Service{repo: repo}
+}
+
+// GetDashboard aggregates product stats, invite stats, recent products,
+// and a weekly-views stub (all zeros — real tracking added later).
+func (s *Service) GetDashboard(farmerID uuid.UUID) (*DashboardResponse, error) {
+	active, pending, passive, err := s.repo.GetProductStatsByFarmerID(farmerID)
+	if err != nil {
+		return nil, fmt.Errorf("product stats: %w", err)
+	}
+
+	totalQuota, usedQuota, err := s.repo.GetInviteStatsByFarmerID(farmerID)
+	if err != nil {
+		return nil, fmt.Errorf("invite stats: %w", err)
+	}
+
+	recent, err := s.repo.GetRecentProductsByFarmerID(farmerID, 5)
+	if err != nil {
+		return nil, fmt.Errorf("recent products: %w", err)
+	}
+
+	weeklyViews := buildWeeklyViewsStub()
+
+	return &DashboardResponse{
+		ProductStats: DashboardProductStats{
+			Active:  active,
+			Pending: pending,
+			Passive: passive,
+			Total:   active + pending + passive,
+		},
+		InviteStats: DashboardInviteStats{
+			TotalQuota: totalQuota,
+			UsedQuota:  usedQuota,
+			Remaining:  totalQuota - usedQuota,
+		},
+		RecentProducts: recent,
+		WeeklyViews:    weeklyViews,
+	}, nil
+}
+
+// buildWeeklyViewsStub returns last 7 days with count = 0.
+// Replace with real view-tracking queries when that feature is implemented.
+func buildWeeklyViewsStub() []DailyCount {
+	now := time.Now().UTC()
+	views := make([]DailyCount, 7)
+	for i := 6; i >= 0; i-- {
+		views[6-i] = DailyCount{
+			Date:  now.AddDate(0, 0, -i).Format("2006-01-02"),
+			Count: 0,
+		}
+	}
+	return views
 }
 
 func (s *Service) GetPublic(id string) (*PublicFarmerDetail, error) {

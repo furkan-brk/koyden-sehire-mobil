@@ -131,6 +131,61 @@ class ApplicationFormData {
             declaresNotIntermediary ?? this.declaresNotIntermediary,
       );
 
+  /// Lightweight serializer used for local draft persistence. Unlike
+  /// [toJson], it does not require an invite code and includes only fields
+  /// the wizard captures from the user (passwords intentionally included so
+  /// the user does not have to retype them when resuming).
+  Map<String, dynamic> toDraftJson() => {
+        'full_name': fullName,
+        'phone': phone,
+        'email': email,
+        'password': password,
+        'business_name': businessName,
+        'producer_type': producerType,
+        'city': city,
+        'district': district,
+        'village': village,
+        'bio': bio,
+        'product_category_slugs': productCategorySlugs,
+        'product_examples': productExamples,
+        'production_place_type': productionPlaceType,
+        'application_note': applicationNote,
+        'application_video_key': applicationVideoKey,
+        'kvkk_accepted': kvkkAccepted,
+        'platform_terms_accepted': platformTermsAccepted,
+        'declares_own_production': declaresOwnProduction,
+        'declares_accurate_location': declaresAccurateLocation,
+        'declares_not_intermediary': declaresNotIntermediary,
+      };
+
+  static ApplicationFormData fromDraftJson(Map<String, dynamic> json) {
+    final slugs = json['product_category_slugs'];
+    return ApplicationFormData(
+      fullName: json['full_name']?.toString() ?? '',
+      phone: json['phone']?.toString() ?? '',
+      email: json['email']?.toString(),
+      password: json['password']?.toString() ?? '',
+      businessName: json['business_name']?.toString() ?? '',
+      producerType: json['producer_type']?.toString(),
+      city: json['city']?.toString() ?? '',
+      district: json['district']?.toString() ?? '',
+      village: json['village']?.toString() ?? '',
+      bio: json['bio']?.toString() ?? '',
+      productCategorySlugs: slugs is List
+          ? slugs.map((e) => e.toString()).toList()
+          : const [],
+      productExamples: json['product_examples']?.toString() ?? '',
+      productionPlaceType: json['production_place_type']?.toString(),
+      applicationNote: json['application_note']?.toString(),
+      applicationVideoKey: json['application_video_key']?.toString(),
+      kvkkAccepted: json['kvkk_accepted'] == true,
+      platformTermsAccepted: json['platform_terms_accepted'] == true,
+      declaresOwnProduction: json['declares_own_production'] == true,
+      declaresAccurateLocation: json['declares_accurate_location'] == true,
+      declaresNotIntermediary: json['declares_not_intermediary'] == true,
+    );
+  }
+
   Map<String, dynamic> toJson({required String inviteCode}) => {
         'invite_code': inviteCode,
         'full_name': fullName,

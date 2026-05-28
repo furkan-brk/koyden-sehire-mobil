@@ -13,6 +13,7 @@ type User struct {
 	PhoneVerifiedAt *time.Time `db:"phone_verified_at" json:"phone_verified_at"`
 	CreatedAt       time.Time  `db:"created_at" json:"created_at"`
 	UpdatedAt       time.Time  `db:"updated_at" json:"updated_at"`
+	DeletedAt       *time.Time `db:"deleted_at" json:"deleted_at,omitempty"`
 }
 
 type FarmerProfile struct {

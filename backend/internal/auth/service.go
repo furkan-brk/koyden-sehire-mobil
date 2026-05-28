@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -237,22 +238,19 @@ func (s *Service) issueRefreshToken(ctx context.Context, userID string) (string,
 	return token, nil
 }
 
-// ForgotPassword telefona OTP gönderir; reset akışı için ayrı purpose key kullanır.
-// Kullanıcı varlığını kasıtlı olarak doğrulamıyoruz (hesap numaralandırma saldırılarına karşı).
-// OTP, login OTP'siyle çakışmaması için "reset:{phone}" key'iyle saklanır.
+// ForgotPassword telefona şifre sıfırlama OTP'si gönderir.
+// OTP, login OTP'siyle çakışmaması için "reset:{phone}" key'iyle Redis'e yazılır (5 dk TTL).
+// Development modunda kod stdout'a basılır; production'da SMS gönderilir.
 func (s *Service) ForgotPassword(phone string) error {
 	if !validPhone(phone) {
 		return apperrors.New("INVALID_PHONE", "Geçersiz telefon numarası formatı", 400)
 	}
 
-	// Kullanıcının var olup olmadığını kontrol et
 	_, err := s.repo.FindByPhone(phone)
 	if err != nil {
-		// Hesap numaralandırma koruması: hata mesajını gizle, sadece 404 ise bildir
 		return apperrors.New("PHONE_NOT_FOUND", "Bu telefon numarasıyla kayıtlı hesap bulunamadı", 404)
 	}
 
-	// Reset için ayrı key: otp:{phone} ile çakışmaz
 	ctx := context.Background()
 	resetKey := fmt.Sprintf("reset:%s", phone)
 
@@ -262,20 +260,18 @@ func (s *Service) ForgotPassword(phone string) error {
 		return apperrors.ErrInternal
 	}
 
-	return nil
-}
-
-// ForgotPasswordWithCode şifre sıfırlama OTP'sini döndürür (development modunda test için).
-// Production'da SMS gönderimi için OTP service kullanın.
-func (s *Service) GetResetCode(phone string) string {
-	ctx := context.Background()
-	resetKey := fmt.Sprintf("reset:%s", phone)
-	val, err := s.rdb.Get(ctx, resetKey).Result()
-	if err != nil {
-		return ""
+	if s.appEnv == "development" {
+		log.Printf("[RESET OTP] %s -> %s", phone, code)
+	} else if s.smsProvider != nil {
+		msg := fmt.Sprintf("Köyden Şehire şifre sıfırlama kodunuz: %s. Bu kod 5 dakika geçerlidir.", code)
+		go func() {
+			if err := s.smsProvider.Send(phone, msg); err != nil {
+				log.Printf("[SMS] reset OTP send failed: %v", err)
+			}
+		}()
 	}
-	code, _ := splitCode(val)
-	return code
+
+	return nil
 }
 
 // ResetPassword OTP'yi doğrular ve şifreyi günceller.
