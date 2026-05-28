@@ -11,8 +11,6 @@ import 'package:koyden_sehire/views/admin/admin_categories_view.dart';
 import 'package:koyden_sehire/views/admin/admin_dashboard_view.dart';
 import 'package:koyden_sehire/views/admin/admin_farmer_detail_view.dart';
 import 'package:koyden_sehire/views/admin/admin_farmers_view.dart';
-import 'package:koyden_sehire/views/admin/admin_invite_network_view.dart';
-import 'package:koyden_sehire/views/admin/admin_map_view.dart';
 import 'package:koyden_sehire/views/admin/admin_product_detail_view.dart';
 import 'package:koyden_sehire/views/admin/admin_products_view.dart';
 import 'package:koyden_sehire/views/admin/widgets/admin_shell.dart';
@@ -274,11 +272,11 @@ class AppRouter {
             ),
             GoRoute(
               path: '/admin/map',
-              pageBuilder: (_, __) => const NoTransitionPage(child: AdminMapView()),
+              redirect: (_, __) => '/admin/farmers',
             ),
             GoRoute(
               path: '/admin/invite-network',
-              pageBuilder: (_, __) => const NoTransitionPage(child: AdminInviteNetworkView()),
+              redirect: (_, __) => '/admin/farmers',
             ),
             GoRoute(
               path: '/admin/audit-logs',

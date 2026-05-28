@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/models/admin/admin_application_model.dart';
@@ -13,6 +14,30 @@ import 'package:koyden_sehire/views/admin/widgets/admin_risk_badge.dart';
 import 'package:koyden_sehire/views/admin/widgets/admin_status_badge.dart';
 import 'package:koyden_sehire/controllers/admin/admin_application_detail_controller.dart';
 import 'package:koyden_sehire/core/utils/date_formatter.dart' show AppFormatters;
+
+// ── Label maps ──────────────────────────────────────────────────────────────
+
+const _producerTypeLabels = {
+  'individual_farmer': 'Bireysel Çiftçi',
+  'family_producer': 'Aile Üreticisi',
+  'cooperative': 'Kooperatif',
+  'small_producer': 'Küçük Üretici',
+  'dairy_producer': 'Süt Üreticisi',
+  'beekeeper': 'Arıcı',
+  'olive_producer': 'Zeytin Üreticisi',
+  'other': 'Diğer',
+};
+
+const _productionPlaceLabels = {
+  'own_land': 'Kendi Arazisi',
+  'family_land': 'Aile Arazisi',
+  'rented_land': 'Kiralık Arazi',
+  'cooperative_production': 'Kooperatif Üretimi',
+  'home_production': 'Ev Üretimi',
+  'other': 'Diğer',
+};
+
+// ── Main view ────────────────────────────────────────────────────────────────
 
 class AdminApplicationDetailView extends StatefulWidget {
   final String appId;
@@ -77,7 +102,7 @@ class _AdminApplicationDetailViewState
         ],
       ),
     );
-    final reason = reasonCtrl.text; // dispose öncesi yakala
+    final reason = reasonCtrl.text;
     reasonCtrl.dispose();
     if (confirmed == true && mounted) {
       final ok = await _ctrl.review('reject', reason: reason);
@@ -142,10 +167,8 @@ class _AdminApplicationDetailViewState
     final cs = Theme.of(context).colorScheme;
     return Column(
       children: [
-        // Breadcrumb + actions
         Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           decoration: const BoxDecoration(
             color: AppColors.surfaceContainerLowest,
             border: Border(
@@ -218,23 +241,43 @@ class _AdminApplicationDetailViewState
             ],
           ),
         ),
-        // 2-column content
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(flex: 3, child: _InfoCard(app: app)),
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    children: [
+                      _PersonalCard(app: app),
+                      const SizedBox(height: 16),
+                      _BusinessCard(app: app),
+                      const SizedBox(height: 16),
+                      _LocationCard(app: app),
+                      const SizedBox(height: 16),
+                      _ProductionCard(app: app),
+                      const SizedBox(height: 16),
+                      _MediaCard(app: app),
+                    ],
+                  ),
+                ),
                 const SizedBox(width: 16),
                 Expanded(
                   flex: 2,
                   child: Column(
                     children: [
-                      _RiskCard(app: app),
-                      if (app.adminNotes != null) ...[
+                      _SummaryCard(app: app),
+                      const SizedBox(height: 16),
+                      _DeclarationsCard(app: app),
+                      if (app.adminNote != null) ...[
                         const SizedBox(height: 16),
-                        _AdminNotesCard(notes: app.adminNotes!),
+                        _AdminNoteCard(note: app.adminNote!),
+                      ],
+                      if (app.rejectionReason != null) ...[
+                        const SizedBox(height: 16),
+                        _RejectionCard(reason: app.rejectionReason!),
                       ],
                     ],
                   ),
@@ -272,8 +315,7 @@ class _AdminApplicationDetailViewState
                   TextButton.icon(
                     onPressed: _confirmReject,
                     icon: Icon(Icons.close, color: cs.error),
-                    label:
-                        Text('Reddet', style: TextStyle(color: cs.error)),
+                    label: Text('Reddet', style: TextStyle(color: cs.error)),
                   ),
                   TextButton.icon(
                     onPressed: _confirmApprove,
@@ -289,12 +331,26 @@ class _AdminApplicationDetailViewState
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            _InfoCard(app: app),
-            const SizedBox(height: 16),
-            _RiskCard(app: app),
-            if (app.adminNotes != null) ...[
-              const SizedBox(height: 16),
-              _AdminNotesCard(notes: app.adminNotes!),
+            _SummaryCard(app: app),
+            const SizedBox(height: 12),
+            _PersonalCard(app: app),
+            const SizedBox(height: 12),
+            _BusinessCard(app: app),
+            const SizedBox(height: 12),
+            _LocationCard(app: app),
+            const SizedBox(height: 12),
+            _ProductionCard(app: app),
+            const SizedBox(height: 12),
+            _MediaCard(app: app),
+            const SizedBox(height: 12),
+            _DeclarationsCard(app: app),
+            if (app.adminNote != null) ...[
+              const SizedBox(height: 12),
+              _AdminNoteCard(note: app.adminNote!),
+            ],
+            if (app.rejectionReason != null) ...[
+              const SizedBox(height: 12),
+              _RejectionCard(reason: app.rejectionReason!),
             ],
           ],
         ),
@@ -303,143 +359,275 @@ class _AdminApplicationDetailViewState
   }
 }
 
-// ── Shared cards ─────────────────────────────────────────────────────────────
+// ── Section cards ────────────────────────────────────────────────────────────
 
-class _InfoCard extends StatelessWidget {
+class _SummaryCard extends StatelessWidget {
   final AdminApplication app;
-  const _InfoCard({required this.app});
+  const _SummaryCard({required this.app});
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text('Üretici Bilgileri',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        )),
-                const Spacer(),
-                AdminStatusBadge(status: app.status),
-              ],
+    return _SectionCard(
+      title: 'Başvuru Özeti',
+      icon: Icons.assignment_outlined,
+      children: [
+        _FieldRow('Durum', child: AdminStatusBadge(status: app.status)),
+        if (app.riskLevel != null)
+          _FieldRow('Risk', child: AdminRiskBadge(level: app.riskLevel!)),
+        _Field('Başvuru Tarihi', AppFormatters.date(app.createdAt)),
+        if (app.inviteCode != null)
+          _Field('Davet Kodu',
+              '${app.inviteCode}${app.inviteTrust != null ? ' (${app.inviteTrust})' : ''}'),
+      ],
+    );
+  }
+}
+
+class _PersonalCard extends StatelessWidget {
+  final AdminApplication app;
+  const _PersonalCard({required this.app});
+
+  @override
+  Widget build(BuildContext context) {
+    return _SectionCard(
+      title: 'Kişisel ve İletişim Bilgileri',
+      icon: Icons.person_outline,
+      children: [
+        _Field('Ad Soyad', app.fullName),
+        _Field('Telefon', app.phone),
+        _Field('E-posta', app.email ?? 'Belirtilmemiş'),
+      ],
+    );
+  }
+}
+
+class _BusinessCard extends StatelessWidget {
+  final AdminApplication app;
+  const _BusinessCard({required this.app});
+
+  @override
+  Widget build(BuildContext context) {
+    return _SectionCard(
+      title: 'İşletme ve Üretici Bilgileri',
+      icon: Icons.store_outlined,
+      children: [
+        _Field('İşletme / Çiftlik Adı',
+            app.businessName.isEmpty ? 'Belirtilmemiş' : app.businessName),
+        _Field('Üretici Tipi',
+            _producerTypeLabels[app.producerType] ?? app.producerType),
+        _Field('Biyografi / Hakkında',
+            (app.bio == null || app.bio!.isEmpty) ? 'Belirtilmemiş' : app.bio!),
+      ],
+    );
+  }
+}
+
+class _LocationCard extends StatelessWidget {
+  final AdminApplication app;
+  const _LocationCard({required this.app});
+
+  @override
+  Widget build(BuildContext context) {
+    return _SectionCard(
+      title: 'Konum Bilgileri',
+      icon: Icons.location_on_outlined,
+      children: [
+        _Field('İl', app.city.isEmpty ? 'Belirtilmemiş' : app.city),
+        _Field('İlçe', app.district.isEmpty ? 'Belirtilmemiş' : app.district),
+        _Field('Köy / Mahalle',
+            (app.village == null || app.village!.isEmpty)
+                ? 'Belirtilmemiş'
+                : app.village!),
+      ],
+    );
+  }
+}
+
+class _ProductionCard extends StatelessWidget {
+  final AdminApplication app;
+  const _ProductionCard({required this.app});
+
+  @override
+  Widget build(BuildContext context) {
+    return _SectionCard(
+      title: 'Ürün ve Üretim Bilgileri',
+      icon: Icons.eco_outlined,
+      children: [
+        if (app.productCategories.isNotEmpty)
+          _FieldRow(
+            'Ürün Kategorileri',
+            child: Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: app.productCategories
+                  .map((c) => _Chip(label: c))
+                  .toList(),
             ),
-            const Divider(height: 20),
-            _Field('Ad Soyad', app.fullName),
-            _Field('İşletme Adı', app.businessName),
-            _Field('Telefon', app.phone),
-            _Field(
-                'Lokasyon',
-                '${app.city}, ${app.district}'
-                    '${app.village != null ? ' - ${app.village}' : ''}'),
-            _Field('Başvuru Tarihi', AppFormatters.date(app.createdAt)),
-            if (app.profileDescription != null)
-              _Field('Hakkında', app.profileDescription!),
-            if (app.productExamples != null)
-              _Field('Ürün Örnekleri', app.productExamples!),
-          ],
+          )
+        else
+          const _Field('Ürün Kategorileri', 'Belirtilmemiş'),
+        _Field('Ürün Örnekleri',
+            (app.productExamples == null || app.productExamples!.isEmpty)
+                ? 'Belirtilmemiş'
+                : app.productExamples!),
+        _Field(
+          'Üretim Yeri',
+          app.productionPlaceType == null
+              ? 'Belirtilmemiş'
+              : (_productionPlaceLabels[app.productionPlaceType!] ??
+                  app.productionPlaceType!),
         ),
-      ),
+        _Field('Başvuru Notu',
+            (app.applicationNote == null || app.applicationNote!.isEmpty)
+                ? 'Belirtilmemiş'
+                : app.applicationNote!),
+      ],
     );
   }
 }
 
-class _RiskCard extends StatelessWidget {
+class _MediaCard extends StatelessWidget {
   final AdminApplication app;
-  const _RiskCard({required this.app});
+  const _MediaCard({required this.app});
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Risk Analizi',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    )),
-            const Divider(height: 20),
-            if (app.riskLevel != null)
-              _RiskRow('Genel Risk', AdminRiskBadge(level: app.riskLevel!)),
-            if (app.inviteCode != null)
-              _StrRow(
-                  'Davet Kodu',
-                  '${app.inviteCode}'
-                      '${app.inviteTrust != null ? ' (${app.inviteTrust})' : ''}'),
-            _VideoRow(videoUrl: app.videoUrl),
-          ],
-        ),
-      ),
+    return _SectionCard(
+      title: 'Belgeler ve Video',
+      icon: Icons.attach_file_outlined,
+      children: [
+        // Video
+        const _Label('Tanıtım Videosu'),
+        const SizedBox(height: 6),
+        if (app.applicationVideoUrl != null)
+          _LinkTile(
+            label: 'Videoyu Aç',
+            icon: Icons.videocam_outlined,
+            url: app.applicationVideoUrl!,
+          )
+        else
+          const _EmptyText('Video yüklenmemiş'),
+        const SizedBox(height: 12),
+        // Documents
+        const _Label('Belgeler'),
+        const SizedBox(height: 6),
+        if (app.documentUrls.isNotEmpty)
+          ...app.documentUrls.asMap().entries.map(
+                (e) => Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: _LinkTile(
+                    label: 'Belge ${e.key + 1}',
+                    icon: Icons.insert_drive_file_outlined,
+                    url: e.value,
+                  ),
+                ),
+              )
+        else
+          const _EmptyText('Belge yüklenmemiş'),
+      ],
     );
   }
 }
 
-class _VideoRow extends StatelessWidget {
-  final String? videoUrl;
-  const _VideoRow({required this.videoUrl});
+class _DeclarationsCard extends StatelessWidget {
+  final AdminApplication app;
+  const _DeclarationsCard({required this.app});
+
+  @override
+  Widget build(BuildContext context) {
+    return _SectionCard(
+      title: 'Yasal Onaylar ve Beyanlar',
+      icon: Icons.verified_outlined,
+      children: [
+        _DeclarationRow('KVKK Onayı', app.kvkkAccepted),
+        _DeclarationRow('Kullanıcı Sözleşmesi', app.platformTermsAccepted),
+        _DeclarationRow(
+            'Kendi üretimini sattığını beyan etti', app.declaresOwnProduction),
+        _DeclarationRow(
+            'Konum bilgilerinin doğru olduğunu beyan etti',
+            app.declaresAccurateLocation),
+        _DeclarationRow(
+            'Aracı/komisyoncu olmadığını beyan etti',
+            app.declaresNotIntermediary),
+      ],
+    );
+  }
+}
+
+class _AdminNoteCard extends StatelessWidget {
+  final String note;
+  const _AdminNoteCard({required this.note});
+
+  @override
+  Widget build(BuildContext context) {
+    return _SectionCard(
+      title: 'Admin Notu',
+      icon: Icons.edit_note_outlined,
+      children: [
+        Text(note, style: const TextStyle(fontSize: 13)),
+      ],
+    );
+  }
+}
+
+class _RejectionCard extends StatelessWidget {
+  final String reason;
+  const _RejectionCard({required this.reason});
+
+  @override
+  Widget build(BuildContext context) {
+    return _SectionCard(
+      title: 'Red Gerekçesi',
+      icon: Icons.cancel_outlined,
+      iconColor: AppColors.error,
+      children: [
+        Text(reason,
+            style: const TextStyle(fontSize: 13, color: AppColors.error)),
+      ],
+    );
+  }
+}
+
+// ── Reusable primitives ──────────────────────────────────────────────────────
+
+class _SectionCard extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color? iconColor;
+  final List<Widget> children;
+
+  const _SectionCard({
+    required this.title,
+    required this.icon,
+    required this.children,
+    this.iconColor,
+  });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text('Video Durumu', style: TextStyle(fontSize: 13)),
-          if (videoUrl != null)
-            const Row(
-              children: [
-                Icon(Icons.videocam_outlined,
-                    size: 14, color: AppColors.success),
-                SizedBox(width: 4),
-                Text('Yüklendi',
-                    style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.success,
-                        fontWeight: FontWeight.w500)),
-              ],
-            )
-          else
-            Row(
-              children: [
-                Icon(Icons.videocam_off_outlined,
-                    size: 14, color: cs.onSurfaceVariant),
-                const SizedBox(width: 4),
-                Text('Eksik',
-                    style: TextStyle(
-                        fontSize: 13, color: cs.onSurfaceVariant)),
-              ],
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AdminNotesCard extends StatelessWidget {
-  final String notes;
-  const _AdminNotesCard({required this.notes});
-
-  @override
-  Widget build(BuildContext context) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Admin Notları',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    )),
+            Row(
+              children: [
+                Icon(icon,
+                    size: 16, color: iconColor ?? AppColors.primaryContainer),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSurface,
+                      ),
+                ),
+              ],
+            ),
             const Divider(height: 20),
-            Text(notes, style: const TextStyle(fontSize: 13)),
+            ...children,
           ],
         ),
       ),
@@ -456,7 +644,7 @@ class _Field extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 5),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -476,42 +664,158 @@ class _Field extends StatelessWidget {
   }
 }
 
-class _RiskRow extends StatelessWidget {
+class _FieldRow extends StatelessWidget {
   final String label;
-  final Widget badge;
-  const _RiskRow(this.label, this.badge);
+  final Widget child;
+  const _FieldRow(this.label, {required this.child});
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 13)),
-          badge,
+          Text(label,
+              style: TextStyle(
+                  fontSize: 11,
+                  color: cs.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3)),
+          const SizedBox(height: 6),
+          child,
         ],
       ),
     );
   }
 }
 
-class _StrRow extends StatelessWidget {
+class _Label extends StatelessWidget {
+  final String text;
+  const _Label(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(text,
+        style: TextStyle(
+            fontSize: 11,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.3));
+  }
+}
+
+class _EmptyText extends StatelessWidget {
+  final String text;
+  const _EmptyText(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(text,
+        style: const TextStyle(
+            fontSize: 13, color: AppColors.onSurfaceVariant));
+  }
+}
+
+class _Chip extends StatelessWidget {
   final String label;
-  final String value;
-  const _StrRow(this.label, this.value);
+  const _Chip({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.primaryFixed.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(
+            color: AppColors.primaryContainer.withValues(alpha: 0.3)),
+      ),
+      child: Text(label,
+          style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.primaryContainer,
+              fontWeight: FontWeight.w500)),
+    );
+  }
+}
+
+class _LinkTile extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final String url;
+  const _LinkTile(
+      {required this.label, required this.icon, required this.url});
+
+  Future<void> _open() async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return;
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: _open,
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          border: Border.all(color: AppColors.outlineVariant),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 16, color: AppColors.primaryContainer),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(label,
+                  style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.primaryContainer,
+                      fontWeight: FontWeight.w500)),
+            ),
+            const Icon(Icons.open_in_new,
+                size: 14, color: AppColors.onSurfaceVariant),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DeclarationRow extends StatelessWidget {
+  final String label;
+  final bool accepted;
+  const _DeclarationRow(this.label, this.accepted);
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontSize: 13)),
-          Text(value,
-              style: const TextStyle(
-                  fontSize: 13, fontWeight: FontWeight.w500)),
+          Icon(
+            accepted ? Icons.check_circle : Icons.cancel,
+            size: 17,
+            color: accepted ? AppColors.success : AppColors.error,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(label,
+                style: const TextStyle(fontSize: 13)),
+          ),
+          Text(
+            accepted ? 'Onaylandı' : 'Onaylanmadı',
+            style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: accepted ? AppColors.success : AppColors.error),
+          ),
         ],
       ),
     );

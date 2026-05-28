@@ -98,11 +98,60 @@ class _AdminFarmersViewState extends State<AdminFarmersView> {
                     ],
                   ),
                   SizedBox(height: isDesktop ? 16 : 12),
-                  SearchField(
-                    controller: _searchController,
-                    hintText: 'İsim, şehir veya davet kodu ara...',
-                    onChanged: (v) => _ctrl.search.value = v,
-                    onClear: () => _ctrl.search.value = '',
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: SearchField(
+                          controller: _searchController,
+                          hintText: 'İsim, şehir veya davet kodu ara...',
+                          onChanged: (v) => _ctrl.search.value = v,
+                          onClear: () => _ctrl.search.value = '',
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        flex: 2,
+                        child: Obx(() {
+                          final cityVal = _ctrl.cityFilter.value;
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 2),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .outline),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: DropdownButton<String>(
+                              value: cityVal.isEmpty ? null : cityVal,
+                              hint: const Text('Tüm Şehirler',
+                                  style: TextStyle(fontSize: 13)),
+                              underline: const SizedBox.shrink(),
+                              isExpanded: true,
+                              items: [
+                                const DropdownMenuItem<String>(
+                                  value: null,
+                                  child: Text('Tüm Şehirler',
+                                      style: TextStyle(fontSize: 13)),
+                                ),
+                                ..._ctrl.cities.map(
+                                    (c) => DropdownMenuItem<String>(
+                                          value: c,
+                                          child: Text(c,
+                                              style: const TextStyle(
+                                                  fontSize: 13)),
+                                        )),
+                              ],
+                              onChanged: (v) =>
+                                  _ctrl.cityFilter.value = v ?? '',
+                            ),
+                          );
+                        }),
+                      ),
+                    ],
                   ),
                   SizedBox(height: isDesktop ? 16 : 8),
                 ],

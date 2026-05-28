@@ -216,18 +216,6 @@ class _AdminSidebar extends StatelessWidget {
                       currentLocation: currentLocation,
                     ),
                     _SidebarItem(
-                      icon: Icons.bar_chart_outlined,
-                      label: 'Şehir Yoğunluğu',
-                      route: '/admin/map',
-                      currentLocation: currentLocation,
-                    ),
-                    _SidebarItem(
-                      icon: Icons.account_tree_outlined,
-                      label: 'Davet Ağı',
-                      route: '/admin/invite-network',
-                      currentLocation: currentLocation,
-                    ),
-                    _SidebarItem(
                       icon: Icons.history_outlined,
                       label: 'Denetim Günlüğü',
                       route: '/admin/audit-logs',
@@ -383,8 +371,6 @@ class _AdminDrawer extends StatelessWidget {
                 _NavItem(icon: Icons.inventory_2_outlined, label: 'Ürün Moderasyonu', route: '/admin/products', currentLocation: currentLocation),
                 _NavItem(icon: Icons.category_outlined, label: 'Kategoriler', route: '/admin/categories', currentLocation: currentLocation),
                 _NavItem(icon: Icons.people_outline, label: 'Üreticiler', route: '/admin/farmers', currentLocation: currentLocation),
-                _NavItem(icon: Icons.bar_chart_outlined, label: 'Şehir Yoğunluğu', route: '/admin/map', currentLocation: currentLocation),
-                _NavItem(icon: Icons.account_tree_outlined, label: 'Davet Ağı', route: '/admin/invite-network', currentLocation: currentLocation),
                 _NavItem(icon: Icons.history_outlined, label: 'Denetim Günlüğü', route: '/admin/audit-logs', currentLocation: currentLocation),
               ],
             ),

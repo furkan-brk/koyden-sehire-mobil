@@ -85,6 +85,73 @@ func (r *Repository) GetAdminDetail(id string) (*FarmerDetail, error) {
 	if err != nil {
 		return nil, apperrors.ErrNotFound
 	}
+
+	// Referans eden kişi: bu farmerin başvurusundaki referred_by_user_id
+	var ref struct {
+		ID          string `db:"id"`
+		FullName    string `db:"full_name"`
+		Phone       string `db:"phone"`
+		City        string `db:"city"`
+		DisplayName string `db:"display_name"`
+	}
+	if refErr := r.db.Get(&ref, `
+		SELECT u2.id, u2.full_name, u2.phone, fp2.city, fp2.display_name
+		FROM farmer_applications fa
+		JOIN users u2 ON u2.id = fa.referred_by_user_id
+		JOIN farmer_profiles fp2 ON fp2.user_id = u2.id
+		WHERE fa.phone = (SELECT phone FROM users WHERE id = $1)
+		  AND fa.status = 'approved'
+		  AND fa.referred_by_user_id IS NOT NULL
+		LIMIT 1
+	`, id); refErr == nil {
+		d.ReferredBy = &ReferredByInfo{
+			ID:          ref.ID,
+			FullName:    ref.FullName,
+			Phone:       ref.Phone,
+			City:        ref.City,
+			DisplayName: ref.DisplayName,
+		}
+	}
+
+	// Bu farmerin davet ettiği üreticiler
+	type referralRow struct {
+		ID          string    `db:"id"`
+		FullName    string    `db:"full_name"`
+		DisplayName string    `db:"display_name"`
+		City        string    `db:"city"`
+		Status      string    `db:"status"`
+		CreatedAt   time.Time `db:"created_at"`
+		InviteCode  *string   `db:"invite_code"`
+	}
+	var rows []referralRow
+	_ = r.db.Select(&rows, `
+		SELECT u2.id, u2.full_name, fp2.display_name, fp2.city, u2.status, u2.created_at,
+		       ic.code AS invite_code
+		FROM farmer_applications fa
+		JOIN users u2 ON u2.phone = fa.phone AND u2.role = 'farmer'
+		JOIN farmer_profiles fp2 ON fp2.user_id = u2.id
+		LEFT JOIN LATERAL (
+			SELECT code FROM invite_codes
+			WHERE owner_user_id = u2.id AND is_active = true
+			ORDER BY created_at DESC LIMIT 1
+		) ic ON true
+		WHERE fa.referred_by_user_id = $1
+		  AND fa.status = 'approved'
+		ORDER BY u2.created_at DESC
+	`, id)
+	d.Referrals = make([]ReferralItem, len(rows))
+	for i, row := range rows {
+		d.Referrals[i] = ReferralItem{
+			ID:          row.ID,
+			FullName:    row.FullName,
+			DisplayName: row.DisplayName,
+			City:        row.City,
+			Status:      row.Status,
+			CreatedAt:   row.CreatedAt,
+			InviteCode:  row.InviteCode,
+		}
+	}
+
 	return &d, nil
 }
 
@@ -133,9 +200,14 @@ func (r *Repository) ListPublic(page, limit int, city, search string) ([]PublicF
 	return farmers, total, err
 }
 
-func (r *Repository) ListAdmin(page, limit int) ([]FarmerDetail, int, error) {
+func (r *Repository) ListAdmin(page, limit int, city string) ([]FarmerDetail, int, error) {
 	var total int
-	if err := r.db.Get(&total, "SELECT COUNT(*) FROM users WHERE role = 'farmer'"); err != nil {
+	if err := r.db.Get(&total, `
+		SELECT COUNT(*) FROM users u
+		JOIN farmer_profiles fp ON fp.user_id = u.id
+		WHERE u.role = 'farmer'
+		  AND ($1 = '' OR LOWER(fp.city) = LOWER($1))
+	`, city); err != nil {
 		return nil, 0, err
 	}
 
@@ -157,9 +229,10 @@ func (r *Repository) ListAdmin(page, limit int) ([]FarmerDetail, int, error) {
 			LIMIT 1
 		) ic ON true
 		WHERE u.role = 'farmer'
+		  AND ($1 = '' OR LOWER(fp.city) = LOWER($1))
 		ORDER BY u.created_at DESC
-		LIMIT $1 OFFSET $2
-	`, limit, offset)
+		LIMIT $2 OFFSET $3
+	`, city, limit, offset)
 	if farmers == nil {
 		farmers = []FarmerDetail{}
 	}

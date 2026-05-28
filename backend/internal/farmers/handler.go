@@ -70,8 +70,9 @@ func (h *Handler) AdminList(c *fiber.Ctx) error {
 	if limit > 100 {
 		limit = 100
 	}
+	city := strings.TrimSpace(c.Query("city", ""))
 
-	farmers, total, err := h.svc.List(page, limit)
+	farmers, total, err := h.svc.List(page, limit, city)
 	if err != nil {
 		return response.Error(c, err)
 	}

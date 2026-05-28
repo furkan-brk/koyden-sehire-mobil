@@ -11,6 +11,8 @@ class AdminFarmersController extends GetxController {
   final error = ''.obs;
   final _items = <AdminFarmer>[].obs;
   final search = ''.obs;
+  final cityFilter = ''.obs;
+  final cities = <String>[].obs;
 
   List<AdminFarmer> get filteredItems {
     final q = search.value.toLowerCase().trim();
@@ -26,14 +28,21 @@ class AdminFarmersController extends GetxController {
   void onInit() {
     super.onInit();
     load();
+    ever(cityFilter, (_) => load());
   }
-
 
   Future<void> load() async {
     isLoading.value = true;
     error.value = '';
     try {
-      _items.value = await _repo.getFarmers();
+      final filter = cityFilter.value.isEmpty ? null : cityFilter.value;
+      final result = await _repo.getFarmers(city: filter);
+      _items.value = result;
+      // Şehir listesini yalnızca filtresiz ilk yüklemede doldur
+      if (filter == null && cities.isEmpty) {
+        final unique = result.map((f) => f.city).toSet().toList()..sort();
+        cities.value = unique;
+      }
     } catch (e) {
       error.value = e.toString();
     } finally {

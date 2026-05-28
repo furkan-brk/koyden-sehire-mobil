@@ -50,12 +50,72 @@ class AdminFarmer {
       );
 }
 
+class FarmerReferredBy {
+  final String id;
+  final String fullName;
+  final String phone;
+  final String city;
+  final String displayName;
+
+  const FarmerReferredBy({
+    required this.id,
+    required this.fullName,
+    required this.phone,
+    required this.city,
+    required this.displayName,
+  });
+
+  factory FarmerReferredBy.fromJson(Map<String, dynamic> json) =>
+      FarmerReferredBy(
+        id: json['id']?.toString() ?? '',
+        fullName: json['full_name']?.toString() ?? '',
+        phone: json['phone']?.toString() ?? '',
+        city: json['city']?.toString() ?? '',
+        displayName: json['display_name']?.toString() ?? '',
+      );
+}
+
+class FarmerReferral {
+  final String id;
+  final String fullName;
+  final String displayName;
+  final String city;
+  final String status;
+  final DateTime createdAt;
+  final String? inviteCode;
+
+  const FarmerReferral({
+    required this.id,
+    required this.fullName,
+    required this.displayName,
+    required this.city,
+    required this.status,
+    required this.createdAt,
+    this.inviteCode,
+  });
+
+  bool get isActive => status == 'active';
+
+  factory FarmerReferral.fromJson(Map<String, dynamic> json) => FarmerReferral(
+        id: json['id']?.toString() ?? '',
+        fullName: json['full_name']?.toString() ?? '',
+        displayName: json['display_name']?.toString() ?? '',
+        city: json['city']?.toString() ?? '',
+        status: json['status']?.toString() ?? 'active',
+        createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+            DateTime.now(),
+        inviteCode: json['invite_code']?.toString(),
+      );
+}
+
 class AdminFarmerDetail extends AdminFarmer {
   final double profileCompletion;
   final bool hasVideoVerification;
   final int approvedProducts;
   final int complaints;
   final int inviteHistory;
+  final FarmerReferredBy? referredBy;
+  final List<FarmerReferral> referrals;
 
   const AdminFarmerDetail({
     required super.id,
@@ -76,6 +136,8 @@ class AdminFarmerDetail extends AdminFarmer {
     required this.approvedProducts,
     required this.complaints,
     required this.inviteHistory,
+    this.referredBy,
+    this.referrals = const [],
   });
 
   factory AdminFarmerDetail.fromJson(Map<String, dynamic> json) {
@@ -100,6 +162,15 @@ class AdminFarmerDetail extends AdminFarmer {
       approvedProducts: (json['approved_products'] as num?)?.toInt() ?? 0,
       complaints: (json['complaints'] as num?)?.toInt() ?? 0,
       inviteHistory: (json['invite_history'] as num?)?.toInt() ?? 0,
+      referredBy: json['referred_by'] == null
+          ? null
+          : FarmerReferredBy.fromJson(
+              (json['referred_by'] as Map).cast<String, dynamic>()),
+      referrals: (json['referrals'] as List?)
+              ?.map((e) => FarmerReferral.fromJson(
+                  (e as Map).cast<String, dynamic>()))
+              .toList() ??
+          const [],
     );
   }
 }

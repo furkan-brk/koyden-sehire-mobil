@@ -42,6 +42,10 @@ class _AdminFarmerDetailViewState extends State<AdminFarmerDetailView> {
     return AppColors.error;
   }
 
+  void _navigateToFarmer(String id) {
+    context.go('/admin/farmers/$id');
+  }
+
   void _showQuotaDialog(AdminFarmerDetail farmer) {
     final ctrl =
         TextEditingController(text: farmer.inviteQuota.toString());
@@ -226,7 +230,7 @@ class _AdminFarmerDetailViewState extends State<AdminFarmerDetailView> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Left: info + trust
+                  // Left: info + trust + referans kaynağı
                   Expanded(
                     flex: 3,
                     child: Column(
@@ -236,16 +240,30 @@ class _AdminFarmerDetailViewState extends State<AdminFarmerDetailView> {
                         _TrustCard(
                             farmer: farmer,
                             trustColor: _trustColor),
+                        const SizedBox(height: 16),
+                        _ReferredByCard(
+                          farmer: farmer,
+                          onNavigate: _navigateToFarmer,
+                        ),
                       ],
                     ),
                   ),
                   const SizedBox(width: 16),
-                  // Right: invite
+                  // Right: invite + davet edilenler
                   Expanded(
                     flex: 2,
-                    child: _InviteCard(
-                      farmer: farmer,
-                      onEditQuota: () => _showQuotaDialog(farmer),
+                    child: Column(
+                      children: [
+                        _InviteCard(
+                          farmer: farmer,
+                          onEditQuota: () => _showQuotaDialog(farmer),
+                        ),
+                        const SizedBox(height: 16),
+                        _ReferralsCard(
+                          farmer: farmer,
+                          onNavigate: _navigateToFarmer,
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -275,6 +293,16 @@ class _AdminFarmerDetailViewState extends State<AdminFarmerDetailView> {
             _InviteCard(
               farmer: farmer,
               onEditQuota: () => _showQuotaDialog(farmer),
+            ),
+            const SizedBox(height: 12),
+            _ReferredByCard(
+              farmer: farmer,
+              onNavigate: _navigateToFarmer,
+            ),
+            const SizedBox(height: 12),
+            _ReferralsCard(
+              farmer: farmer,
+              onNavigate: _navigateToFarmer,
             ),
             const SizedBox(height: 16),
             Obx(() => AppButton(
@@ -474,6 +502,174 @@ class _InviteCard extends StatelessWidget {
                         .onSurfaceVariant,
                   ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReferredByCard extends StatelessWidget {
+  final AdminFarmerDetail farmer;
+  final void Function(String id) onNavigate;
+  const _ReferredByCard({required this.farmer, required this.onNavigate});
+
+  @override
+  Widget build(BuildContext context) {
+    final refBy = farmer.referredBy;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Referans Bilgisi',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleSmall
+                    ?.copyWith(fontWeight: FontWeight.w600)),
+            const Divider(height: 20),
+            if (refBy == null)
+              Text(
+                'Bu üretici doğrudan veya referanssız kayıt olmuş.',
+                style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant),
+              )
+            else ...[
+              _Row(label: 'Referans Olan', value: refBy.fullName),
+              _Row(label: 'Telefon', value: refBy.phone),
+              _Row(label: 'Şehir', value: refBy.city),
+              if (farmer.inviteCode != null)
+                _Row(label: 'Kullanılan Kod', value: farmer.inviteCode!),
+              const SizedBox(height: 14),
+              OutlinedButton.icon(
+                onPressed: () => onNavigate(refBy.id),
+                icon: const Icon(Icons.person_outline, size: 15),
+                label: const Text('Referans Profiline Git',
+                    style: TextStyle(fontSize: 13)),
+                style: OutlinedButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  minimumSize: Size.zero,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReferralsCard extends StatelessWidget {
+  final AdminFarmerDetail farmer;
+  final void Function(String id) onNavigate;
+  const _ReferralsCard({required this.farmer, required this.onNavigate});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final referrals = farmer.referrals;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Davet Edilen Üreticiler',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleSmall
+                    ?.copyWith(fontWeight: FontWeight.w600)),
+            const Divider(height: 20),
+            // Kota özeti
+            if (farmer.inviteQuota > 0) ...[
+              Row(
+                children: [
+                  Icon(Icons.people_outline,
+                      size: 14, color: cs.onSurfaceVariant),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Kota: ${farmer.usedInvites} / ${farmer.inviteQuota} kullanıldı',
+                    style: TextStyle(
+                        fontSize: 12, color: cs.onSurfaceVariant),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+            ],
+            if (referrals.isEmpty)
+              Text(
+                'Bu üretici henüz kimseyi davet etmemiş.',
+                style: TextStyle(
+                    fontSize: 13, color: cs.onSurfaceVariant),
+              )
+            else
+              ...referrals.map((r) => _ReferralRow(
+                    referral: r,
+                    onTap: () => onNavigate(r.id),
+                  )),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReferralRow extends StatelessWidget {
+  final FarmerReferral referral;
+  final VoidCallback onTap;
+  const _ReferralRow({required this.referral, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final statusColor =
+        referral.isActive ? AppColors.success : AppColors.error;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 7),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    referral.displayName.isNotEmpty
+                        ? referral.displayName
+                        : referral.fullName,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w500, fontSize: 13),
+                  ),
+                  Text(
+                    referral.city,
+                    style: TextStyle(
+                        fontSize: 11, color: cs.onSurfaceVariant),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              decoration: BoxDecoration(
+                color: statusColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                referral.isActive ? 'Aktif' : 'Askıda',
+                style: TextStyle(
+                    fontSize: 11,
+                    color: statusColor,
+                    fontWeight: FontWeight.w600),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(Icons.chevron_right, size: 16, color: cs.onSurfaceVariant),
           ],
         ),
       ),

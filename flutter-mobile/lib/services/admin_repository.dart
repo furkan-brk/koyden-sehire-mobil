@@ -129,11 +129,12 @@ class AdminRepository {
     );
   }
 
-  Future<List<AdminFarmer>> getFarmers({String? status}) async {
+  Future<List<AdminFarmer>> getFarmers({String? status, String? city}) async {
     return _client.get<List<AdminFarmer>>(
       ApiEndpoints.adminFarmers,
       query: {
         if (status != null) 'status': status,
+        if (city != null && city.isNotEmpty) 'city': city,
         'limit': 100,
       },
       parse: (d) {

@@ -78,8 +78,8 @@ func (s *Service) GetAdminDetail(id string) (*FarmerDetail, error) {
 	return s.repo.GetAdminDetail(id)
 }
 
-func (s *Service) List(page, limit int) ([]FarmerDetail, int, error) {
-	return s.repo.ListAdmin(page, limit)
+func (s *Service) List(page, limit int, city string) ([]FarmerDetail, int, error) {
+	return s.repo.ListAdmin(page, limit, city)
 }
 
 func (s *Service) Suspend(id string) error {

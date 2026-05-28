@@ -2,6 +2,24 @@ package farmers
 
 import "time"
 
+type ReferredByInfo struct {
+	ID          string `json:"id"`
+	FullName    string `json:"full_name"`
+	Phone       string `json:"phone"`
+	City        string `json:"city"`
+	DisplayName string `json:"display_name"`
+}
+
+type ReferralItem struct {
+	ID          string    `json:"id"`
+	FullName    string    `json:"full_name"`
+	DisplayName string    `json:"display_name"`
+	City        string    `json:"city"`
+	Status      string    `json:"status"`
+	CreatedAt   time.Time `json:"created_at"`
+	InviteCode  *string   `json:"invite_code,omitempty"`
+}
+
 type FarmerDetail struct {
 	ID        string    `db:"id" json:"id"`
 	FullName  string    `db:"full_name" json:"full_name"`
@@ -24,6 +42,9 @@ type FarmerDetail struct {
 	InviteQuota      int     `db:"invite_quota" json:"invite_quota"`
 	InviteCode       *string `db:"invite_code" json:"invite_code"`
 	UsedInvites      int     `db:"used_invites" json:"used_invites"`
+
+	ReferredBy *ReferredByInfo `json:"referred_by,omitempty"`
+	Referrals  []ReferralItem  `json:"referrals,omitempty"`
 }
 
 type PublicFarmerSummary struct {

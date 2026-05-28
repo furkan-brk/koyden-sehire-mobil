@@ -3,6 +3,7 @@ package admin
 import (
 	"context"
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -209,24 +210,96 @@ func (s *Service) ApproveApplication(appID, adminID string, req *ApproveApplicat
 
 func (s *Service) GetApplicationWithVideoURL(appID string) (map[string]any, error) {
 	var app struct {
-		ID                  string  `db:"id"`
-		FullName            string  `db:"full_name"`
-		Phone               string  `db:"phone"`
-		Status              string  `db:"status"`
-		ApplicationVideoKey *string `db:"application_video_key"`
+		ID                       string    `db:"id"`
+		FullName                 string    `db:"full_name"`
+		Phone                    string    `db:"phone"`
+		Email                    *string   `db:"email"`
+		BusinessName             string    `db:"business_name"`
+		ProducerType             string    `db:"producer_type"`
+		City                     string    `db:"city"`
+		District                 string    `db:"district"`
+		Village                  string    `db:"village"`
+		Bio                      string    `db:"bio"`
+		ProductCategories        []byte    `db:"product_categories"`
+		ProductExamples          string    `db:"product_examples"`
+		ProductionPlaceType      *string   `db:"production_place_type"`
+		DocumentURLs             []byte    `db:"document_urls"`
+		ApplicationNote          *string   `db:"application_note"`
+		ApplicationVideoKey      *string   `db:"application_video_key"`
+		KvkkAccepted             bool      `db:"kvkk_accepted"`
+		PlatformTermsAccepted    bool      `db:"platform_terms_accepted"`
+		DeclaresOwnProduction    bool      `db:"declares_own_production"`
+		DeclaresAccurateLocation bool      `db:"declares_accurate_location"`
+		DeclaresNotIntermediary  bool      `db:"declares_not_intermediary"`
+		Status                   string    `db:"status"`
+		RejectionReason          *string   `db:"rejection_reason"`
+		AdminNote                *string   `db:"admin_note"`
+		CreatedAt                time.Time `db:"created_at"`
+		InviteCode               *string   `db:"invite_code"`
 	}
 	if err := s.db.Get(&app, `
-		SELECT id, full_name, phone, status, application_video_key
-		FROM farmer_applications WHERE id = $1
+		SELECT
+			fa.id, fa.full_name, fa.phone, fa.email,
+			fa.business_name, fa.producer_type,
+			fa.city, fa.district, fa.village, fa.bio,
+			fa.product_categories, fa.product_examples,
+			fa.production_place_type, fa.document_urls, fa.application_note,
+			fa.application_video_key,
+			fa.kvkk_accepted, fa.platform_terms_accepted,
+			fa.declares_own_production, fa.declares_accurate_location,
+			fa.declares_not_intermediary,
+			fa.status, fa.rejection_reason, fa.admin_note,
+			fa.created_at,
+			ic.code AS invite_code
+		FROM farmer_applications fa
+		LEFT JOIN invite_codes ic ON ic.id = fa.invite_code_id
+		WHERE fa.id = $1
 	`, appID); err != nil {
 		return nil, apperrors.ErrNotFound
 	}
 
+	var categories []string
+	if len(app.ProductCategories) > 0 {
+		_ = json.Unmarshal(app.ProductCategories, &categories)
+	}
+	if categories == nil {
+		categories = []string{}
+	}
+
+	var docURLs []string
+	if len(app.DocumentURLs) > 0 {
+		_ = json.Unmarshal(app.DocumentURLs, &docURLs)
+	}
+	if docURLs == nil {
+		docURLs = []string{}
+	}
+
 	result := map[string]any{
-		"id":        app.ID,
-		"full_name": app.FullName,
-		"phone":     app.Phone,
-		"status":    app.Status,
+		"id":                         app.ID,
+		"full_name":                  app.FullName,
+		"phone":                      app.Phone,
+		"email":                      app.Email,
+		"business_name":              app.BusinessName,
+		"producer_type":              app.ProducerType,
+		"city":                       app.City,
+		"district":                   app.District,
+		"village":                    app.Village,
+		"bio":                        app.Bio,
+		"product_categories":         categories,
+		"product_examples":           app.ProductExamples,
+		"production_place_type":      app.ProductionPlaceType,
+		"document_urls":              docURLs,
+		"application_note":           app.ApplicationNote,
+		"kvkk_accepted":              app.KvkkAccepted,
+		"platform_terms_accepted":    app.PlatformTermsAccepted,
+		"declares_own_production":    app.DeclaresOwnProduction,
+		"declares_accurate_location": app.DeclaresAccurateLocation,
+		"declares_not_intermediary":  app.DeclaresNotIntermediary,
+		"status":                     app.Status,
+		"rejection_reason":           app.RejectionReason,
+		"admin_note":                 app.AdminNote,
+		"created_at":                 app.CreatedAt,
+		"invite_code":                app.InviteCode,
 	}
 
 	if app.ApplicationVideoKey != nil {
