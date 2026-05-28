@@ -19,7 +19,6 @@ import 'package:koyden_sehire/models/product_form_config.dart';
 import 'package:koyden_sehire/controllers/public/category_controller.dart';
 import 'package:koyden_sehire/controllers/farmer/farmer_profile_controller.dart';
 import 'package:koyden_sehire/services/farmer_product_repository.dart';
-import 'package:koyden_sehire/models/farmer_product_model.dart';
 import 'package:koyden_sehire/controllers/farmer/my_products_controller.dart';
 import 'package:koyden_sehire/controllers/farmer/product_form_controller.dart';
 
@@ -79,8 +78,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     if (widget.editingId != null) {
       setState(() => _loadingExisting = true);
       try {
-        final m = await Get.find<FarmerProductRepository>()
-            .getById(widget.editingId!);
+        final m = await Get.find<FarmerProductRepository>().getById(widget.editingId!);
         _formCtrl.hydrate(m);
       } catch (e) {
         setState(() => _loadError = e.toString());
@@ -88,9 +86,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         if (mounted) setState(() => _loadingExisting = false);
       }
     } else {
-      final profile = Get.isRegistered<FarmerProfileController>()
-          ? Get.find<FarmerProfileController>().profile.value
-          : null;
+      final profile =
+          Get.isRegistered<FarmerProfileController>() ? Get.find<FarmerProfileController>().profile.value : null;
       if (profile != null) {
         _formCtrl.patch((d) => d.copyWith(
               city: profile.city,
@@ -124,8 +121,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       bytes = await picked.readAsBytes();
     } catch (_) {
       if (!mounted) return;
-      context.snack('Fotoğraf okunamadı. Lütfen tekrar deneyin.',
-          isError: true);
+      context.snack('Fotoğraf okunamadı. Lütfen tekrar deneyin.', isError: true);
       return;
     }
 
@@ -156,8 +152,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
       ),
       builder: (_) => SafeArea(
         child: Column(
@@ -198,9 +193,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
 
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    final profile = Get.isRegistered<FarmerProfileController>()
-        ? Get.find<FarmerProfileController>().profile.value
-        : null;
+    final profile =
+        Get.isRegistered<FarmerProfileController>() ? Get.find<FarmerProfileController>().profile.value : null;
     if (profile != null) {
       _formCtrl.patch((d) => d.copyWith(
             city: profile.city,
@@ -239,9 +233,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     final ok = await _formCtrl.submit(editingId: widget.editingId);
     if (!mounted) return;
     if (ok) {
-      context.toast(widget.editingId == null
-          ? 'Ürününüz incelemeye alındı.'
-          : 'Ürün güncellendi.');
+      context.toast(widget.editingId == null ? 'Ürününüz incelemeye alındı.' : 'Ürün güncellendi.');
       Get.find<MyProductsController>().refresh();
       if (context.canPop()) {
         context.pop();
@@ -308,10 +300,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               // ── Tamamlanma durumu ──────────────────────────────────────
               final isPhotosComplete = data.imageUrls.isNotEmpty;
               final isCategoryComplete = data.categoryId != null;
-              final isBasicInfoComplete = data.title.trim().isNotEmpty &&
-                  data.description.trim().isNotEmpty;
-              final isPricingComplete = data.price.isNotEmpty &&
-                  (double.tryParse(data.price.replaceAll(',', '.')) ?? 0) > 0;
+              final isBasicInfoComplete = data.title.trim().isNotEmpty && data.description.trim().isNotEmpty;
+              final isPricingComplete =
+                  data.price.isNotEmpty && (double.tryParse(data.price.replaceAll(',', '.')) ?? 0) > 0;
               // Stok durumu her zaman bir değere sahip (default: 'available')
               const isStockComplete = true;
 
@@ -358,15 +349,13 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                         ? const Center(
                             child: Padding(
                               padding: EdgeInsets.symmetric(vertical: 12),
-                              child:
-                                  CircularProgressIndicator(strokeWidth: 2),
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             ),
                           )
                         : catCtrl.error.value != null
                             ? const Text(
                                 'Kategoriler yüklenemedi',
-                                style: TextStyle(
-                                    color: AppColors.onSurfaceVariant),
+                                style: TextStyle(color: AppColors.onSurfaceVariant),
                               )
                             : _CategorySelector(
                                 categories: catCtrl.categories,
@@ -389,10 +378,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                           helperText: ProductFormConfig.titleField.helperText,
                           initialValue: data.title,
                           maxLength: ProductFormConfig.titleField.maxLength,
-                          onChanged: (v) =>
-                              state.patch((d) => d.copyWith(title: v)),
-                          validator: (v) =>
-                              Validators.required(v, field: 'Ürün adı'),
+                          onChanged: (v) => state.patch((d) => d.copyWith(title: v)),
+                          validator: (v) => Validators.required(v, field: 'Ürün adı'),
                         ),
                         const SizedBox(height: AppSpacing.sm + 4),
                         AppTextField(
@@ -400,10 +387,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                           hint: ProductFormConfig.descriptionField.hint,
                           initialValue: data.description,
                           maxLines: 5,
-                          onChanged: (v) =>
-                              state.patch((d) => d.copyWith(description: v)),
-                          validator: (v) =>
-                              Validators.required(v, field: 'Açıklama'),
+                          onChanged: (v) => state.patch((d) => d.copyWith(description: v)),
+                          validator: (v) => Validators.required(v, field: 'Açıklama'),
                         ),
                       ],
                     ),
@@ -425,16 +410,11 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                             helperText: ProductFormConfig.priceField.helperText,
                             prefix: const Padding(
                               padding: EdgeInsets.all(12),
-                              child: Text('₺',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.w600)),
+                              child: Text('₺', style: TextStyle(fontWeight: FontWeight.w600)),
                             ),
-                            keyboardType:
-                                const TextInputType.numberWithOptions(
-                                    decimal: true),
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             initialValue: data.price,
-                            onChanged: (v) =>
-                                state.patch((d) => d.copyWith(price: v)),
+                            onChanged: (v) => state.patch((d) => d.copyWith(price: v)),
                             validator: Validators.positiveNumber,
                           ),
                         ),
@@ -442,12 +422,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                         Expanded(
                           child: DropdownButtonFormField<String>(
                             value: data.unit,
-                            decoration: const InputDecoration(
-                                labelText: 'Birim'),
-                            items: productUnits
-                                .map((u) => DropdownMenuItem(
-                                    value: u, child: Text(u)))
-                                .toList(),
+                            decoration: const InputDecoration(labelText: 'Birim'),
+                            items: productUnits.map((u) => DropdownMenuItem(value: u, child: Text(u))).toList(),
                             onChanged: (v) {
                               if (v == null) return;
                               state.patch((d) => d.copyWith(unit: v));
@@ -467,8 +443,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                     isComplete: isStockComplete,
                     child: _StockToggle(
                       current: data.stockStatus,
-                      onChanged: (v) =>
-                          state.patch((d) => d.copyWith(stockStatus: v)),
+                      onChanged: (v) => state.patch((d) => d.copyWith(stockStatus: v)),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm + 4),
@@ -478,9 +453,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                   const SizedBox(height: AppSpacing.lg),
 
                   AppButton(
-                    label: widget.editingId == null
-                        ? 'Ürünü Yayına Gönder'
-                        : 'Değişiklikleri Kaydet',
+                    label: widget.editingId == null ? 'Ürünü Yayına Gönder' : 'Değişiklikleri Kaydet',
                     isLoading: state.isSubmitting.value,
                     onPressed: state.isSubmitting.value ? null : _submit,
                   ),
@@ -508,17 +481,12 @@ class _FormProgressChip extends StatelessWidget {
     final isDone = completed >= total;
     final progress = total > 0 ? completed / total : 0.0;
     final progressColor = isDone ? Colors.green.shade600 : cs.primary;
-    final label = isDone
-        ? 'Göndermeye hazır ✓'
-        : '$completed / $total zorunlu bölüm tamamlandı';
+    final label = isDone ? 'Göndermeye hazır ✓' : '$completed / $total zorunlu bölüm tamamlandı';
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md, vertical: AppSpacing.sm + 2),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm + 2),
       decoration: BoxDecoration(
-        color: isDone
-            ? Colors.green.shade50
-            : cs.primaryContainer.withOpacity(0.35),
+        color: isDone ? Colors.green.shade50 : cs.primaryContainer.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Column(
@@ -547,7 +515,7 @@ class _FormProgressChip extends StatelessWidget {
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 4,
-              backgroundColor: cs.outlineVariant.withOpacity(0.4),
+              backgroundColor: cs.outlineVariant.withValues(alpha: 0.4),
               color: progressColor,
             ),
           ),
@@ -595,15 +563,10 @@ class _SectionCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
-              if (isComplete)
-                Icon(Icons.check_circle,
-                    size: 16, color: Colors.green.shade600),
+              if (isComplete) Icon(Icons.check_circle, size: 16, color: Colors.green.shade600),
             ],
           ),
           // Alt açıklama
@@ -682,8 +645,7 @@ class _ImagePickerSection extends StatelessWidget {
                       color: Colors.black54,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.close,
-                        size: 14, color: Colors.white),
+                    child: const Icon(Icons.close, size: 14, color: Colors.white),
                   ),
                 ),
               ),
@@ -719,14 +681,12 @@ class _AddImageTile extends StatelessWidget {
             ? SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2, color: cs.primary),
+                child: CircularProgressIndicator(strokeWidth: 2, color: cs.primary),
               )
             : Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.add_a_photo_outlined,
-                      color: cs.onSurfaceVariant, size: 24),
+                  Icon(Icons.add_a_photo_outlined, color: cs.onSurfaceVariant, size: 24),
                   const SizedBox(height: 4),
                   Text(
                     'Fotoğraf Ekle',
@@ -748,8 +708,7 @@ class _AddImageTile extends StatelessWidget {
 class _CategorySelector extends StatefulWidget {
   final List<CategoryModel> categories;
   final ProductFormData selected;
-  const _CategorySelector(
-      {required this.categories, required this.selected});
+  const _CategorySelector({required this.categories, required this.selected});
 
   @override
   State<_CategorySelector> createState() => _CategorySelectorState();
@@ -772,9 +731,7 @@ class _CategorySelectorState extends State<_CategorySelector> {
   @override
   Widget build(BuildContext context) {
     final roots = widget.categories.where((c) => c.isRoot).toList();
-    final mainCategory = _mainId == null
-        ? null
-        : roots.firstWhereOrNull((c) => c.id == _mainId);
+    final mainCategory = _mainId == null ? null : roots.firstWhereOrNull((c) => c.id == _mainId);
     final subs = mainCategory?.children ?? const [];
 
     return Column(
@@ -783,10 +740,7 @@ class _CategorySelectorState extends State<_CategorySelector> {
         DropdownButtonFormField<String>(
           value: _mainId,
           decoration: const InputDecoration(labelText: 'Ana Kategori'),
-          items: roots
-              .map((c) =>
-                  DropdownMenuItem(value: c.id, child: Text(c.name)))
-              .toList(),
+          items: roots.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))).toList(),
           onChanged: (v) {
             setState(() => _mainId = v);
             Get.find<ProductFormController>().patch(
@@ -797,14 +751,9 @@ class _CategorySelectorState extends State<_CategorySelector> {
         if (subs.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.sm + 4),
           DropdownButtonFormField<String>(
-            value: subs.any((s) => s.id == widget.selected.categoryId)
-                ? widget.selected.categoryId
-                : null,
+            value: subs.any((s) => s.id == widget.selected.categoryId) ? widget.selected.categoryId : null,
             decoration: const InputDecoration(labelText: 'Alt Kategori'),
-            items: subs
-                .map((c) =>
-                    DropdownMenuItem(value: c.id, child: Text(c.name)))
-                .toList(),
+            items: subs.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))).toList(),
             onChanged: (v) {
               Get.find<ProductFormController>().patch(
                 (d) => d.copyWith(categoryId: v),
@@ -826,9 +775,8 @@ class _LocationInfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Obx(() {
-      final profile = Get.isRegistered<FarmerProfileController>()
-          ? Get.find<FarmerProfileController>().profile.value
-          : null;
+      final profile =
+          Get.isRegistered<FarmerProfileController>() ? Get.find<FarmerProfileController>().profile.value : null;
       final parts = <String>[
         if ((profile?.city ?? '').isNotEmpty) profile!.city,
         if ((profile?.district ?? '').isNotEmpty) profile!.district,
@@ -854,15 +802,11 @@ class _LocationInfoCard extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.place_outlined,
-                          size: 14, color: cs.primary),
+                      Icon(Icons.place_outlined, size: 14, color: cs.primary),
                       const SizedBox(width: 4),
                       Text(
                         ProductFormConfig.location.title,
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w700),
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
                       ),
                     ],
                   ),

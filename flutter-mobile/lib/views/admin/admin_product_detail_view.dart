@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/services/admin_repository.dart';
 import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
@@ -17,20 +16,17 @@ class AdminProductDetailView extends StatefulWidget {
   const AdminProductDetailView({super.key, required this.productId});
 
   @override
-  State<AdminProductDetailView> createState() =>
-      _AdminProductDetailViewState();
+  State<AdminProductDetailView> createState() => _AdminProductDetailViewState();
 }
 
-class _AdminProductDetailViewState
-    extends State<AdminProductDetailView> {
+class _AdminProductDetailViewState extends State<AdminProductDetailView> {
   late final AdminProductDetailController _ctrl;
 
   @override
   void initState() {
     super.initState();
     final repo = Get.find<AdminRepository>();
-    _ctrl = Get.put(
-        AdminProductDetailController(repo, productId: widget.productId));
+    _ctrl = Get.put(AdminProductDetailController(repo, productId: widget.productId));
   }
 
   @override
@@ -53,8 +49,7 @@ class _AdminProductDetailViewState
                   const SizedBox(height: 8),
                   TextField(
                     controller: reasonCtrl,
-                    decoration:
-                        const InputDecoration(hintText: 'Sebep...'),
+                    decoration: const InputDecoration(hintText: 'Sebep...'),
                     maxLines: 2,
                   ),
                 ],
@@ -69,9 +64,7 @@ class _AdminProductDetailViewState
           ),
           AppButton(
             label: action == 'approve' ? 'Onayla' : 'Reddet',
-            variant: action == 'approve'
-                ? AppButtonVariant.primary
-                : AppButtonVariant.destructive,
+            variant: action == 'approve' ? AppButtonVariant.primary : AppButtonVariant.destructive,
             fullWidth: false,
             onPressed: () => Navigator.pop(ctx, true),
           ),
@@ -82,11 +75,9 @@ class _AdminProductDetailViewState
       return result;
     });
     if (confirmed == true && mounted) {
-      final ok = await _ctrl.moderate(action,
-          reason: action == 'reject' ? reasonCtrl.text : null);
+      final ok = await _ctrl.moderate(action, reason: action == 'reject' ? reasonCtrl.text : null);
       if (ok && mounted) {
-        context.snack(action == 'approve' ? 'Ürün onaylandı.' : 'Ürün reddedildi.',
-            isError: action == 'reject');
+        context.snack(action == 'approve' ? 'Ürün onaylandı.' : 'Ürün reddedildi.', isError: action == 'reject');
       }
     }
   }
@@ -120,23 +111,18 @@ class _AdminProductDetailViewState
                   if (_ctrl.isSubmitting.value)
                     const Padding(
                       padding: EdgeInsets.all(12),
-                      child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2)),
+                      child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
                     )
                   else ...[
                     TextButton.icon(
                       onPressed: () => _confirmModerate('reject'),
                       icon: Icon(Icons.close, color: cs.error),
-                      label: Text('Reddet',
-                          style: TextStyle(color: cs.error)),
+                      label: Text('Reddet', style: TextStyle(color: cs.error)),
                     ),
                     TextButton.icon(
                       onPressed: () => _confirmModerate('approve'),
                       icon: Icon(Icons.check, color: cs.primary),
-                      label: Text('Onayla',
-                          style: TextStyle(color: cs.primary)),
+                      label: Text('Onayla', style: TextStyle(color: cs.primary)),
                     ),
                   ],
                 ]
@@ -153,8 +139,7 @@ class _AdminProductDetailViewState
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: product.imageUrls.length,
-                    separatorBuilder: (_, __) =>
-                        const SizedBox(width: 8),
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
                     itemBuilder: (ctx, i) => ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: CachedNetworkImage(
@@ -177,35 +162,25 @@ class _AdminProductDetailViewState
                           Expanded(
                             child: Text(
                               product.title,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleLarge,
+                              style: Theme.of(context).textTheme.titleLarge,
                             ),
                           ),
                           AdminStatusBadge(status: product.status),
                         ],
                       ),
                       const Divider(height: 20),
-                      _Row('Fiyat',
-                          '${product.price} ₺ / ${product.unit}'),
+                      _Row('Fiyat', '${product.price} ₺ / ${product.unit}'),
                       _Row('Şehir', product.city),
-                      if (product.district != null)
-                        _Row('İlçe', product.district!),
-                      if (product.category != null)
-                        _Row('Kategori', product.category!.name),
+                      if (product.district != null) _Row('İlçe', product.district!),
+                      if (product.category != null) _Row('Kategori', product.category!.name),
                       if (product.farmer != null) ...[
                         _Row('Üretici', product.farmer!.displayName),
-                        if (product.farmer!.city != null)
-                          _Row('Üretici Şehri', product.farmer!.city!),
+                        if (product.farmer!.city != null) _Row('Üretici Şehri', product.farmer!.city!),
                       ],
-                      if (product.description != null &&
-                          product.description!.isNotEmpty) ...[
+                      if (product.description != null && product.description!.isNotEmpty) ...[
                         const SizedBox(height: 8),
                         Text('Açıklama',
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: cs.onSurfaceVariant,
-                                fontWeight: FontWeight.w500)),
+                            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant, fontWeight: FontWeight.w500)),
                         const SizedBox(height: 4),
                         Text(product.description!),
                       ],
@@ -236,16 +211,9 @@ class _Row extends StatelessWidget {
         children: [
           SizedBox(
             width: 110,
-            child: Text(label,
-                style: TextStyle(
-                    fontSize: 13,
-                    color: cs.onSurfaceVariant,
-                    fontWeight: FontWeight.w500)),
+            child: Text(label, style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant, fontWeight: FontWeight.w500)),
           ),
-          Expanded(
-              child: Text(value,
-                  style: const TextStyle(
-                      fontSize: 13, fontWeight: FontWeight.w500))),
+          Expanded(child: Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
         ],
       ),
     );

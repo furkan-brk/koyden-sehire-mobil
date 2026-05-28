@@ -14,8 +14,7 @@ class AdminDashboardView extends StatefulWidget {
   const AdminDashboardView({super.key});
 
   @override
-  State<AdminDashboardView> createState() =>
-      _AdminDashboardViewState();
+  State<AdminDashboardView> createState() => _AdminDashboardViewState();
 }
 
 class _AdminDashboardViewState extends State<AdminDashboardView> {
@@ -66,10 +65,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
               const SizedBox(height: 4),
               Text(
                 'Sistemdeki genel operasyonel durum ve metrikler.',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(color: cs.onSurfaceVariant),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
               ),
               const SizedBox(height: 20),
               _StatsGrid(stats: data.stats),
@@ -99,26 +95,10 @@ class _StatsGrid extends StatelessWidget {
         stats.todayApplications > 0 ? '+${stats.todayApplications} bugün' : null,
       ),
       ('Aktif Çiftçiler', stats.activeFarmers, Icons.people_outline, null),
-      (
-        'Bekleyen Ürünler',
-        stats.pendingProducts,
-        Icons.shield_outlined,
-        null
-      ),
-      ('Yayındaki Ürünler', stats.activeProducts, Icons.check_circle_outline,
-          null),
-      (
-        'Askıya Alınanlar',
-        stats.suspendedFarmers,
-        Icons.warning_amber_outlined,
-        null
-      ),
-      (
-        'Bugünkü Başvurular',
-        stats.todayApplications,
-        Icons.trending_up,
-        null
-      ),
+      ('Bekleyen Ürünler', stats.pendingProducts, Icons.shield_outlined, null),
+      ('Yayındaki Ürünler', stats.activeProducts, Icons.check_circle_outline, null),
+      ('Askıya Alınanlar', stats.suspendedFarmers, Icons.warning_amber_outlined, null),
+      ('Bugünkü Başvurular', stats.todayApplications, Icons.trending_up, null),
     ];
 
     return GridView.count(
@@ -165,7 +145,7 @@ class _ApplicationsChart extends StatelessWidget {
                   gridData: FlGridData(
                     drawVerticalLine: false,
                     horizontalInterval: 1,
-                    getDrawingHorizontalLine: (_) => FlLine(
+                    getDrawingHorizontalLine: (_) => const FlLine(
                       color: AppColors.outlineVariant,
                       strokeWidth: 1,
                     ),
@@ -190,8 +170,7 @@ class _ApplicationsChart extends StatelessWidget {
                           }
                           return Text(
                             points[i].name,
-                            style: TextStyle(
-                                fontSize: 10, color: cs.onSurfaceVariant),
+                            style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant),
                           );
                         },
                       ),
@@ -200,12 +179,7 @@ class _ApplicationsChart extends StatelessWidget {
                   borderData: FlBorderData(show: false),
                   lineBarsData: [
                     LineChartBarData(
-                      spots: points
-                          .asMap()
-                          .entries
-                          .map((e) => FlSpot(
-                              e.key.toDouble(), e.value.value))
-                          .toList(),
+                      spots: points.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.value)).toList(),
                       isCurved: true,
                       color: AppColors.success,
                       barWidth: 3,

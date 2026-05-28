@@ -37,20 +37,20 @@ class FarmerBottomNav extends StatelessWidget {
           ),
           NavigationDestination(
             icon: isSuspended
-                ? const Semantics(
+                ? Semantics(
                     label: 'Hesap askıda — bu sekme kullanılamıyor',
                     excludeSemantics: true,
-                    child: Opacity(
+                    child: const Opacity(
                       opacity: 0.4,
                       child: Icon(Icons.shopping_bag_outlined),
                     ),
                   )
                 : const Icon(Icons.shopping_bag_outlined),
             selectedIcon: isSuspended
-                ? const Semantics(
+                ? Semantics(
                     label: 'Hesap askıda — bu sekme kullanılamıyor',
                     excludeSemantics: true,
-                    child: Opacity(
+                    child: const Opacity(
                       opacity: 0.4,
                       child: Icon(Icons.shopping_bag),
                     ),
@@ -60,20 +60,20 @@ class FarmerBottomNav extends StatelessWidget {
           ),
           NavigationDestination(
             icon: isSuspended
-                ? const Semantics(
+                ? Semantics(
                     label: 'Hesap askıda — bu sekme kullanılamıyor',
                     excludeSemantics: true,
-                    child: Opacity(
+                    child: const Opacity(
                       opacity: 0.4,
                       child: Icon(Icons.card_giftcard_outlined),
                     ),
                   )
                 : const Icon(Icons.card_giftcard_outlined),
             selectedIcon: isSuspended
-                ? const Semantics(
+                ? Semantics(
                     label: 'Hesap askıda — bu sekme kullanılamıyor',
                     excludeSemantics: true,
-                    child: Opacity(
+                    child: const Opacity(
                       opacity: 0.4,
                       child: Icon(Icons.card_giftcard),
                     ),

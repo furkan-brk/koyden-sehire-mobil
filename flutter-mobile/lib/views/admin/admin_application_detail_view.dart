@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/models/admin/admin_application_model.dart';
 import 'package:koyden_sehire/services/admin_repository.dart';
 import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
@@ -19,20 +18,17 @@ class AdminApplicationDetailView extends StatefulWidget {
   const AdminApplicationDetailView({super.key, required this.appId});
 
   @override
-  State<AdminApplicationDetailView> createState() =>
-      _AdminApplicationDetailViewState();
+  State<AdminApplicationDetailView> createState() => _AdminApplicationDetailViewState();
 }
 
-class _AdminApplicationDetailViewState
-    extends State<AdminApplicationDetailView> {
+class _AdminApplicationDetailViewState extends State<AdminApplicationDetailView> {
   late final AdminApplicationDetailController _ctrl;
 
   @override
   void initState() {
     super.initState();
     final repo = Get.find<AdminRepository>();
-    _ctrl = Get.put(
-        AdminApplicationDetailController(repo, appId: widget.appId));
+    _ctrl = Get.put(AdminApplicationDetailController(repo, appId: widget.appId));
   }
 
   @override
@@ -50,13 +46,11 @@ class _AdminApplicationDetailViewState
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-                'Lütfen reddetme sebebini yazın. Bu bilgi SMS ile üreticiye iletilecektir.'),
+            const Text('Lütfen reddetme sebebini yazın. Bu bilgi SMS ile üreticiye iletilecektir.'),
             const SizedBox(height: 12),
             TextField(
               controller: reasonCtrl,
-              decoration: const InputDecoration(
-                  hintText: 'Reddetme sebebi...'),
+              decoration: const InputDecoration(hintText: 'Reddetme sebebi...'),
               maxLines: 3,
             ),
           ],
@@ -81,8 +75,7 @@ class _AdminApplicationDetailViewState
       return result;
     });
     if (confirmed == true && mounted) {
-      final ok =
-          await _ctrl.review('reject', reason: reasonCtrl.text);
+      final ok = await _ctrl.review('reject', reason: reasonCtrl.text);
       if (ok && mounted) {
         context.snack('Başvuru reddedildi.');
       }
@@ -148,24 +141,18 @@ class _AdminApplicationDetailViewState
                   if (_ctrl.isSubmitting.value)
                     const Padding(
                       padding: EdgeInsets.all(12),
-                      child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2)),
+                      child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
                     )
                   else ...[
                     TextButton.icon(
                       onPressed: _confirmReject,
                       icon: Icon(Icons.close, color: cs.error),
-                      label: Text('Reddet',
-                          style: TextStyle(color: cs.error)),
+                      label: Text('Reddet', style: TextStyle(color: cs.error)),
                     ),
                     TextButton.icon(
                       onPressed: _confirmApprove,
-                      icon: Icon(Icons.check,
-                          color: cs.primary),
-                      label: Text('Onayla',
-                          style: TextStyle(color: cs.primary)),
+                      icon: Icon(Icons.check, color: cs.primary),
+                      label: Text('Onayla', style: TextStyle(color: cs.primary)),
                     ),
                   ],
                 ]
@@ -205,8 +192,7 @@ class _InfoCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Text('Üretici Bilgileri',
-                    style: Theme.of(context).textTheme.titleMedium),
+                Text('Üretici Bilgileri', style: Theme.of(context).textTheme.titleMedium),
                 const Spacer(),
                 AdminStatusBadge(status: app.status),
               ],
@@ -220,10 +206,8 @@ class _InfoCard extends StatelessWidget {
                 '${app.city}, ${app.district}'
                     '${app.village != null ? ' - ${app.village}' : ''}'),
             _Field('Başvuru Tarihi', AppFormatters.date(app.createdAt)),
-            if (app.profileDescription != null)
-              _Field('Hakkında', app.profileDescription!),
-            if (app.productExamples != null)
-              _Field('Ürün Örnekleri', app.productExamples!),
+            if (app.profileDescription != null) _Field('Hakkında', app.profileDescription!),
+            if (app.productExamples != null) _Field('Ürün Örnekleri', app.productExamples!),
           ],
         ),
       ),
@@ -243,14 +227,11 @@ class _RiskCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Risk Analizi',
-                style: Theme.of(context).textTheme.titleMedium),
+            Text('Risk Analizi', style: Theme.of(context).textTheme.titleMedium),
             const Divider(height: 20),
-            if (app.riskLevel != null)
-              _RiskRow('Genel Risk', AdminRiskBadge(level: app.riskLevel!)),
+            if (app.riskLevel != null) _RiskRow('Genel Risk', AdminRiskBadge(level: app.riskLevel!)),
             if (app.inviteCode != null)
-              _StrRow('Davet Kodu',
-                  '${app.inviteCode}${app.inviteTrust != null ? ' (${app.inviteTrust})' : ''}'),
+              _StrRow('Davet Kodu', '${app.inviteCode}${app.inviteTrust != null ? ' (${app.inviteTrust})' : ''}'),
             _StrRow('Video Durumu', app.videoUrl != null ? 'Yüklendi' : 'Eksik'),
           ],
         ),
@@ -271,8 +252,7 @@ class _AdminNotesCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Admin Notları',
-                style: Theme.of(context).textTheme.titleMedium),
+            Text('Admin Notları', style: Theme.of(context).textTheme.titleMedium),
             const Divider(height: 20),
             Text(notes),
           ],
@@ -295,11 +275,7 @@ class _Field extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: TextStyle(
-                  fontSize: 12,
-                  color: cs.onSurfaceVariant,
-                  fontWeight: FontWeight.w500)),
+          Text(label, style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant, fontWeight: FontWeight.w500)),
           const SizedBox(height: 2),
           Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
         ],
@@ -317,8 +293,7 @@ class _RiskRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
-      child:
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
         Text(label, style: const TextStyle(fontSize: 13)),
         badge,
       ]),
@@ -335,12 +310,9 @@ class _StrRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
-      child:
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
         Text(label, style: const TextStyle(fontSize: 13)),
-        Text(value,
-            style: const TextStyle(
-                fontSize: 13, fontWeight: FontWeight.w500)),
+        Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
       ]),
     );
   }

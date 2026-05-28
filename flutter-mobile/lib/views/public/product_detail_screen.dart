@@ -211,10 +211,7 @@ class _Body extends StatelessWidget {
                         Flexible(
                           child: Text(
                             locationText,
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelMedium
-                                ?.copyWith(color: cs.onSurfaceVariant),
+                            style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant),
                           ),
                         ),
                       ],
@@ -300,7 +297,7 @@ class _Body extends StatelessWidget {
 }
 
 Future<void> _showReportDialog(BuildContext context, String productId) async {
-  final reasons = const <({String key, String label})>[
+  const reasons = <({String key, String label})>[
     (key: 'inappropriate', label: 'Uygunsuz içerik'),
     (key: 'misleading', label: 'Yanıltıcı bilgi'),
     (key: 'spam', label: 'Spam'),
@@ -362,8 +359,7 @@ Future<void> _showReportDialog(BuildContext context, String productId) async {
               onPressed: submitting || selectedKey == null
                   ? null
                   : () async {
-                      if (selectedKey == 'other' &&
-                          noteCtrl.text.trim().isEmpty) {
+                      if (selectedKey == 'other' && noteCtrl.text.trim().isEmpty) {
                         ScaffoldMessenger.of(ctx).showSnackBar(
                           const SnackBar(
                             content: Text('Lütfen bir açıklama girin'),
@@ -400,8 +396,7 @@ Future<void> _showReportDialog(BuildContext context, String productId) async {
                   ? const SizedBox(
                       width: 18,
                       height: 18,
-                      child:
-                          CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Text('Gönder'),
             ),
@@ -422,9 +417,7 @@ class _StockChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final available = stockStatus == 'available';
     final color = available ? AppColors.success : AppColors.onSurfaceVariant;
-    final label = available
-        ? 'Mevcut'
-        : (stockStatus == 'limited' ? 'Sınırlı' : 'Tükendi');
+    final label = available ? 'Mevcut' : (stockStatus == 'limited' ? 'Sınırlı' : 'Tükendi');
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
@@ -460,12 +453,8 @@ class _FarmerCard extends StatelessWidget {
             CircleAvatar(
               radius: 28,
               backgroundColor: AppColors.surfaceContainerLow,
-              backgroundImage: farmer.profileImageUrl == null
-                  ? null
-                  : NetworkImage(farmer.profileImageUrl!),
-              child: farmer.profileImageUrl == null
-                  ? const Icon(Icons.person)
-                  : null,
+              backgroundImage: farmer.profileImageUrl == null ? null : NetworkImage(farmer.profileImageUrl!),
+              child: farmer.profileImageUrl == null ? const Icon(Icons.person) : null,
             ),
             const SizedBox(width: 12),
             Expanded(

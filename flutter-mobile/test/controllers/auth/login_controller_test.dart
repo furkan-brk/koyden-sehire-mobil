@@ -25,8 +25,7 @@ class MockPushTokenRepository extends Mock implements PushTokenRepository {}
 /// A concrete no-op subclass — mocktail cannot mock GetxService subclasses
 /// because they have internal callbacks that must be non-null.
 class _FakePushNotificationService extends PushNotificationService {
-  _FakePushNotificationService()
-      : super(MockPushTokenRepository());
+  _FakePushNotificationService() : super(MockPushTokenRepository());
 
   @override
   Future<void> onLogin() async {}
@@ -37,7 +36,7 @@ class _FakePushNotificationService extends PushNotificationService {
 
 // --- helpers ---
 
-LoginResponse _makeFarmerResponse() => LoginResponse(
+LoginResponse _makeFarmerResponse() => const LoginResponse(
       accessToken: 'test-access-token',
       refreshToken: 'test-refresh-token',
       user: UserModel(
@@ -49,7 +48,7 @@ LoginResponse _makeFarmerResponse() => LoginResponse(
       ),
     );
 
-LoginResponse _makeCustomerResponse() => LoginResponse(
+LoginResponse _makeCustomerResponse() => const LoginResponse(
       accessToken: 'test-access-token-cust',
       refreshToken: 'test-refresh-token-cust',
       user: UserModel(
@@ -64,8 +63,7 @@ LoginResponse _makeCustomerResponse() => LoginResponse(
 void main() {
   setUpAll(() {
     // mocktail requires fallback values for any custom type used with any().
-    registerFallbackValue(
-        const LoginRequest(phone: '05300000000', password: 'fallback'));
+    registerFallbackValue(const LoginRequest(phone: '05300000000', password: 'fallback'));
   });
 
   late MockAuthRepository mockRepo;
@@ -100,11 +98,9 @@ void main() {
 
   group('AuthService.login()', () {
     test('success - farmer - sets farmerActive status', () async {
-      when(() => mockRepo.login(any()))
-          .thenAnswer((_) async => _makeFarmerResponse());
+      when(() => mockRepo.login(any())).thenAnswer((_) async => _makeFarmerResponse());
 
-      await authService.login(
-          phone: '05321234567', password: 'securepassword');
+      await authService.login(phone: '05321234567', password: 'securepassword');
 
       expect(authService.status.value, AuthStatus.farmerActive);
       expect(authService.errorMessage.value, isNull);
@@ -112,11 +108,9 @@ void main() {
     });
 
     test('success - customer - sets customerActive status', () async {
-      when(() => mockRepo.login(any()))
-          .thenAnswer((_) async => _makeCustomerResponse());
+      when(() => mockRepo.login(any())).thenAnswer((_) async => _makeCustomerResponse());
 
-      await authService.login(
-          phone: '05321234568', password: 'securepassword');
+      await authService.login(phone: '05321234568', password: 'securepassword');
 
       expect(authService.status.value, AuthStatus.customerActive);
       expect(authService.errorMessage.value, isNull);
@@ -133,22 +127,18 @@ void main() {
         ),
       );
 
-      await authService.login(
-          phone: '05321234567', password: 'wrong-password');
+      await authService.login(phone: '05321234567', password: 'wrong-password');
 
       expect(authService.errorMessage.value, isNotNull);
-      expect(authService.errorMessage.value,
-          contains('şifre hatalı'));
+      expect(authService.errorMessage.value, contains('şifre hatalı'));
       expect(authService.status.value, initialStatus);
       expect(authService.isSubmitting.value, isFalse);
     });
 
     test('network error - sets generic error message', () async {
-      when(() => mockRepo.login(any()))
-          .thenThrow(Exception('network failure'));
+      when(() => mockRepo.login(any())).thenThrow(Exception('network failure'));
 
-      await authService.login(
-          phone: '05321234567', password: 'anything');
+      await authService.login(phone: '05321234567', password: 'anything');
 
       expect(authService.errorMessage.value, isNotNull);
       expect(authService.isSubmitting.value, isFalse);

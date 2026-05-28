@@ -35,8 +35,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
   Worker? _profileWorker;
   bool _formInitialized = false;
 
-  CustomerProfileController get _ctrl =>
-      Get.find<CustomerProfileController>();
+  CustomerProfileController get _ctrl => Get.find<CustomerProfileController>();
 
   @override
   void initState() {
@@ -84,8 +83,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
       bytes = await picked.readAsBytes();
     } catch (_) {
       if (!mounted) return;
-      context.snack('Fotoğraf okunamadı. Lütfen tekrar deneyin.',
-          isError: true);
+      context.snack('Fotoğraf okunamadı. Lütfen tekrar deneyin.', isError: true);
       return;
     }
 
@@ -97,8 +95,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
             : 'image/jpeg';
     final filename = '${DateTime.now().millisecondsSinceEpoch}_profile.$ext';
 
-    final ok = await _ctrl.uploadProfileImage(bytes,
-        filename: filename, contentType: contentType);
+    final ok = await _ctrl.uploadProfileImage(bytes, filename: filename, contentType: contentType);
     if (!mounted) return;
     if (ok) {
       context.toast('Profil resmi güncellendi');
@@ -143,14 +140,12 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
         automaticallyImplyLeading: false,
         title: const Text('Profilim'),
       ),
-      bottomNavigationBar:
-          const CustomerBottomNav(current: CustomerTab.profile),
+      bottomNavigationBar: const CustomerBottomNav(current: CustomerTab.profile),
       body: Obx(() {
         if (_ctrl.isLoading.value && _ctrl.profile.value == null) {
           return const AppLoading();
         }
-        if (_ctrl.errorMessage.value != null &&
-            _ctrl.profile.value == null) {
+        if (_ctrl.errorMessage.value != null && _ctrl.profile.value == null) {
           return AppErrorWidget(
             message: _ctrl.errorMessage.value!,
             onRetry: _ctrl.load,
@@ -160,8 +155,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
         if (profile == null) return const AppLoading();
 
         return ListView(
-          padding: const EdgeInsets.symmetric(
-              horizontal: 16, vertical: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
           children: [
             // ── Header ────────────────────────────────────────────────
             _ProfileHeaderCard(
@@ -172,7 +166,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
             const SizedBox(height: 24),
 
             // ── Hesap Bilgileri ───────────────────────────────────────
-            _SectionHeader(
+            const _SectionHeader(
               icon: Icons.person_outline,
               title: 'Hesap Bilgileri',
             ),
@@ -216,40 +210,30 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: AppColors.surfaceContainerLow,
-                        borderRadius:
-                            BorderRadius.circular(AppRadius.md),
+                        borderRadius: BorderRadius.circular(AppRadius.md),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.phone_outlined,
-                              color: AppColors.onSurfaceVariant,
-                              size: 18),
+                          const Icon(Icons.phone_outlined, color: AppColors.onSurfaceVariant, size: 18),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
                                   'Telefon',
-                                  style: TextStyle(
-                                      fontSize: 11,
-                                      color:
-                                          AppColors.onSurfaceVariant),
+                                  style: TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
                                 ),
                                 Text(
                                   profile.phone,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.w500),
+                                  style: const TextStyle(fontWeight: FontWeight.w500),
                                 ),
                               ],
                             ),
                           ),
                           const Text(
                             'Değiştirilemez',
-                            style: TextStyle(
-                                fontSize: 11,
-                                color: AppColors.onSurfaceVariant),
+                            style: TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
                           ),
                         ],
                       ),
@@ -258,18 +242,14 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                     Obx(() => AppButton(
                           label: 'Kaydet',
                           isLoading: _ctrl.isSaving.value,
-                          onPressed: _ctrl.isSaving.value
-                              ? null
-                              : _save,
+                          onPressed: _ctrl.isSaving.value ? null : _save,
                         )),
                     Obx(() {
                       final err = _ctrl.errorMessage.value;
                       if (err == null) return const SizedBox.shrink();
                       return Padding(
                         padding: const EdgeInsets.only(top: 8),
-                        child: Text(err,
-                            style: const TextStyle(
-                                color: AppColors.error)),
+                        child: Text(err, style: const TextStyle(color: AppColors.error)),
                       );
                     }),
                   ],
@@ -284,7 +264,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _SectionHeader(
+                  const _SectionHeader(
                     icon: Icons.history,
                     title: 'Son Görüntülenenler',
                   ),
@@ -294,8 +274,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       itemCount: recentSvc.items.length,
-                      separatorBuilder: (_, __) =>
-                          const SizedBox(width: 10),
+                      separatorBuilder: (_, __) => const SizedBox(width: 10),
                       itemBuilder: (ctx, i) {
                         final entry = recentSvc.items[i];
                         return _RecentChip(
@@ -321,26 +300,24 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                _SectionHeader(
+                const _SectionHeader(
                   icon: Icons.notifications_outlined,
                   title: 'Bildirimler',
                 ),
                 TextButton(
-                  onPressed: () =>
-                      context.push('/customer/notifications'),
+                  onPressed: () => context.push('/customer/notifications'),
                   child: const Text('Tümünü Gör'),
                 ),
               ],
             ),
             const SizedBox(height: 10),
             _CustomerNotifPreviewCard(
-              onSeeAll: () =>
-                  context.push('/customer/notifications'),
+              onSeeAll: () => context.push('/customer/notifications'),
             ),
             const SizedBox(height: 24),
 
             // ── Hesap ─────────────────────────────────────────────────
-            _SectionHeader(
+            const _SectionHeader(
               icon: Icons.manage_accounts_outlined,
               title: 'Hesap',
             ),
@@ -353,15 +330,12 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
               ),
               child: InkWell(
                 onTap: _confirmLogout,
-                borderRadius:
-                    BorderRadius.circular(AppRadius.md),
+                borderRadius: BorderRadius.circular(AppRadius.md),
                 child: const Padding(
-                  padding: EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 14),
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   child: Row(
                     children: [
-                      Icon(Icons.logout,
-                          size: 20, color: AppColors.error),
+                      Icon(Icons.logout, size: 20, color: AppColors.error),
                       SizedBox(width: 12),
                       Text(
                         'Çıkış Yap',
@@ -433,8 +407,7 @@ class _ProfileHeaderCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: cs.primaryContainer.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(
-            color: cs.primaryContainer.withValues(alpha: 0.2)),
+        border: Border.all(color: cs.primaryContainer.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -443,13 +416,10 @@ class _ProfileHeaderCard extends StatelessWidget {
               CircleAvatar(
                 radius: 32,
                 backgroundColor: cs.secondaryContainer,
-                backgroundImage: profile.profileImageUrl == null
-                    ? null
-                    : CachedNetworkImageProvider(profile.profileImageUrl!),
-                child: profile.profileImageUrl == null
-                    ? Icon(Icons.person,
-                        size: 32, color: cs.primaryContainer)
-                    : null,
+                backgroundImage:
+                    profile.profileImageUrl == null ? null : CachedNetworkImageProvider(profile.profileImageUrl!),
+                child:
+                    profile.profileImageUrl == null ? Icon(Icons.person, size: 32, color: cs.primaryContainer) : null,
               ),
               Positioned(
                 right: 0,
@@ -470,12 +440,10 @@ class _ProfileHeaderCard extends StatelessWidget {
                                 height: 14,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white),
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                 ),
                               )
-                            : const Icon(Icons.camera_alt,
-                                color: Colors.white, size: 14),
+                            : const Icon(Icons.camera_alt, color: Colors.white, size: 14),
                       ),
                     ),
                   );
@@ -490,19 +458,14 @@ class _ProfileHeaderCard extends StatelessWidget {
               children: [
                 Text(
                   profile.fullName,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: cs.secondaryContainer,
-                    borderRadius:
-                        BorderRadius.circular(AppRadius.pill),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
                   ),
                   child: Text(
                     'Müşteri Hesabı',
@@ -517,68 +480,6 @@ class _ProfileHeaderCard extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _NavCard extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String label;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _NavCard({
-    required this.icon,
-    required this.iconColor,
-    required this.label,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.outlineVariant),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-              horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              Icon(icon, size: 22, color: iconColor),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(label,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.onSurfaceVariant,
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right,
-                  color: AppColors.onSurfaceVariant),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -614,8 +515,7 @@ class _RecentChip extends StatelessWidget {
                     ? CachedNetworkImage(
                         imageUrl: entry.imageUrl!,
                         fit: BoxFit.cover,
-                        errorWidget: (_, __, ___) =>
-                            _RecentPlaceholder(type: entry.type),
+                        errorWidget: (_, __, ___) => _RecentPlaceholder(type: entry.type),
                       )
                     : _RecentPlaceholder(type: entry.type),
               ),
@@ -644,9 +544,7 @@ class _RecentPlaceholder extends StatelessWidget {
     return Container(
       color: AppColors.surfaceContainerLow,
       child: Icon(
-        type == RecentViewType.product
-            ? Icons.shopping_bag_outlined
-            : Icons.storefront_outlined,
+        type == RecentViewType.product ? Icons.shopping_bag_outlined : Icons.storefront_outlined,
         size: 18,
         color: AppColors.onSurfaceVariant,
       ),
@@ -664,12 +562,10 @@ class _CustomerNotifPreviewCard extends StatelessWidget {
   const _CustomerNotifPreviewCard({required this.onSeeAll});
 
   (IconData, Color) _iconFor(String type) => switch (type) {
-        'product_approved' =>
-          (Icons.check_circle_outline, AppColors.success),
+        'product_approved' => (Icons.check_circle_outline, AppColors.success),
         'product_rejected' => (Icons.cancel_outlined, AppColors.error),
         'product_needs_edit' => (Icons.edit_outlined, AppColors.warning),
-        'account_approved' =>
-          (Icons.account_circle_outlined, AppColors.success),
+        'account_approved' => (Icons.account_circle_outlined, AppColors.success),
         _ => (Icons.campaign_outlined, AppColors.primaryContainer),
       };
 
@@ -713,8 +609,7 @@ class _CustomerNotifPreviewCard extends StatelessWidget {
           children: [
             if (isEmpty)
               const Padding(
-                padding: EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 18),
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
                 child: AppEmptyWidget(
                   message: 'Henüz bildirim yok.',
                   icon: Icons.notifications_none,
@@ -726,11 +621,9 @@ class _CustomerNotifPreviewCard extends StatelessWidget {
                 return Column(
                   children: [
                     InkWell(
-                      onTap: () =>
-                          context.push('/customer/notifications'),
+                      onTap: () => context.push('/customer/notifications'),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         child: Row(
                           children: [
                             Container(
@@ -738,8 +631,7 @@ class _CustomerNotifPreviewCard extends StatelessWidget {
                               height: 32,
                               decoration: BoxDecoration(
                                 color: color.withValues(alpha: 0.12),
-                                borderRadius:
-                                    BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                               alignment: Alignment.center,
                               child: Icon(icon, size: 16, color: color),
@@ -747,16 +639,13 @@ class _CustomerNotifPreviewCard extends StatelessWidget {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     n.title,
                                     style: TextStyle(
                                       fontSize: 13,
-                                      fontWeight: n.isRead
-                                          ? FontWeight.w500
-                                          : FontWeight.w700,
+                                      fontWeight: n.isRead ? FontWeight.w500 : FontWeight.w700,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -784,24 +673,19 @@ class _CustomerNotifPreviewCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (n != items.last)
-                      const Divider(
-                          height: 1, indent: 16, endIndent: 16),
+                    if (n != items.last) const Divider(height: 1, indent: 16, endIndent: 16),
                   ],
                 );
               }),
             const Divider(height: 1, thickness: 1),
             InkWell(
               onTap: onSeeAll,
-              borderRadius: const BorderRadius.vertical(
-                  bottom: Radius.circular(AppRadius.md)),
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(AppRadius.md)),
               child: const Padding(
-                padding: EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 12),
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
                   children: [
-                    Icon(Icons.arrow_forward_ios,
-                        size: 13, color: AppColors.primaryContainer),
+                    Icon(Icons.arrow_forward_ios, size: 13, color: AppColors.primaryContainer),
                     SizedBox(width: 8),
                     Text(
                       'Tüm Bildirimleri Gör',

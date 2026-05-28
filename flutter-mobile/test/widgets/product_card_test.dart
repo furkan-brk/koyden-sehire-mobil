@@ -15,8 +15,7 @@ import 'package:koyden_sehire/shared/widgets/product_card.dart';
 /// A concrete FavoritesService stub that doesn't need a real repo.
 /// We override [isFavorite] so we can control which products are favorited.
 class _StubFavoritesRepository extends FavoritesRepository {
-  _StubFavoritesRepository()
-      : super(_StubApiClient(SecureStorageService()));
+  _StubFavoritesRepository() : super(_StubApiClient(SecureStorageService()));
 
   @override
   Future<List<ProductModel>> list() async => [];
@@ -30,8 +29,7 @@ class _StubFavoritesRepository extends FavoritesRepository {
 
 /// Minimal ApiClient stub — methods are never called in these tests.
 class _StubApiClient extends ApiClient {
-  _StubApiClient(SecureStorageService storage)
-      : super(storage, onUnauthorized: () {});
+  _StubApiClient(super.storage) : super(onUnauthorized: () {});
 }
 
 /// Stub SecureStorageService — read-only methods return null/empty.
@@ -139,8 +137,7 @@ void main() {
   tearDown(() => Get.reset());
 
   group('ProductCard widget', () {
-    testWidgets('renders without error and shows product title',
-        (tester) async {
+    testWidgets('renders without error and shows product title', (tester) async {
       final product = _makeProduct(title: 'Taze Domates');
 
       await tester.pumpWidget(_buildTestApp(ProductCard(product: product)));
@@ -170,8 +167,7 @@ void main() {
       expect(find.textContaining('İzmir'), findsOneWidget);
     });
 
-    testWidgets('shows category pill badge when categoryName is set',
-        (tester) async {
+    testWidgets('shows category pill badge when categoryName is set', (tester) async {
       final product = _makeProduct();
 
       await tester.pumpWidget(_buildTestApp(ProductCard(product: product)));
@@ -187,14 +183,12 @@ void main() {
       await tester.pump();
 
       // The favorite icon (either filled or border) should be present.
-      final favIcon = find.byWidgetPredicate((w) =>
-          w is Icon &&
-          (w.icon == Icons.favorite || w.icon == Icons.favorite_border));
+      final favIcon =
+          find.byWidgetPredicate((w) => w is Icon && (w.icon == Icons.favorite || w.icon == Icons.favorite_border));
       expect(favIcon, findsOneWidget);
     });
 
-    testWidgets('shows filled favorite icon when product is favorited',
-        (tester) async {
+    testWidgets('shows filled favorite icon when product is favorited', (tester) async {
       final product = _makeProduct(id: 'p-fav');
       stubFavoritesService.ids.add('p-fav');
 
@@ -202,8 +196,7 @@ void main() {
       await tester.pump();
 
       expect(
-        find.byWidgetPredicate(
-            (w) => w is Icon && w.icon == Icons.favorite),
+        find.byWidgetPredicate((w) => w is Icon && w.icon == Icons.favorite),
         findsOneWidget,
       );
     });
@@ -220,8 +213,7 @@ void main() {
     testWidgets('compact mode hides stock badge', (tester) async {
       final product = _makeProduct(stockStatus: 'available');
 
-      await tester.pumpWidget(
-          _buildTestApp(ProductCard(product: product, compact: true)));
+      await tester.pumpWidget(_buildTestApp(ProductCard(product: product, compact: true)));
       await tester.pump();
 
       expect(find.text('Mevcut'), findsNothing);

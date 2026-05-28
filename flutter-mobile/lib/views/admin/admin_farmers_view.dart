@@ -52,15 +52,11 @@ class _AdminFarmersViewState extends State<AdminFarmersView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Üreticiler',
-                  style: Theme.of(context).textTheme.headlineMedium),
+              Text('Üreticiler', style: Theme.of(context).textTheme.headlineMedium),
               const SizedBox(height: 4),
               Text(
                 'Sistemdeki aktif üreticilerin listesi.',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(color: cs.onSurfaceVariant),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
               ),
               const SizedBox(height: 12),
               SearchField(
@@ -97,11 +93,9 @@ class _AdminFarmersViewState extends State<AdminFarmersView> {
                   final farmer = items[i];
                   return Card(
                     child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       leading: CircleAvatar(
-                        backgroundColor: _trustColor(farmer.trustScore)
-                            .withValues(alpha: 0.15),
+                        backgroundColor: _trustColor(farmer.trustScore).withValues(alpha: 0.15),
                         child: Text(
                           farmer.trustScore.toStringAsFixed(0),
                           style: TextStyle(
@@ -120,10 +114,9 @@ class _AdminFarmersViewState extends State<AdminFarmersView> {
                             ),
                           ),
                           if (farmer.isFoundingFarmer)
-                            Padding(
-                              padding: const EdgeInsets.only(right: 8),
-                              child: Icon(Icons.star,
-                                  size: 16, color: AppColors.warning),
+                            const Padding(
+                              padding: EdgeInsets.only(right: 8),
+                              child: Icon(Icons.star, size: 16, color: AppColors.warning),
                             ),
                           AdminStatusBadge(status: farmer.status),
                         ],
@@ -134,31 +127,25 @@ class _AdminFarmersViewState extends State<AdminFarmersView> {
                           const SizedBox(height: 4),
                           Row(
                             children: [
-                              Icon(Icons.location_on_outlined,
-                                  size: 12, color: cs.onSurfaceVariant),
+                              Icon(Icons.location_on_outlined, size: 12, color: cs.onSurfaceVariant),
                               const SizedBox(width: 2),
                               Text(
                                 '${farmer.city}, ${farmer.district}',
-                                style: TextStyle(
-                                    fontSize: 12, color: cs.onSurfaceVariant),
+                                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
                               ),
                               const SizedBox(width: 12),
-                              Icon(Icons.inventory_2_outlined,
-                                  size: 12, color: cs.onSurfaceVariant),
+                              Icon(Icons.inventory_2_outlined, size: 12, color: cs.onSurfaceVariant),
                               const SizedBox(width: 2),
                               Text(
                                 '${farmer.productCount} ürün',
-                                style: TextStyle(
-                                    fontSize: 12, color: cs.onSurfaceVariant),
+                                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
                               ),
                               const SizedBox(width: 12),
-                              Icon(Icons.people_outline,
-                                  size: 12, color: cs.onSurfaceVariant),
+                              Icon(Icons.people_outline, size: 12, color: cs.onSurfaceVariant),
                               const SizedBox(width: 2),
                               Text(
                                 '${farmer.usedInvites}/${farmer.inviteQuota}',
-                                style: TextStyle(
-                                    fontSize: 12, color: cs.onSurfaceVariant),
+                                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
                               ),
                             ],
                           ),

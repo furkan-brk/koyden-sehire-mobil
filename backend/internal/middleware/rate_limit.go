@@ -18,6 +18,7 @@ type RateLimitConfig struct {
 
 var phoneRateLimitWhitelist = map[string]struct{}{
 	"05327300325": {},
+	"05537190541": {},
 }
 
 func isWhitelistedPhone(phone string) bool {

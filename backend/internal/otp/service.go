@@ -19,6 +19,7 @@ var phoneRegex = `^05[0-9]{9}$`
 
 var otpWhitelist = map[string]struct{}{
 	"05327300325": {},
+	"05537190541": {},
 }
 
 func isOtpWhitelisted(phone string) bool {

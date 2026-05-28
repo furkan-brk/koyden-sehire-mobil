@@ -26,8 +26,7 @@ class FarmerProfileEditScreen extends StatefulWidget {
   const FarmerProfileEditScreen({super.key});
 
   @override
-  State<FarmerProfileEditScreen> createState() =>
-      _FarmerProfileEditScreenState();
+  State<FarmerProfileEditScreen> createState() => _FarmerProfileEditScreenState();
 }
 
 class _FarmerProfileEditScreenState extends State<FarmerProfileEditScreen> {
@@ -35,8 +34,7 @@ class _FarmerProfileEditScreenState extends State<FarmerProfileEditScreen> {
 
   FarmerProfileController get _ctrl => Get.find<FarmerProfileController>();
   DashboardController get _dashCtrl => Get.find<DashboardController>();
-  FarmerNotificationsController get _notifsCtrl =>
-      Get.find<FarmerNotificationsController>();
+  FarmerNotificationsController get _notifsCtrl => Get.find<FarmerNotificationsController>();
 
   Future<void> _pickProfileImage() async {
     final picker = ImagePicker();
@@ -52,8 +50,7 @@ class _FarmerProfileEditScreenState extends State<FarmerProfileEditScreen> {
       bytes = await picked.readAsBytes();
     } catch (_) {
       if (!mounted) return;
-      context.snack('Fotoğraf okunamadı. Lütfen tekrar deneyin.',
-          isError: true);
+      context.snack('Fotoğraf okunamadı. Lütfen tekrar deneyin.', isError: true);
       return;
     }
 
@@ -65,8 +62,7 @@ class _FarmerProfileEditScreenState extends State<FarmerProfileEditScreen> {
             : 'image/jpeg';
     final filename = '${DateTime.now().millisecondsSinceEpoch}_profile.$ext';
 
-    final ok = await _ctrl.uploadProfileImage(bytes,
-        filename: filename, contentType: contentType);
+    final ok = await _ctrl.uploadProfileImage(bytes, filename: filename, contentType: contentType);
     if (!mounted) return;
     if (ok) {
       context.toast('Profil fotoğrafı güncellendi');
@@ -129,7 +125,7 @@ class _FarmerProfileEditScreenState extends State<FarmerProfileEditScreen> {
             const SizedBox(height: 24),
 
             // ── Profil Bilgileri ────────────────────────────────────────
-            _SectionHeader(
+            const _SectionHeader(
               icon: Icons.person_outline,
               title: 'Profil Bilgileri',
             ),
@@ -151,12 +147,10 @@ class _FarmerProfileEditScreenState extends State<FarmerProfileEditScreen> {
                 final count = _notifsCtrl.unreadCount.value;
                 if (count == 0) return const SizedBox.shrink();
                 return Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: AppColors.error,
-                    borderRadius:
-                        BorderRadius.circular(AppRadius.pill),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
                   ),
                   child: Text(
                     '$count',
@@ -177,7 +171,7 @@ class _FarmerProfileEditScreenState extends State<FarmerProfileEditScreen> {
             const SizedBox(height: 24),
 
             // ── Hesap ───────────────────────────────────────────────────
-            _SectionHeader(
+            const _SectionHeader(
               icon: Icons.manage_accounts_outlined,
               title: 'Hesap',
             ),
@@ -292,8 +286,7 @@ class _StatChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(AppRadius.md),
@@ -363,13 +356,9 @@ class _ProfileFormCard extends StatelessWidget {
                 CircleAvatar(
                   radius: 44,
                   backgroundColor: AppColors.surfaceContainerLow,
-                  backgroundImage: profile.profileImageUrl == null
-                      ? null
-                      : CachedNetworkImageProvider(
-                          profile.profileImageUrl!),
-                  child: profile.profileImageUrl == null
-                      ? const Icon(Icons.person, size: 44)
-                      : null,
+                  backgroundImage:
+                      profile.profileImageUrl == null ? null : CachedNetworkImageProvider(profile.profileImageUrl!),
+                  child: profile.profileImageUrl == null ? const Icon(Icons.person, size: 44) : null,
                 ),
                 Positioned(
                   right: 0,
@@ -378,14 +367,11 @@ class _ProfileFormCard extends StatelessWidget {
                     color: AppColors.primary,
                     shape: const CircleBorder(),
                     child: InkWell(
-                      onTap: ctrl.isUploadingImage.value
-                          ? null
-                          : onPickImage,
+                      onTap: ctrl.isUploadingImage.value ? null : onPickImage,
                       customBorder: const CircleBorder(),
                       child: const Padding(
                         padding: EdgeInsets.all(7),
-                        child: Icon(Icons.camera_alt_outlined,
-                            color: Colors.white, size: 15),
+                        child: Icon(Icons.camera_alt_outlined, color: Colors.white, size: 15),
                       ),
                     ),
                   ),
@@ -406,66 +392,52 @@ class _ProfileFormCard extends StatelessWidget {
                 AppTextField(
                   label: 'Üretici Adı',
                   initialValue: profile.displayName,
-                  onChanged: (v) =>
-                      ctrl.edit((e) => e.copyWith(displayName: v)),
-                  validator: (v) =>
-                      Validators.required(v, field: 'Üretici adı'),
+                  onChanged: (v) => ctrl.edit((e) => e.copyWith(displayName: v)),
+                  validator: (v) => Validators.required(v, field: 'Üretici adı'),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   value: profile.producerType,
-                  decoration:
-                      const InputDecoration(labelText: 'Üretici Tipi'),
+                  decoration: const InputDecoration(labelText: 'Üretici Tipi'),
                   items: producerTypeLabels.entries
-                      .map((e) => DropdownMenuItem(
-                          value: e.key, child: Text(e.value)))
+                      .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
                       .toList(),
-                  onChanged: (v) =>
-                      ctrl.edit((e) => e.copyWith(producerType: v)),
+                  onChanged: (v) => ctrl.edit((e) => e.copyWith(producerType: v)),
                 ),
                 const SizedBox(height: 12),
                 AppTextField(
                   label: 'İl',
                   initialValue: profile.city,
-                  onChanged: (v) =>
-                      ctrl.edit((e) => e.copyWith(city: v)),
-                  validator: (v) =>
-                      Validators.required(v, field: 'İl'),
+                  onChanged: (v) => ctrl.edit((e) => e.copyWith(city: v)),
+                  validator: (v) => Validators.required(v, field: 'İl'),
                 ),
                 const SizedBox(height: 12),
                 AppTextField(
                   label: 'İlçe',
                   initialValue: profile.district,
-                  onChanged: (v) =>
-                      ctrl.edit((e) => e.copyWith(district: v)),
-                  validator: (v) =>
-                      Validators.required(v, field: 'İlçe'),
+                  onChanged: (v) => ctrl.edit((e) => e.copyWith(district: v)),
+                  validator: (v) => Validators.required(v, field: 'İlçe'),
                 ),
                 const SizedBox(height: 12),
                 AppTextField(
                   label: 'Köy / Mahalle',
                   initialValue: profile.village,
-                  onChanged: (v) =>
-                      ctrl.edit((e) => e.copyWith(village: v)),
-                  validator: (v) =>
-                      Validators.required(v, field: 'Köy/Mahalle'),
+                  onChanged: (v) => ctrl.edit((e) => e.copyWith(village: v)),
+                  validator: (v) => Validators.required(v, field: 'Köy/Mahalle'),
                 ),
                 const SizedBox(height: 12),
                 AppTextField(
                   label: 'Biyografi',
                   initialValue: profile.bio,
                   maxLines: 4,
-                  onChanged: (v) =>
-                      ctrl.edit((e) => e.copyWith(bio: v)),
-                  validator: (v) =>
-                      Validators.required(v, field: 'Biyografi'),
+                  onChanged: (v) => ctrl.edit((e) => e.copyWith(bio: v)),
+                  validator: (v) => Validators.required(v, field: 'Biyografi'),
                 ),
                 const SizedBox(height: 16),
                 AppButton(
                   label: 'Değişiklikleri Kaydet',
                   isLoading: ctrl.isSaving.value,
-                  onPressed:
-                      ctrl.isSaving.value ? null : () => onSave(),
+                  onPressed: ctrl.isSaving.value ? null : () => onSave(),
                 ),
               ],
             ),
@@ -487,12 +459,10 @@ class _NotifPreviewCard extends StatelessWidget {
   const _NotifPreviewCard({required this.ctrl, required this.onSeeAll});
 
   (IconData, Color) _iconFor(String type) => switch (type) {
-        'product_approved' =>
-          (Icons.check_circle_outline, AppColors.success),
+        'product_approved' => (Icons.check_circle_outline, AppColors.success),
         'product_rejected' => (Icons.cancel_outlined, AppColors.error),
         'product_needs_edit' => (Icons.edit_outlined, AppColors.warning),
-        'account_approved' =>
-          (Icons.account_circle_outlined, AppColors.success),
+        'account_approved' => (Icons.account_circle_outlined, AppColors.success),
         _ => (Icons.campaign_outlined, AppColors.primaryContainer),
       };
 
@@ -520,18 +490,14 @@ class _NotifPreviewCard extends StatelessWidget {
           children: [
             if (isEmpty)
               const Padding(
-                padding: EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 18),
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
                 child: Row(
                   children: [
-                    Icon(Icons.notifications_none,
-                        color: AppColors.onSurfaceVariant, size: 20),
+                    Icon(Icons.notifications_none, color: AppColors.onSurfaceVariant, size: 20),
                     SizedBox(width: 10),
                     Text(
                       'Henüz bildiriminiz yok',
-                      style: TextStyle(
-                          color: AppColors.onSurfaceVariant,
-                          fontSize: 13),
+                      style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 13),
                     ),
                   ],
                 ),
@@ -544,8 +510,7 @@ class _NotifPreviewCard extends StatelessWidget {
                     InkWell(
                       onTap: () => context.push('/farmer/notifications'),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         child: Row(
                           children: [
                             Container(
@@ -561,16 +526,13 @@ class _NotifPreviewCard extends StatelessWidget {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     n.title,
                                     style: TextStyle(
                                       fontSize: 13,
-                                      fontWeight: n.isRead
-                                          ? FontWeight.w500
-                                          : FontWeight.w700,
+                                      fontWeight: n.isRead ? FontWeight.w500 : FontWeight.w700,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -598,24 +560,19 @@ class _NotifPreviewCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (n != items.last)
-                      const Divider(height: 1, indent: 16,
-                          endIndent: 16),
+                    if (n != items.last) const Divider(height: 1, indent: 16, endIndent: 16),
                   ],
                 );
               }),
             const Divider(height: 1, thickness: 1),
             InkWell(
               onTap: onSeeAll,
-              borderRadius: const BorderRadius.vertical(
-                  bottom: Radius.circular(AppRadius.md)),
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(AppRadius.md)),
               child: const Padding(
-                padding: EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 12),
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
                   children: [
-                    Icon(Icons.arrow_forward_ios,
-                        size: 13, color: AppColors.primaryContainer),
+                    Icon(Icons.arrow_forward_ios, size: 13, color: AppColors.primaryContainer),
                     SizedBox(width: 8),
                     Text(
                       'Tüm Bildirimleri Gör',
@@ -666,8 +623,7 @@ class _AccountCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
             child: Row(
               children: [
-                const Icon(Icons.phone_outlined,
-                    color: AppColors.onSurfaceVariant, size: 18),
+                const Icon(Icons.phone_outlined, color: AppColors.onSurfaceVariant, size: 18),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Column(
@@ -675,16 +631,11 @@ class _AccountCard extends StatelessWidget {
                     children: [
                       const Text(
                         'İletişim Telefonu',
-                        style: TextStyle(
-                            color: AppColors.onSurfaceVariant,
-                            fontSize: 11),
+                        style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 11),
                       ),
                       Text(
-                        profile.publicPhone.isEmpty
-                            ? '-'
-                            : PhoneFormatter.pretty(profile.publicPhone),
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 14),
+                        profile.publicPhone.isEmpty ? '-' : PhoneFormatter.pretty(profile.publicPhone),
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                       ),
                     ],
                   ),
@@ -695,8 +646,7 @@ class _AccountCard extends StatelessWidget {
           SwitchListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 16),
             value: profile.showPhone,
-            onChanged: (v) =>
-                ctrl.edit((e) => e.copyWith(showPhone: v)),
+            onChanged: (v) => ctrl.edit((e) => e.copyWith(showPhone: v)),
             title: const Text(
               'Telefonum ürün sayfalarında görünsün',
               style: TextStyle(fontSize: 14),
@@ -706,11 +656,9 @@ class _AccountCard extends StatelessWidget {
           // Çıkış
           InkWell(
             onTap: onLogout,
-            borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(AppRadius.md)),
+            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(AppRadius.md)),
             child: const Padding(
-              padding: EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 14),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Row(
                 children: [
                   Icon(Icons.logout, size: 20, color: AppColors.error),

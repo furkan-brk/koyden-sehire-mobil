@@ -3,6 +3,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 
 import 'package:koyden_sehire/app/app.dart';
 import 'package:koyden_sehire/app/constants.dart';
@@ -12,6 +13,10 @@ import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  if (kIsWeb) {
+    usePathUrlStrategy();
+  }
 
   // Refuse to launch a release build that hasn't been given an explicit
   // BASE_URL — the dev default points at the Android emulator host loopback
