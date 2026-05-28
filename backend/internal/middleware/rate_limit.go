@@ -152,6 +152,17 @@ func InviteValidateRateLimit(rdb *redis.Client) fiber.Handler {
 	})
 }
 
+// ReportRateLimit allows 3 report submissions per IP per hour.
+func ReportRateLimit(rdb *redis.Client) fiber.Handler {
+	return RateLimit(rdb, RateLimitConfig{
+		KeyFunc: func(c *fiber.Ctx) string {
+			return fmt.Sprintf("report:%s", c.IP())
+		},
+		Max:    3,
+		Window: time.Hour,
+	})
+}
+
 func VideoPresignRateLimit(rdb *redis.Client) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		ctx := context.Background()
@@ -183,6 +194,43 @@ func VideoPresignRateLimit(rdb *redis.Client) fiber.Handler {
 		}
 
 		if phoneCount > 5 || ipCount > 10 {
+			return response.TooManyRequests(c, "Çok fazla istek gönderdiniz, lütfen bekleyin")
+		}
+
+		return c.Next()
+	}
+}
+
+// ForgotPasswordRateLimit IP bazlı şifre sıfırlama rate limiti: saatte 5 istek.
+// Telefon bazlı da ek koruma sağlar: aynı telefona saatte 5'ten fazla sıfırlama isteği önlenir.
+func ForgotPasswordRateLimit(rdb *redis.Client) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		ctx := context.Background()
+
+		var body struct {
+			Phone string `json:"phone"`
+		}
+		c.BodyParser(&body)
+
+		ipKey := fmt.Sprintf("rl:forgot_ip:%s", c.IP())
+		ipCount, err := rdb.Incr(ctx, ipKey).Result()
+		if err == nil && ipCount == 1 {
+			rdb.Expire(ctx, ipKey, time.Hour)
+		}
+
+		var phoneCount int64
+		if body.Phone != "" {
+			if isWhitelistedPhone(body.Phone) {
+				return c.Next()
+			}
+			phoneKey := fmt.Sprintf("rl:forgot_phone:%s", body.Phone)
+			phoneCount, err = rdb.Incr(ctx, phoneKey).Result()
+			if err == nil && phoneCount == 1 {
+				rdb.Expire(ctx, phoneKey, time.Hour)
+			}
+		}
+
+		if ipCount > 5 || phoneCount > 5 {
 			return response.TooManyRequests(c, "Çok fazla istek gönderdiniz, lütfen bekleyin")
 		}
 

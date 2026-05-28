@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -14,6 +12,7 @@ import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_text_field.dart';
 import 'package:koyden_sehire/shared/widgets/otp_input.dart';
+import 'package:koyden_sehire/shared/widgets/otp_resend_button.dart';
 
 /// Multi-step customer registration: phone → OTP → profile.
 ///
@@ -46,8 +45,6 @@ class _CustomerRegisterScreenState extends State<CustomerRegisterScreen> {
   _Step _step = _Step.phone;
   bool _obscure = true;
   String _otpCode = '';
-  int _cooldown = 0;
-  Timer? _cooldownTimer;
 
   AuthService get _auth => Get.find<AuthService>();
 
@@ -72,7 +69,6 @@ class _CustomerRegisterScreenState extends State<CustomerRegisterScreen> {
 
   @override
   void dispose() {
-    _cooldownTimer?.cancel();
     _errorWorker?.dispose();
     _statusWorker?.dispose();
     _phoneController.dispose();
@@ -82,30 +78,11 @@ class _CustomerRegisterScreenState extends State<CustomerRegisterScreen> {
     super.dispose();
   }
 
-  void _startCooldown() {
-    _cooldownTimer?.cancel();
-    setState(() => _cooldown = AppConstants.otpResendCooldownSeconds);
-    _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (!mounted) {
-        t.cancel();
-        return;
-      }
-      setState(() {
-        _cooldown--;
-        if (_cooldown <= 0) {
-          _cooldown = 0;
-          t.cancel();
-        }
-      });
-    });
-  }
-
   Future<void> _sendOtp() async {
     if (!(_phoneFormKey.currentState?.validate() ?? false)) return;
     FocusScope.of(context).unfocus();
     final ok = await _auth.requestRegisterOtp(_phoneController.text.trim());
     if (ok && mounted) {
-      _startCooldown();
       setState(() {
         _step = _Step.otp;
         _otpCode = '';
@@ -127,8 +104,7 @@ class _CustomerRegisterScreenState extends State<CustomerRegisterScreen> {
   }
 
   Future<void> _resendOtp() async {
-    final ok = await _auth.requestRegisterOtp(_phoneController.text.trim());
-    if (ok && mounted) _startCooldown();
+    await _auth.requestRegisterOtp(_phoneController.text.trim());
   }
 
   Future<void> _submitProfile() async {
@@ -250,17 +226,7 @@ class _CustomerRegisterScreenState extends State<CustomerRegisterScreen> {
                   : null,
             )),
         const SizedBox(height: 12),
-        Center(
-          child: _cooldown > 0
-              ? Text(
-                  'Kodu tekrar gönder ($_cooldown)',
-                  style: const TextStyle(color: AppColors.onSurfaceVariant),
-                )
-              : TextButton(
-                  onPressed: _resendOtp,
-                  child: const Text('Kodu tekrar gönder'),
-                ),
-        ),
+        Center(child: OtpResendButton(onResend: _resendOtp)),
       ],
     );
   }

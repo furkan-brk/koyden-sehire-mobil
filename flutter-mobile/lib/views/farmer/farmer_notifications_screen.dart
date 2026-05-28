@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:koyden_sehire/controllers/farmer/farmer_notifications_controller.dart';
 import 'package:koyden_sehire/models/notification_model.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
-import 'package:koyden_sehire/shared/widgets/farmer_bottom_nav.dart';
 import 'package:koyden_sehire/shared/widgets/notification_tile.dart';
 import 'package:koyden_sehire/shared/widgets/shimmer_notification_tile.dart';
 
@@ -77,23 +76,42 @@ class _FarmerNotificationsScreenState extends State<FarmerNotificationsScreen> {
           }),
         ],
       ),
-      bottomNavigationBar: const FarmerBottomNav(current: FarmerTab.profile),
-      body: Obx(() {
-        if (_ctrl.isLoading.value && _ctrl.items.isEmpty) {
-          return const ShimmerNotificationList(count: 6);
-        }
-        if (_ctrl.errorMessage.value != null && _ctrl.items.isEmpty) {
-          return AppErrorWidget(
-            message: _ctrl.errorMessage.value!,
-            onRetry: _ctrl.load,
-          );
-        }
-        if (_ctrl.items.isEmpty) {
-          return const NotificationEmptyState(role: 'farmer');
-        }
-        return RefreshIndicator(
-          onRefresh: _ctrl.load,
-          child: ListView.separated(
+      body: RefreshIndicator(
+        onRefresh: _ctrl.load,
+        child: Obx(() {
+          if (_ctrl.isLoading.value && _ctrl.items.isEmpty) {
+            return const ShimmerNotificationList(count: 6);
+          }
+          if (_ctrl.errorMessage.value != null && _ctrl.items.isEmpty) {
+            return LayoutBuilder(
+              builder: (ctx, constraints) => SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  height: constraints.maxHeight,
+                  child: Center(
+                    child: AppErrorWidget(
+                      message: _ctrl.errorMessage.value!,
+                      onRetry: _ctrl.load,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }
+          if (_ctrl.items.isEmpty) {
+            return LayoutBuilder(
+              builder: (ctx, constraints) => SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  height: constraints.maxHeight,
+                  child: const Center(
+                    child: NotificationEmptyState(role: 'farmer'),
+                  ),
+                ),
+              ),
+            );
+          }
+          return ListView.separated(
             controller: _scrollCtrl,
             padding: const EdgeInsets.symmetric(vertical: 8),
             itemCount: _ctrl.items.length + 1,
@@ -123,9 +141,9 @@ class _FarmerNotificationsScreenState extends State<FarmerNotificationsScreen> {
                 onTap: () => _handleTap(n),
               );
             },
-          ),
-        );
-      }),
+          );
+        }),
+      ),
     );
   }
 }

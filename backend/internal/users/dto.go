@@ -26,3 +26,8 @@ type UpdateCustomerProfileRequest struct {
 	FullName string  `json:"full_name" validate:"required,min=2,max=100"`
 	Email    *string `json:"email" validate:"omitempty,email,max=255"`
 }
+
+// DeleteAccountRequest KVKK gereği hesap silme isteği — şifre doğrulaması zorunlu.
+type DeleteAccountRequest struct {
+	Password string `json:"password" validate:"required"`
+}

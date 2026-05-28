@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -9,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 
 import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/app/theme.dart';
+import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/core/errors/app_exception.dart';
 import 'package:koyden_sehire/core/utils/phone_formatter.dart';
 import 'package:koyden_sehire/core/utils/validators.dart';
@@ -17,6 +17,7 @@ import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_text_field.dart';
 import 'package:koyden_sehire/shared/widgets/category_chip.dart';
 import 'package:koyden_sehire/shared/widgets/otp_input.dart';
+import 'package:koyden_sehire/shared/widgets/otp_resend_button.dart';
 import 'package:koyden_sehire/services/category_repository.dart';
 import 'package:koyden_sehire/services/otp_repository.dart';
 import 'package:koyden_sehire/controllers/public/category_controller.dart';
@@ -42,6 +43,50 @@ class ApplicationFormScreen extends StatefulWidget {
 }
 
 class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeOfferResume());
+  }
+
+  Future<void> _maybeOfferResume() async {
+    final ctrl = _formCtrl();
+    // If the wizard is already populated (e.g. user typed into step 1 before
+    // any persistence kicked in) we do not overwrite their input.
+    final hasUserInput = ctrl.data.value.fullName.isNotEmpty ||
+        ctrl.data.value.businessName.isNotEmpty ||
+        ctrl.currentStep.value > 0;
+    if (hasUserInput) return;
+    final hasDraft = await ctrl.hasDraft();
+    if (!hasDraft || !mounted) return;
+    final resume = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: const Text('Devam etmek ister misiniz?'),
+        content: const Text(
+          'Yarım kalan bir başvurunuz var. Kaldığınız yerden devam '
+          'etmek ister misiniz?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hayır, Yeniden Başla'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Evet, Devam Et'),
+          ),
+        ],
+      ),
+    );
+    if (resume == true) {
+      await ctrl.restoreDraft();
+    } else {
+      await ctrl.clearDraft();
+    }
+  }
+
   Future<bool> _confirmExit() async {
     final ok = await showDialog<bool>(
       context: context,
@@ -182,8 +227,6 @@ class _StepPhoneState extends State<_StepPhone> {
   bool _isVerifying = false;
   String _otpCode = '';
   String? _error;
-  int _cooldown = 0;
-  Timer? _timer;
 
   late final OtpRepository _repo;
 
@@ -196,27 +239,8 @@ class _StepPhoneState extends State<_StepPhone> {
 
   @override
   void dispose() {
-    _timer?.cancel();
     _phone.dispose();
     super.dispose();
-  }
-
-  void _startCooldown() {
-    _timer?.cancel();
-    setState(() => _cooldown = AppConstants.otpResendCooldownSeconds);
-    _timer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (!mounted) {
-        t.cancel();
-        return;
-      }
-      setState(() {
-        _cooldown--;
-        if (_cooldown <= 0) {
-          _cooldown = 0;
-          t.cancel();
-        }
-      });
-    });
   }
 
   Future<void> _sendCode() async {
@@ -227,7 +251,6 @@ class _StepPhoneState extends State<_StepPhone> {
     });
     try {
       await _repo.send(_phone.text.trim());
-      _startCooldown();
       if (mounted) {
         setState(() {
           _codeSent = true;
@@ -238,10 +261,7 @@ class _StepPhoneState extends State<_StepPhone> {
       String msg = e.message;
       if (e.code == 'COOLDOWN_ACTIVE') {
         msg = 'Az önce gönderildi, biraz bekleyin.';
-        _startCooldown();
-        if (mounted) {
-          setState(() => _codeSent = true);
-        }
+        if (mounted) setState(() => _codeSent = true);
       } else if (e.code == 'INVALID_PHONE') {
         msg = 'Geçersiz telefon numarası';
       }
@@ -258,6 +278,16 @@ class _StepPhoneState extends State<_StepPhone> {
           _isSending = false;
         });
       }
+    }
+  }
+
+  Future<void> _resendCode() async {
+    try {
+      await _repo.send(_phone.text.trim());
+    } on AppException catch (e) {
+      if (mounted) setState(() => _error = e.message);
+    } catch (_) {
+      if (mounted) setState(() => _error = 'Kod gönderilemedi');
     }
   }
 
@@ -300,12 +330,10 @@ class _StepPhoneState extends State<_StepPhone> {
 
   void _resetPhone() {
     _formCtrl().setPhoneVerified(false);
-    _timer?.cancel();
     setState(() {
       _codeSent = false;
       _otpCode = '';
       _error = null;
-      _cooldown = 0;
     });
   }
 
@@ -391,18 +419,7 @@ class _StepPhoneState extends State<_StepPhone> {
                       : null,
                 ),
                 const SizedBox(height: 12),
-                Center(
-                  child: _cooldown > 0
-                      ? Text(
-                          'Kodu tekrar gönder ($_cooldown)',
-                          style: const TextStyle(
-                              color: AppColors.onSurfaceVariant),
-                        )
-                      : TextButton(
-                          onPressed: _isSending ? null : _sendCode,
-                          child: const Text('Kodu Tekrar Gönder'),
-                        ),
-                ),
+                Center(child: OtpResendButton(onResend: _resendCode)),
               ],
             ],
           ],
@@ -873,7 +890,7 @@ class _StepProductionVideoState extends State<_StepProductionVideo> {
               const SizedBox(height: 8),
               Obx(() {
                 if (_cats.isLoading.value) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const AppLoading();
                 }
                 if (_cats.error.value != null) {
                   return const Text(
