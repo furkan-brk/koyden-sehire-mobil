@@ -10,15 +10,12 @@ import 'package:koyden_sehire/controllers/customer/customer_profile_controller.d
 import 'package:koyden_sehire/core/services/auth_service.dart';
 import 'package:koyden_sehire/core/services/recent_views_service.dart';
 import 'package:koyden_sehire/core/utils/date_formatter.dart';
-import 'package:koyden_sehire/core/utils/validators.dart' show Validators;
 import 'package:koyden_sehire/models/customer_profile_model.dart';
 import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
 import 'package:koyden_sehire/shared/utils/confirm_dialog.dart';
-import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_loading.dart';
-import 'package:koyden_sehire/shared/widgets/app_text_field.dart';
 import 'package:koyden_sehire/shared/widgets/customer_bottom_nav.dart';
 
 class CustomerProfileScreen extends StatefulWidget {
@@ -29,45 +26,8 @@ class CustomerProfileScreen extends StatefulWidget {
 }
 
 class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
-  late final TextEditingController _nameCtrl;
-  late final TextEditingController _emailCtrl;
-  final _formKey = GlobalKey<FormState>();
-  Worker? _profileWorker;
-  bool _formInitialized = false;
-
-  CustomerProfileController get _ctrl => Get.find<CustomerProfileController>();
-
-  @override
-  void initState() {
-    super.initState();
-    final p = _ctrl.profile.value;
-    _nameCtrl = TextEditingController(text: p?.fullName ?? '');
-    _emailCtrl = TextEditingController(text: p?.email ?? '');
-    if (p == null) {
-      _profileWorker = ever<CustomerProfileModel?>(
-        _ctrl.profile,
-        (profile) {
-          if (profile != null && !_formInitialized) {
-            _nameCtrl.text = profile.fullName;
-            _emailCtrl.text = profile.email ?? '';
-            _formInitialized = true;
-            _profileWorker?.dispose();
-            _profileWorker = null;
-          }
-        },
-      );
-    } else {
-      _formInitialized = true;
-    }
-  }
-
-  @override
-  void dispose() {
-    _nameCtrl.dispose();
-    _emailCtrl.dispose();
-    _profileWorker?.dispose();
-    super.dispose();
-  }
+  CustomerProfileController get _ctrl =>
+      Get.find<CustomerProfileController>();
 
   Future<void> _pickProfileImage() async {
     final picker = ImagePicker();
@@ -83,7 +43,8 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
       bytes = await picked.readAsBytes();
     } catch (_) {
       if (!mounted) return;
-      context.snack('Fotoğraf okunamadı. Lütfen tekrar deneyin.', isError: true);
+      context.snack('Fotoğraf okunamadı. Lütfen tekrar deneyin.',
+          isError: true);
       return;
     }
 
@@ -93,28 +54,17 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
         : ext == 'webp'
             ? 'image/webp'
             : 'image/jpeg';
-    final filename = '${DateTime.now().millisecondsSinceEpoch}_profile.$ext';
+    final filename =
+        '${DateTime.now().millisecondsSinceEpoch}_profile.$ext';
 
-    final ok = await _ctrl.uploadProfileImage(bytes, filename: filename, contentType: contentType);
+    final ok = await _ctrl.uploadProfileImage(bytes,
+        filename: filename, contentType: contentType);
     if (!mounted) return;
     if (ok) {
       context.toast('Profil resmi güncellendi');
     } else {
       final err = _ctrl.errorMessage.value;
       if (err != null) context.snack(err, isError: true);
-    }
-  }
-
-  Future<void> _save() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-    final email = _emailCtrl.text.trim();
-    final ok = await _ctrl.updateProfile(
-      fullName: _nameCtrl.text.trim(),
-      email: email.isEmpty ? null : email,
-    );
-    if (!mounted) return;
-    if (ok) {
-      context.toast('Profil güncellendi');
     }
   }
 
@@ -140,12 +90,14 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
         automaticallyImplyLeading: false,
         title: const Text('Profilim'),
       ),
-      bottomNavigationBar: const CustomerBottomNav(current: CustomerTab.profile),
+      bottomNavigationBar:
+          const CustomerBottomNav(current: CustomerTab.profile),
       body: Obx(() {
         if (_ctrl.isLoading.value && _ctrl.profile.value == null) {
           return const AppLoading();
         }
-        if (_ctrl.errorMessage.value != null && _ctrl.profile.value == null) {
+        if (_ctrl.errorMessage.value != null &&
+            _ctrl.profile.value == null) {
           return AppErrorWidget(
             message: _ctrl.errorMessage.value!,
             onRetry: _ctrl.load,
@@ -165,96 +117,14 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
             ),
             const SizedBox(height: 24),
 
-            // ── Hesap Bilgileri ───────────────────────────────────────
+            // ── Hesap Bilgileri tıklanabilir kart ─────────────────────
             const _SectionHeader(
               icon: Icons.person_outline,
               title: 'Hesap Bilgileri',
             ),
             const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(AppRadius.md),
-                border: Border.all(color: AppColors.outlineVariant),
-              ),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    AppTextField(
-                      controller: _nameCtrl,
-                      label: 'Ad Soyad',
-                      validator: (v) {
-                        if (v == null || v.trim().length < 2) {
-                          return 'En az 2 karakter giriniz';
-                        }
-                        if (v.trim().length > 100) {
-                          return 'En fazla 100 karakter';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    AppTextField(
-                      controller: _emailCtrl,
-                      label: 'E-posta (isteğe bağlı)',
-                      keyboardType: TextInputType.emailAddress,
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) return null;
-                        return Validators.email(v.trim());
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceContainerLow,
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.phone_outlined, color: AppColors.onSurfaceVariant, size: 18),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Telefon',
-                                  style: TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
-                                ),
-                                Text(
-                                  profile.phone,
-                                  style: const TextStyle(fontWeight: FontWeight.w500),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Text(
-                            'Değiştirilemez',
-                            style: TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Obx(() => AppButton(
-                          label: 'Kaydet',
-                          isLoading: _ctrl.isSaving.value,
-                          onPressed: _ctrl.isSaving.value ? null : _save,
-                        )),
-                    Obx(() {
-                      final err = _ctrl.errorMessage.value;
-                      if (err == null) return const SizedBox.shrink();
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Text(err, style: const TextStyle(color: AppColors.error)),
-                      );
-                    }),
-                  ],
-                ),
-              ),
+            _AccountInfoCard(
+              onTap: () => context.push('/customer/profile/edit'),
             ),
             const SizedBox(height: 24),
 
@@ -274,7 +144,8 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       itemCount: recentSvc.items.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 10),
+                      separatorBuilder: (_, __) =>
+                          const SizedBox(width: 10),
                       itemBuilder: (ctx, i) {
                         final entry = recentSvc.items[i];
                         return _RecentChip(
@@ -305,14 +176,16 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                   title: 'Bildirimler',
                 ),
                 TextButton(
-                  onPressed: () => context.push('/customer/notifications'),
+                  onPressed: () =>
+                      context.push('/customer/notifications'),
                   child: const Text('Tümünü Gör'),
                 ),
               ],
             ),
             const SizedBox(height: 10),
             _CustomerNotifPreviewCard(
-              onSeeAll: () => context.push('/customer/notifications'),
+              onSeeAll: () =>
+                  context.push('/customer/notifications'),
             ),
             const SizedBox(height: 24),
 
@@ -332,10 +205,12 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                 onTap: _confirmLogout,
                 borderRadius: BorderRadius.circular(AppRadius.md),
                 child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 14),
                   child: Row(
                     children: [
-                      Icon(Icons.logout, size: 20, color: AppColors.error),
+                      Icon(Icons.logout,
+                          size: 20, color: AppColors.error),
                       SizedBox(width: 12),
                       Text(
                         'Çıkış Yap',
@@ -388,6 +263,65 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
+class _AccountInfoCard extends StatelessWidget {
+  final VoidCallback onTap;
+  const _AccountInfoCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.outlineVariant),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: cs.primaryContainer.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: Icon(Icons.person_outline,
+                    size: 18, color: cs.primary),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Hesap Bilgileri',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w600, fontSize: 14),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Ad soyad, e-posta ve telefon bilgilerinizi görüntüleyin.',
+                      style: TextStyle(
+                          fontSize: 12, color: cs.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right,
+                  size: 20, color: cs.onSurfaceVariant),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ProfileHeaderCard extends StatelessWidget {
   final CustomerProfileModel profile;
   final CustomerProfileController ctrl;
@@ -407,7 +341,8 @@ class _ProfileHeaderCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: cs.primaryContainer.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: cs.primaryContainer.withValues(alpha: 0.2)),
+        border: Border.all(
+            color: cs.primaryContainer.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -416,10 +351,14 @@ class _ProfileHeaderCard extends StatelessWidget {
               CircleAvatar(
                 radius: 32,
                 backgroundColor: cs.secondaryContainer,
-                backgroundImage:
-                    profile.profileImageUrl == null ? null : CachedNetworkImageProvider(profile.profileImageUrl!),
-                child:
-                    profile.profileImageUrl == null ? Icon(Icons.person, size: 32, color: cs.primaryContainer) : null,
+                backgroundImage: profile.profileImageUrl == null
+                    ? null
+                    : CachedNetworkImageProvider(
+                        profile.profileImageUrl!),
+                child: profile.profileImageUrl == null
+                    ? Icon(Icons.person,
+                        size: 32, color: cs.primaryContainer)
+                    : null,
               ),
               Positioned(
                 right: 0,
@@ -440,10 +379,13 @@ class _ProfileHeaderCard extends StatelessWidget {
                                 height: 14,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  valueColor:
+                                      AlwaysStoppedAnimation<Color>(
+                                          Colors.white),
                                 ),
                               )
-                            : const Icon(Icons.camera_alt, color: Colors.white, size: 14),
+                            : const Icon(Icons.camera_alt,
+                                color: Colors.white, size: 14),
                       ),
                     ),
                   );
@@ -458,14 +400,19 @@ class _ProfileHeaderCard extends StatelessWidget {
               children: [
                 Text(
                   profile.fullName,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: cs.secondaryContainer,
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                    borderRadius:
+                        BorderRadius.circular(AppRadius.pill),
                   ),
                   child: Text(
                     'Müşteri Hesabı',
@@ -515,7 +462,8 @@ class _RecentChip extends StatelessWidget {
                     ? CachedNetworkImage(
                         imageUrl: entry.imageUrl!,
                         fit: BoxFit.cover,
-                        errorWidget: (_, __, ___) => _RecentPlaceholder(type: entry.type),
+                        errorWidget: (_, __, ___) =>
+                            _RecentPlaceholder(type: entry.type),
                       )
                     : _RecentPlaceholder(type: entry.type),
               ),
@@ -544,7 +492,9 @@ class _RecentPlaceholder extends StatelessWidget {
     return Container(
       color: AppColors.surfaceContainerLow,
       child: Icon(
-        type == RecentViewType.product ? Icons.shopping_bag_outlined : Icons.storefront_outlined,
+        type == RecentViewType.product
+            ? Icons.shopping_bag_outlined
+            : Icons.storefront_outlined,
         size: 18,
         color: AppColors.onSurfaceVariant,
       ),
@@ -562,10 +512,13 @@ class _CustomerNotifPreviewCard extends StatelessWidget {
   const _CustomerNotifPreviewCard({required this.onSeeAll});
 
   (IconData, Color) _iconFor(String type) => switch (type) {
-        'product_approved' => (Icons.check_circle_outline, AppColors.success),
+        'product_approved' =>
+          (Icons.check_circle_outline, AppColors.success),
         'product_rejected' => (Icons.cancel_outlined, AppColors.error),
-        'product_needs_edit' => (Icons.edit_outlined, AppColors.warning),
-        'account_approved' => (Icons.account_circle_outlined, AppColors.success),
+        'product_needs_edit' =>
+          (Icons.edit_outlined, AppColors.warning),
+        'account_approved' =>
+          (Icons.account_circle_outlined, AppColors.success),
         _ => (Icons.campaign_outlined, AppColors.primaryContainer),
       };
 
@@ -609,7 +562,8 @@ class _CustomerNotifPreviewCard extends StatelessWidget {
           children: [
             if (isEmpty)
               const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                padding: EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 18),
                 child: AppEmptyWidget(
                   message: 'Henüz bildirim yok.',
                   icon: Icons.notifications_none,
@@ -621,9 +575,11 @@ class _CustomerNotifPreviewCard extends StatelessWidget {
                 return Column(
                   children: [
                     InkWell(
-                      onTap: () => context.push('/customer/notifications'),
+                      onTap: () =>
+                          context.push('/customer/notifications'),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
                         child: Row(
                           children: [
                             Container(
@@ -631,21 +587,26 @@ class _CustomerNotifPreviewCard extends StatelessWidget {
                               height: 32,
                               decoration: BoxDecoration(
                                 color: color.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius:
+                                    BorderRadius.circular(8),
                               ),
                               alignment: Alignment.center,
-                              child: Icon(icon, size: 16, color: color),
+                              child: Icon(icon,
+                                  size: 16, color: color),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     n.title,
                                     style: TextStyle(
                                       fontSize: 13,
-                                      fontWeight: n.isRead ? FontWeight.w500 : FontWeight.w700,
+                                      fontWeight: n.isRead
+                                          ? FontWeight.w500
+                                          : FontWeight.w700,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -673,19 +634,25 @@ class _CustomerNotifPreviewCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (n != items.last) const Divider(height: 1, indent: 16, endIndent: 16),
+                    if (n != items.last)
+                      const Divider(
+                          height: 1, indent: 16, endIndent: 16),
                   ],
                 );
               }),
             const Divider(height: 1, thickness: 1),
             InkWell(
               onTap: onSeeAll,
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(AppRadius.md)),
+              borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(AppRadius.md)),
               child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 12),
                 child: Row(
                   children: [
-                    Icon(Icons.arrow_forward_ios, size: 13, color: AppColors.primaryContainer),
+                    Icon(Icons.arrow_forward_ios,
+                        size: 13,
+                        color: AppColors.primaryContainer),
                     SizedBox(width: 8),
                     Text(
                       'Tüm Bildirimleri Gör',

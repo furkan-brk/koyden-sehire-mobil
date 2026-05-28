@@ -10,7 +10,6 @@ import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 
-/// Maps known audit actions to localized labels.
 const Map<String, String> _actionLabels = {
   'product.approved': 'Ürün Onaylandı',
   'product.rejected': 'Ürün Reddedildi',
@@ -47,93 +46,136 @@ class _AdminAuditLogViewState extends State<AdminAuditLogView> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Denetim Günlüğü',
-                  style: Theme.of(context).textTheme.headlineMedium),
-              const SizedBox(height: 4),
-              Text(
-                'Yöneticiler tarafından gerçekleştirilen aksiyonların kaydı.',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(color: cs.onSurfaceVariant),
-              ),
-              const SizedBox(height: 12),
-              Obx(() {
-                return DropdownButtonFormField<String?>(
-                  value: _ctrl.actionFilter.value,
-                  isDense: true,
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.filter_list),
-                    hintText: 'Aksiyona göre filtrele',
-                    isDense: true,
-                  ),
-                  items: [
-                    const DropdownMenuItem<String?>(
-                      value: null,
-                      child: Text('Tüm Aksiyonlar'),
-                    ),
-                    ..._actionLabels.entries.map(
-                      (e) => DropdownMenuItem<String?>(
-                        value: e.key,
-                        child: Text(e.value),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth >= 900;
+        final hp = isDesktop ? 24.0 : 16.0;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(hp, hp, hp, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Denetim Günlüğü',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineSmall
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              'Yöneticiler tarafından gerçekleştirilen aksiyonların kaydı.',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(color: cs.onSurfaceVariant),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                  onChanged: _ctrl.setActionFilter,
+                      const SizedBox(width: 16),
+                      OutlinedButton.icon(
+                        onPressed: _ctrl.load,
+                        icon: const Icon(Icons.refresh_outlined, size: 16),
+                        label: const Text('Yenile'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 10),
+                          minimumSize: Size.zero,
+                          textStyle: const TextStyle(
+                              fontSize: 13, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: isDesktop ? 16 : 12),
+                  Obx(() => DropdownButtonFormField<String?>(
+                        // ignore: deprecated_member_use
+                        value: _ctrl.actionFilter.value,
+                        isDense: true,
+                        decoration: const InputDecoration(
+                          prefixIcon:
+                              Icon(Icons.filter_list_outlined, size: 18),
+                          hintText: 'Aksiyona göre filtrele',
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 10),
+                        ),
+                        items: [
+                          const DropdownMenuItem<String?>(
+                            value: null,
+                            child: Text('Tüm Aksiyonlar'),
+                          ),
+                          ..._actionLabels.entries.map(
+                            (e) => DropdownMenuItem<String?>(
+                              value: e.key,
+                              child: Text(e.value),
+                            ),
+                          ),
+                        ],
+                        onChanged: _ctrl.setActionFilter,
+                      )),
+                  SizedBox(height: isDesktop ? 16 : 8),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Obx(() {
+                if (_ctrl.isLoading.value) return const AppLoading();
+                if (_ctrl.error.value.isNotEmpty) {
+                  return AppErrorWidget(
+                      message: _ctrl.error.value, onRetry: _ctrl.load);
+                }
+                final items = _ctrl.logs;
+                if (items.isEmpty) {
+                  return const AppEmptyWidget(
+                    message: 'Henüz denetim kaydı bulunmuyor.',
+                    icon: Icons.history,
+                  );
+                }
+                return RefreshIndicator(
+                  onRefresh: _ctrl.load,
+                  child: ListView.separated(
+                    padding: EdgeInsets.fromLTRB(hp, 0, hp, hp),
+                    itemCount: items.length + 1,
+                    separatorBuilder: (_, __) => const SizedBox(height: 6),
+                    itemBuilder: (ctx, i) {
+                      if (i == items.length) {
+                        return _LoadMoreFooter(controller: _ctrl);
+                      }
+                      return _AuditLogTile(log: items[i]);
+                    },
+                  ),
                 );
               }),
-            ],
-          ),
-        ),
-        Expanded(
-          child: Obx(() {
-            if (_ctrl.isLoading.value) {
-              return const AppLoading();
-            }
-            if (_ctrl.error.value.isNotEmpty) {
-              return AppErrorWidget(
-                message: _ctrl.error.value,
-                onRetry: _ctrl.load,
-              );
-            }
-            final items = _ctrl.logs;
-            if (items.isEmpty) {
-              return const AppEmptyWidget(
-                message: 'Henüz denetim kaydı bulunmuyor.',
-                icon: Icons.history,
-              );
-            }
-            return RefreshIndicator(
-              onRefresh: _ctrl.load,
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                itemCount: items.length + 1,
-                separatorBuilder: (_, __) => const SizedBox(height: 8),
-                itemBuilder: (ctx, i) {
-                  if (i == items.length) {
-                    return _LoadMoreFooter(controller: _ctrl);
-                  }
-                  return _AuditLogTile(log: items[i]);
-                },
-              ),
-            );
-          }),
-        ),
-      ],
+            ),
+          ],
+        );
+      },
     );
   }
 }
 
-class _AuditLogTile extends StatelessWidget {
+class _AuditLogTile extends StatefulWidget {
   final AuditLog log;
   const _AuditLogTile({required this.log});
+
+  @override
+  State<_AuditLogTile> createState() => _AuditLogTileState();
+}
+
+class _AuditLogTileState extends State<_AuditLogTile> {
+  bool _expanded = false;
 
   Color _actionColor(String action) {
     if (action.endsWith('.approved')) return AppColors.success;
@@ -156,8 +198,12 @@ class _AuditLogTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final log = widget.log;
     final color = _actionColor(log.action);
+    final hasMeta = log.meta != null && log.meta!.isNotEmpty;
+
     return Card(
+      margin: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
@@ -184,17 +230,13 @@ class _AuditLogTile extends StatelessWidget {
                         child: Text(
                           _actionLabel(log.action),
                           style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: color,
-                          ),
+                              fontWeight: FontWeight.w600, color: color),
                         ),
                       ),
                       Text(
                         AppFormatters.date(log.createdAt),
                         style: TextStyle(
-                          fontSize: 12,
-                          color: cs.onSurfaceVariant,
-                        ),
+                            fontSize: 12, color: cs.onSurfaceVariant),
                       ),
                     ],
                   ),
@@ -208,9 +250,7 @@ class _AuditLogTile extends StatelessWidget {
                         child: Text(
                           log.actorName.isEmpty ? '—' : log.actorName,
                           style: TextStyle(
-                            fontSize: 12,
-                            color: cs.onSurfaceVariant,
-                          ),
+                              fontSize: 12, color: cs.onSurfaceVariant),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -231,24 +271,51 @@ class _AuditLogTile extends StatelessWidget {
                       ),
                     ],
                   ),
-                  if (log.meta != null && log.meta!.isNotEmpty) ...[
-                    const SizedBox(height: 6),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        log.meta.toString(),
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontFamily: 'monospace',
-                          color: cs.onSurfaceVariant,
-                        ),
+                  if (hasMeta) ...[
+                    const SizedBox(height: 4),
+                    GestureDetector(
+                      onTap: () => setState(() => _expanded = !_expanded),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _expanded
+                                ? Icons.keyboard_arrow_up
+                                : Icons.keyboard_arrow_down,
+                            size: 14,
+                            color: cs.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            _expanded ? 'Gizle' : 'Detayları Göster',
+                            style: TextStyle(
+                                fontSize: 12, color: cs.onSurfaceVariant),
+                          ),
+                        ],
                       ),
                     ),
+                    if (_expanded) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceContainerHighest,
+                          borderRadius:
+                              BorderRadius.circular(AppRadius.sm),
+                          border: Border.all(
+                              color: AppColors.outlineVariant, width: 1),
+                        ),
+                        child: Text(
+                          log.meta.toString(),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontFamily: 'monospace',
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ],
               ),

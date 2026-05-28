@@ -69,9 +69,17 @@ func (r *Repository) GetAdminDetail(id string) (*FarmerDetail, error) {
 		SELECT u.id, u.full_name, u.phone, u.email, u.status, u.created_at,
 		       fp.display_name, fp.producer_type, fp.city, fp.district, fp.village, fp.bio,
 		       fp.profile_image_url, fp.public_phone, fp.show_phone,
-		       fp.is_verified, fp.is_founding_farmer, fp.invite_quota
+		       fp.is_verified, fp.is_founding_farmer, fp.invite_quota,
+		       ic.code AS invite_code, COALESCE(ic.used_count, 0) AS used_invites
 		FROM users u
 		JOIN farmer_profiles fp ON fp.user_id = u.id
+		LEFT JOIN LATERAL (
+			SELECT code, used_count
+			FROM invite_codes
+			WHERE owner_user_id = u.id AND is_active = true
+			ORDER BY created_at DESC
+			LIMIT 1
+		) ic ON true
 		WHERE u.id = $1 AND u.role = 'farmer'
 	`, id)
 	if err != nil {
@@ -137,9 +145,17 @@ func (r *Repository) ListAdmin(page, limit int) ([]FarmerDetail, int, error) {
 		SELECT u.id, u.full_name, u.phone, u.email, u.status, u.created_at,
 		       fp.display_name, fp.producer_type, fp.city, fp.district, fp.village, fp.bio,
 		       fp.profile_image_url, fp.public_phone, fp.show_phone,
-		       fp.is_verified, fp.is_founding_farmer, fp.invite_quota
+		       fp.is_verified, fp.is_founding_farmer, fp.invite_quota,
+		       ic.code AS invite_code, COALESCE(ic.used_count, 0) AS used_invites
 		FROM users u
 		JOIN farmer_profiles fp ON fp.user_id = u.id
+		LEFT JOIN LATERAL (
+			SELECT code, used_count
+			FROM invite_codes
+			WHERE owner_user_id = u.id AND is_active = true
+			ORDER BY created_at DESC
+			LIMIT 1
+		) ic ON true
 		WHERE u.role = 'farmer'
 		ORDER BY u.created_at DESC
 		LIMIT $1 OFFSET $2
@@ -263,11 +279,11 @@ func (r *Repository) GetInviteStatsByFarmerID(farmerID uuid.UUID) (totalQuota, u
 // GetRecentProductsByFarmerID returns the most recent products for the farmer.
 func (r *Repository) GetRecentProductsByFarmerID(farmerID uuid.UUID, limit int) ([]RecentProductItem, error) {
 	type row struct {
-		ID        uuid.UUID  `db:"id"`
-		Title     string     `db:"title"`
-		Status    string     `db:"status"`
-		CreatedAt time.Time  `db:"created_at"`
-		ImageURL  *string    `db:"image_url"`
+		ID        uuid.UUID `db:"id"`
+		Title     string    `db:"title"`
+		Status    string    `db:"status"`
+		CreatedAt time.Time `db:"created_at"`
+		ImageURL  *string   `db:"image_url"`
 	}
 	var rows []row
 	err := r.db.Select(&rows, `

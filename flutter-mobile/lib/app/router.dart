@@ -30,6 +30,7 @@ import 'package:koyden_sehire/views/farmer/my_products_screen.dart';
 import 'package:koyden_sehire/views/farmer/product_form_screen.dart';
 import 'package:koyden_sehire/views/farmer/farmer_notifications_screen.dart';
 import 'package:koyden_sehire/views/farmer/farmer_profile_edit_screen.dart';
+import 'package:koyden_sehire/views/farmer/farmer_profile_screen.dart';
 import 'package:koyden_sehire/views/otp/otp_screen.dart';
 import 'package:koyden_sehire/views/public/public_farmer_profile_screen.dart';
 import 'package:koyden_sehire/views/public/home_screen.dart';
@@ -39,6 +40,7 @@ import 'package:koyden_sehire/views/public/product_list_screen.dart';
 import 'package:koyden_sehire/views/public/product_category_screen.dart';
 import 'package:koyden_sehire/views/public/producers_list_screen.dart';
 import 'package:koyden_sehire/views/customer/customer_notifications_screen.dart';
+import 'package:koyden_sehire/views/customer/customer_profile_edit_screen.dart';
 import 'package:koyden_sehire/views/customer/customer_profile_screen.dart';
 import 'package:koyden_sehire/views/splash/splash_screen.dart';
 
@@ -220,53 +222,53 @@ class AppRouter {
           routes: [
             GoRoute(
               path: '/admin/dashboard',
-              builder: (_, __) => const AdminDashboardView(),
+              pageBuilder: (_, __) => const NoTransitionPage(child: AdminDashboardView()),
             ),
             GoRoute(
               path: '/admin/applications',
-              builder: (_, __) => const AdminApplicationsView(),
+              pageBuilder: (_, __) => const NoTransitionPage(child: AdminApplicationsView()),
             ),
             GoRoute(
               path: '/admin/applications/:id',
-              builder: (_, state) => AdminApplicationDetailView(
-                appId: state.pathParameters['id']!,
+              pageBuilder: (_, state) => NoTransitionPage(
+                child: AdminApplicationDetailView(appId: state.pathParameters['id']!),
               ),
             ),
             GoRoute(
               path: '/admin/products',
-              builder: (_, __) => const AdminProductsView(),
+              pageBuilder: (_, __) => const NoTransitionPage(child: AdminProductsView()),
             ),
             GoRoute(
               path: '/admin/products/:id',
-              builder: (_, state) => AdminProductDetailView(
-                productId: state.pathParameters['id']!,
+              pageBuilder: (_, state) => NoTransitionPage(
+                child: AdminProductDetailView(productId: state.pathParameters['id']!),
               ),
             ),
             GoRoute(
               path: '/admin/categories',
-              builder: (_, __) => const AdminCategoriesView(),
+              pageBuilder: (_, __) => const NoTransitionPage(child: AdminCategoriesView()),
             ),
             GoRoute(
               path: '/admin/farmers',
-              builder: (_, __) => const AdminFarmersView(),
+              pageBuilder: (_, __) => const NoTransitionPage(child: AdminFarmersView()),
             ),
             GoRoute(
               path: '/admin/farmers/:id',
-              builder: (_, state) => AdminFarmerDetailView(
-                farmerId: state.pathParameters['id']!,
+              pageBuilder: (_, state) => NoTransitionPage(
+                child: AdminFarmerDetailView(farmerId: state.pathParameters['id']!),
               ),
             ),
             GoRoute(
               path: '/admin/map',
-              builder: (_, __) => const AdminMapView(),
+              pageBuilder: (_, __) => const NoTransitionPage(child: AdminMapView()),
             ),
             GoRoute(
               path: '/admin/invite-network',
-              builder: (_, __) => const AdminInviteNetworkView(),
+              pageBuilder: (_, __) => const NoTransitionPage(child: AdminInviteNetworkView()),
             ),
             GoRoute(
               path: '/admin/audit-logs',
-              builder: (_, __) => const AdminAuditLogView(),
+              pageBuilder: (_, __) => const NoTransitionPage(child: AdminAuditLogView()),
             ),
           ],
         ),
@@ -306,7 +308,11 @@ class AppRouter {
         ),
         GoRoute(
           path: '/farmer/profile',
-          pageBuilder: (_, state) => const NoTransitionPage(child: FarmerProfileEditScreen()),
+          pageBuilder: (_, state) => const NoTransitionPage(child: FarmerProfileMainScreen()),
+        ),
+        GoRoute(
+          path: '/farmer/profile/edit',
+          builder: (_, __) => const FarmerProfileEditScreen(),
         ),
         // ── Farmer non-tab routes — keep slide transition
         GoRoute(
@@ -330,6 +336,10 @@ class AppRouter {
         GoRoute(
           path: '/customer/profile',
           pageBuilder: (_, state) => const NoTransitionPage(child: CustomerProfileScreen()),
+        ),
+        GoRoute(
+          path: '/customer/profile/edit',
+          builder: (_, __) => const CustomerProfileEditScreen(),
         ),
         GoRoute(
           path: '/customer/notifications',

@@ -22,6 +22,8 @@ type FarmerDetail struct {
 	IsVerified       bool    `db:"is_verified" json:"is_verified"`
 	IsFoundingFarmer bool    `db:"is_founding_farmer" json:"is_founding_farmer"`
 	InviteQuota      int     `db:"invite_quota" json:"invite_quota"`
+	InviteCode       *string `db:"invite_code" json:"invite_code"`
+	UsedInvites      int     `db:"used_invites" json:"used_invites"`
 }
 
 type PublicFarmerSummary struct {

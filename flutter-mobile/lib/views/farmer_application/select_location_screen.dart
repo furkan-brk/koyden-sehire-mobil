@@ -148,7 +148,7 @@ class _SelectLocationScreenState extends State<SelectLocationScreen>
       SelectedLocation(
         city: _city,
         district: _district,
-        village: _village,
+        village: _village.isNotEmpty ? _village : _district,
         formattedAddress: _addressLine1.isNotEmpty ? _addressLine1 : _addressLine2,
         lat: _center.latitude,
         lng: _center.longitude,

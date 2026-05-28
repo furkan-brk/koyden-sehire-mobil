@@ -10,6 +10,10 @@ import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/controllers/admin/admin_invite_network_controller.dart';
 
+// Max indent to prevent horizontal overflow on deep trees
+const double _kMaxIndent = 96.0;
+const double _kIndentStep = 20.0;
+
 class AdminInviteNetworkView extends StatefulWidget {
   const AdminInviteNetworkView({super.key});
 
@@ -38,51 +42,92 @@ class _AdminInviteNetworkViewState
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Davet Ağı',
-                  style: Theme.of(context).textTheme.headlineMedium),
-              const SizedBox(height: 4),
-              Text(
-                'Üreticiler arasındaki davet ilişkileri.',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(color: cs.onSurfaceVariant),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth >= 900;
+        final hp = isDesktop ? 24.0 : 16.0;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(hp, hp, hp, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Davet Ağı',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineSmall
+                                  ?.copyWith(
+                                      fontWeight: FontWeight.w700),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              'Üreticiler arasındaki davet ilişkileri ve ağ yapısı.',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                      color: cs.onSurfaceVariant),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      OutlinedButton.icon(
+                        onPressed: _ctrl.load,
+                        icon: const Icon(Icons.refresh_outlined,
+                            size: 16),
+                        label: const Text('Yenile'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 10),
+                          minimumSize: Size.zero,
+                          textStyle: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: isDesktop ? 16 : 12),
+                ],
               ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: Obx(() {
-            if (_ctrl.isLoading.value) {
-              return const AppLoading();
-            }
-            if (_ctrl.error.value.isNotEmpty) {
-              return AppErrorWidget(
-                message: _ctrl.error.value,
-                onRetry: _ctrl.load,
-              );
-            }
-            final root = _ctrl.root.value;
-            if (root == null) {
-              return const AppEmptyWidget(message: 'Ağ verisi bulunamadı.');
-            }
-            return RefreshIndicator(
-              onRefresh: _ctrl.load,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: _NodeTree(node: root, depth: 0),
-              ),
-            );
-          }),
-        ),
-      ],
+            ),
+            Expanded(
+              child: Obx(() {
+                if (_ctrl.isLoading.value) return const AppLoading();
+                if (_ctrl.error.value.isNotEmpty) {
+                  return AppErrorWidget(
+                      message: _ctrl.error.value,
+                      onRetry: _ctrl.load);
+                }
+                final root = _ctrl.root.value;
+                if (root == null) {
+                  return const AppEmptyWidget(
+                      message: 'Ağ verisi bulunamadı.');
+                }
+                return RefreshIndicator(
+                  onRefresh: _ctrl.load,
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(hp, 0, hp, hp),
+                    child: _NodeTree(node: root, depth: 0),
+                  ),
+                );
+              }),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -110,7 +155,9 @@ class _NodeTreeState extends State<_NodeTree> {
     final cs = Theme.of(context).colorScheme;
     final node = widget.node;
     final hasChildren = node.invitees.isNotEmpty;
-    final indentWidth = widget.depth * 20.0;
+    // Cap indent to prevent overflow on deep trees
+    final indentWidth =
+        (widget.depth * _kIndentStep).clamp(0.0, _kMaxIndent);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,45 +165,67 @@ class _NodeTreeState extends State<_NodeTree> {
         Padding(
           padding: EdgeInsets.only(left: indentWidth),
           child: Card(
-            margin: const EdgeInsets.symmetric(vertical: 4),
+            margin: const EdgeInsets.symmetric(vertical: 3),
             child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: () => context.push('/admin/farmers/${node.id}'),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              onTap: () =>
+                  context.push('/admin/farmers/${node.id}'),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                     horizontal: 12, vertical: 10),
                 child: Row(
                   children: [
+                    // Depth indicator line (for nested nodes)
+                    if (widget.depth > 0) ...[
+                      Container(
+                        width: 3,
+                        height: 32,
+                        margin: const EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary
+                              .withValues(alpha: 0.25),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ],
+                    // Founding farmer icon
                     if (node.isFoundingFarmer)
                       const Padding(
                         padding: EdgeInsets.only(right: 6),
                         child: Icon(Icons.hub,
-                            size: 16, color: AppColors.primary),
+                            size: 15, color: AppColors.primary),
                       ),
+                    // Name + city
                     Expanded(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
                         children: [
                           Text(
                             node.fullName,
                             style: const TextStyle(
-                                fontWeight: FontWeight.w600, fontSize: 13),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13),
                           ),
                           Text(
                             node.city,
                             style: TextStyle(
-                                fontSize: 11, color: cs.onSurfaceVariant),
+                                fontSize: 11,
+                                color: cs.onSurfaceVariant),
                           ),
                         ],
                       ),
                     ),
+                    // Invite code chip
                     if (node.inviteCode != null)
                       Container(
+                        margin: const EdgeInsets.only(right: 6),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
+                            horizontal: 6, vertical: 3),
                         decoration: BoxDecoration(
                           color: AppColors.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius:
+                              BorderRadius.circular(AppRadius.xs),
                         ),
                         child: Text(
                           node.inviteCode!,
@@ -166,28 +235,51 @@ class _NodeTreeState extends State<_NodeTree> {
                               color: cs.onSurfaceVariant),
                         ),
                       ),
-                    const SizedBox(width: 8),
+                    // Child count
+                    if (hasChildren)
+                      Container(
+                        margin: const EdgeInsets.only(right: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryFixed
+                              .withValues(alpha: 0.3),
+                          borderRadius:
+                              BorderRadius.circular(AppRadius.pill),
+                        ),
+                        child: Text(
+                          '${node.invitees.length}',
+                          style: const TextStyle(
+                              fontSize: 10,
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    // Trust score
                     Container(
-                      width: 32,
-                      height: 32,
+                      width: 30,
+                      height: 30,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: _trustColor(node.trustScore).withValues(alpha: 0.15),
+                        color: _trustColor(node.trustScore)
+                            .withValues(alpha: 0.12),
                       ),
                       alignment: Alignment.center,
                       child: Text(
                         node.trustScore.toStringAsFixed(0),
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 10,
                           fontWeight: FontWeight.bold,
                           color: _trustColor(node.trustScore),
                         ),
                       ),
                     ),
+                    // Expand/collapse
                     if (hasChildren) ...[
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 2),
                       GestureDetector(
-                        onTap: () => setState(() => _expanded = !_expanded),
+                        onTap: () =>
+                            setState(() => _expanded = !_expanded),
                         child: Icon(
                           _expanded
                               ? Icons.expand_less
@@ -205,7 +297,8 @@ class _NodeTreeState extends State<_NodeTree> {
         ),
         if (hasChildren && _expanded)
           ...node.invitees.map(
-            (child) => _NodeTree(node: child, depth: widget.depth + 1),
+            (child) =>
+                _NodeTree(node: child, depth: widget.depth + 1),
           ),
       ],
     );
