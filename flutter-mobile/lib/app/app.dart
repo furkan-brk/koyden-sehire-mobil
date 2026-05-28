@@ -7,6 +7,7 @@ import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/app/keys.dart';
 import 'package:koyden_sehire/app/router.dart';
 import 'package:koyden_sehire/app/theme.dart';
+import 'package:koyden_sehire/shared/widgets/farmer_mode_banner.dart';
 
 class KoydenSehireApp extends StatelessWidget {
   const KoydenSehireApp({super.key});
@@ -32,6 +33,14 @@ class KoydenSehireApp extends StatelessWidget {
           return Stack(
             children: [
               child ?? const SizedBox.shrink(),
+              // FarmerModeBanner shows itself only while the farmer is in
+              // customer-browse mode; it otherwise returns SizedBox.shrink.
+              const Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: FarmerModeBanner(),
+              ),
               if (offline) const _OfflineBanner(),
             ],
           );

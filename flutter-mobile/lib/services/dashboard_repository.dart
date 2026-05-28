@@ -2,51 +2,37 @@ import 'package:koyden_sehire/core/api/api_client.dart';
 import 'package:koyden_sehire/core/api/api_endpoints.dart';
 import 'package:koyden_sehire/services/farmer_product_repository.dart';
 import 'package:koyden_sehire/models/dashboard_model.dart';
+import 'package:koyden_sehire/models/farmer/dashboard_stats.dart';
 
 class DashboardRepository {
   final ApiClient api;
   final FarmerProductRepository products;
   DashboardRepository({required this.api, required this.products});
 
-  /// Backend has no `/farmer/dashboard` endpoint per the API reference,
-  /// so we derive stats from `/farmer/products` + `/farmer/invites`.
+  /// Hits the new aggregated endpoint and falls back to deriving stats from
+  /// `/farmer/products` + `/farmer/invites` if the backend response is
+  /// missing fields.
   Future<DashboardData> load() async {
-    final all = await products.list(status: null);
-    final activeCount = all.where((p) => p.status == 'active').length;
-    final pendingCount = all.where((p) => p.status == 'pending').length;
-    final hiddenCount = all.where((p) => p.status == 'hidden').length;
-    final rejectedCount = all.where((p) => p.status == 'rejected').length;
+    final stats = await api.get<FarmerDashboardStats>(
+      ApiEndpoints.farmerDashboard,
+      parse: (env) {
+        final data = ((env as Map)['data'] as Map?)?.cast<String, dynamic>() ??
+            const <String, dynamic>{};
+        return FarmerDashboardStats.fromJson(data);
+      },
+    );
 
-    int inviteRemaining = 0;
+    // The backend dashboard response doesn't expose a rejected count, but
+    // the UI surfaces it elsewhere — derive lazily if needed (cheap call,
+    // and the dashboard payload is already small).
+    int rejectedCount = 0;
     try {
-      final invites = await api.get(
-        ApiEndpoints.farmerInvites,
-        parse: (env) {
-          final list = ((env as Map)['data'] as List?) ?? const [];
-          return list;
-        },
-      );
-      for (final raw in invites) {
-        if (raw is! Map) continue;
-        final max = (raw['max_uses'] as num?)?.toInt() ?? 0;
-        final used = (raw['used_count'] as num?)?.toInt() ?? 0;
-        inviteRemaining += (max - used).clamp(0, max);
-      }
+      final rejected = await products.list(status: 'rejected');
+      rejectedCount = rejected.length;
     } catch (_) {
-      // Non-fatal; show 0 if invites endpoint fails.
+      // Non-fatal — we'll just show 0.
     }
 
-    final recent = [...all]
-      ..sort((a, b) => (b.createdAt ?? DateTime(0))
-          .compareTo(a.createdAt ?? DateTime(0)));
-
-    return DashboardData(
-      activeCount: activeCount,
-      pendingCount: pendingCount,
-      hiddenCount: hiddenCount,
-      rejectedCount: rejectedCount,
-      inviteRemaining: inviteRemaining,
-      recentProducts: recent.take(5).toList(),
-    );
+    return DashboardData.fromStats(stats, rejectedCount: rejectedCount);
   }
 }

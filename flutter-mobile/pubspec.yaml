@@ -52,12 +52,19 @@ dependencies:
   geolocator: ^12.0.0
   share_plus: ^10.1.4
 
+  # Photo viewer (fullscreen zoom)
+  photo_view: ^0.14.0
+
+  # QR code generation for invitation sharing
+  qr_flutter: ^4.1.0
+
   cupertino_icons: ^1.0.6
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
+  mocktail: ^1.0.4
 
 flutter:
   uses-material-design: true

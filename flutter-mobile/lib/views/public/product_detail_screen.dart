@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/app/theme.dart';
@@ -13,10 +14,12 @@ import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/shared/widgets/customer_bottom_nav.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_mode_chip.dart';
 import 'package:koyden_sehire/shared/widgets/founding_badge.dart';
+import 'package:koyden_sehire/shared/widgets/fullscreen_photo_viewer.dart';
 import 'package:koyden_sehire/shared/widgets/image_carousel.dart';
 import 'package:koyden_sehire/shared/widgets/verified_badge.dart';
 import 'package:koyden_sehire/models/farmer_model.dart';
 import 'package:koyden_sehire/services/product_repository.dart';
+import 'package:koyden_sehire/services/report_repository.dart';
 import 'package:koyden_sehire/models/product_model.dart';
 import 'package:koyden_sehire/controllers/public/product_detail_controller.dart';
 import 'package:koyden_sehire/core/services/recent_views_service.dart';
@@ -69,6 +72,21 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         scrolledUnderElevation: 0,
         actions: [
           Obx(() {
+            final product = _ctrl.product.value;
+            return IconButton(
+              icon: const Icon(Icons.share_outlined),
+              tooltip: 'Paylaş',
+              onPressed: product == null
+                  ? null
+                  : () {
+                      Share.share(
+                        '${product.title} - Köyden Şehire\n'
+                        'https://koydensehire.com/products/${product.id}',
+                      );
+                    },
+            );
+          }),
+          Obx(() {
             final favs = Get.find<FavoritesService>();
             final isFav = favs.isFavorite(widget.productId);
             return IconButton(
@@ -83,7 +101,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           const FarmerModeChip(),
         ],
       ),
-      bottomNavigationBar: const CustomerBottomNav(current: CustomerTab.market),
+      bottomNavigationBar: const SafeArea(
+        top: false,
+        child: CustomerBottomNav(current: CustomerTab.market),
+      ),
       body: Obx(() {
         if (_ctrl.isLoading.value && _ctrl.product.value == null) {
           return const AppLoading();
@@ -118,7 +139,16 @@ class _Body extends StatelessWidget {
     ].whereType<String>().join(', ');
     return ListView(
       children: [
-        ImageCarousel(imageUrls: product.imageUrls),
+        ImageCarousel(
+          imageUrls: product.imageUrls,
+          onImageTap: product.imageUrls.isEmpty
+              ? null
+              : (i) => showFullscreenPhotoViewer(
+                    context,
+                    imageUrls: product.imageUrls,
+                    initialIndex: i,
+                  ),
+        ),
         Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
           child: Column(
@@ -257,9 +287,7 @@ class _Body extends StatelessWidget {
                 child: TextButton.icon(
                   icon: const Icon(Icons.flag_outlined, size: 16),
                   label: const Text('Uygunsuz İçerik Bildir'),
-                  onPressed: () {
-                    context.toast('Bildirim alındı. Ekibimiz inceleyecek.');
-                  },
+                  onPressed: () => _showReportDialog(context, product.id),
                 ),
               ),
               const SizedBox(height: 24),
@@ -269,6 +297,122 @@ class _Body extends StatelessWidget {
       ],
     );
   }
+}
+
+Future<void> _showReportDialog(BuildContext context, String productId) async {
+  final reasons = const <({String key, String label})>[
+    (key: 'inappropriate', label: 'Uygunsuz içerik'),
+    (key: 'misleading', label: 'Yanıltıcı bilgi'),
+    (key: 'spam', label: 'Spam'),
+    (key: 'other', label: 'Diğer'),
+  ];
+
+  String? selectedKey;
+  final noteCtrl = TextEditingController();
+  bool submitting = false;
+
+  await Get.dialog<void>(
+    StatefulBuilder(
+      builder: (ctx, setState) {
+        final isOther = selectedKey == 'other';
+        return AlertDialog(
+          title: const Text('Uygunsuz İçerik Bildir'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Bu içeriği neden bildirmek istiyorsunuz?',
+                  style: TextStyle(fontSize: 13),
+                ),
+                const SizedBox(height: 8),
+                ...reasons.map(
+                  (r) => RadioListTile<String>(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    value: r.key,
+                    groupValue: selectedKey,
+                    title: Text(r.label),
+                    onChanged: (v) => setState(() => selectedKey = v),
+                  ),
+                ),
+                if (isOther) ...[
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: noteCtrl,
+                    maxLines: 3,
+                    maxLength: 500,
+                    decoration: const InputDecoration(
+                      labelText: 'Açıklama',
+                      hintText: 'Lütfen kısaca açıklayın',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: submitting ? null : () => Get.back(),
+              child: const Text('Vazgeç'),
+            ),
+            FilledButton(
+              onPressed: submitting || selectedKey == null
+                  ? null
+                  : () async {
+                      if (selectedKey == 'other' &&
+                          noteCtrl.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          const SnackBar(
+                            content: Text('Lütfen bir açıklama girin'),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                        return;
+                      }
+                      setState(() => submitting = true);
+                      try {
+                        await Get.find<ReportRepository>().submitReport(
+                          targetType: 'product',
+                          targetId: productId,
+                          reason: selectedKey!,
+                          note: noteCtrl.text.trim(),
+                        );
+                        if (Get.isDialogOpen ?? false) Get.back();
+                        if (context.mounted) {
+                          context.snack(
+                            'Bildiriminiz alındı, inceleyeceğiz',
+                          );
+                        }
+                      } catch (_) {
+                        setState(() => submitting = false);
+                        if (context.mounted) {
+                          context.snack(
+                            'Bildirim gönderilemedi. Lütfen tekrar deneyin.',
+                            isError: true,
+                          );
+                        }
+                      }
+                    },
+              child: submitting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child:
+                          CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Gönder'),
+            ),
+          ],
+        );
+      },
+    ),
+    barrierDismissible: true,
+  );
+
+  noteCtrl.dispose();
 }
 
 class _StockChip extends StatelessWidget {

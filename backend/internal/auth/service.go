@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -21,7 +20,7 @@ type PasswordUpdater interface {
 }
 
 type Service struct {
-	repo               *Repository
+	repo               UserFinder
 	rdb                *redis.Client
 	jwtSecret          string
 	jwtExpiry          time.Duration
@@ -32,6 +31,17 @@ type Service struct {
 }
 
 func NewService(repo *Repository, rdb *redis.Client, jwtSecret string, jwtExpiry, refreshTokenExpiry time.Duration) *Service {
+	return &Service{
+		repo:               repo,
+		rdb:                rdb,
+		jwtSecret:          jwtSecret,
+		jwtExpiry:          jwtExpiry,
+		refreshTokenExpiry: refreshTokenExpiry,
+	}
+}
+
+// newServiceWithFinder is used by tests to inject a mock UserFinder.
+func newServiceWithFinder(repo UserFinder, rdb *redis.Client, jwtSecret string, jwtExpiry, refreshTokenExpiry time.Duration) *Service {
 	return &Service{
 		repo:               repo,
 		rdb:                rdb,
@@ -264,8 +274,8 @@ func (s *Service) GetResetCode(phone string) string {
 	if err != nil {
 		return ""
 	}
-	parts := splitCode(val)
-	return parts[0]
+	code, _ := splitCode(val)
+	return code
 }
 
 // ResetPassword OTP'yi doğrular ve şifreyi günceller.
@@ -285,9 +295,7 @@ func (s *Service) ResetPassword(req *ResetPasswordRequest) error {
 		return apperrors.New("OTP_EXPIRED", "OTP süresi dolmuş veya bulunamadı", 400)
 	}
 
-	parts := splitCode(val)
-	storedCode := parts[0]
-	attempts := parts[1]
+	storedCode, attempts := splitCode(val)
 
 	if attempts >= 3 {
 		s.rdb.Del(ctx, resetKey)

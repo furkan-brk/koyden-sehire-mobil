@@ -6,6 +6,8 @@ import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/core/services/auth_service.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
+import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
+import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/shared/widgets/category_chip.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_card.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_mode_chip.dart';
@@ -115,18 +117,13 @@ class HomeScreen extends StatelessWidget {
                 if (catCtrl.isLoading.value) {
                   return const SizedBox(
                     height: 48,
-                    child: Center(child: CircularProgressIndicator()),
+                    child: AppLoading(),
                   );
                 }
                 if (catCtrl.error.value != null) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                    child: Text(
-                      'Kategoriler yüklenemedi',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: cs.onSurfaceVariant,
-                          ),
-                    ),
+                  return const SizedBox(
+                    height: 48,
+                    child: AppEmptyWidget(message: 'Kategoriler yüklenemedi'),
                   );
                 }
                 return _CategoryRow(categories: catCtrl.categories);
@@ -151,26 +148,16 @@ class HomeScreen extends StatelessWidget {
                   );
                 }
                 if (homeCtrl.error.value != null) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                    child: Text(
-                      'Ürünler yüklenemedi',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: cs.onSurfaceVariant,
-                          ),
-                    ),
+                  return const SizedBox(
+                    height: 120,
+                    child: AppEmptyWidget(message: 'Ürünler yüklenemedi'),
                   );
                 }
                 final items = homeCtrl.newProducts;
                 if (items.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                    child: Text(
-                      'Henüz ürün bulunmuyor.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: cs.onSurfaceVariant,
-                          ),
-                    ),
+                  return const SizedBox(
+                    height: 120,
+                    child: AppEmptyWidget(message: 'Henüz ürün bulunmuyor.'),
                   );
                 }
                 return SizedBox(

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
@@ -9,24 +11,58 @@ class FarmerNotificationsController extends GetxController {
   final NotificationRepository _repo;
   FarmerNotificationsController(this._repo);
 
+  static const int _pageSize = 20;
+  static const Duration _badgeRefreshInterval = Duration(minutes: 5);
+
   final RxList<AppNotification> items = <AppNotification>[].obs;
   final RxBool isLoading = false.obs;
+  final RxBool isLoadingMore = false.obs;
+  final RxBool hasMore = true.obs;
+  final RxInt currentPage = 1.obs;
   final RxInt unreadCount = 0.obs;
   final RxnString errorMessage = RxnString();
+
+  Timer? _badgePoll;
 
   @override
   void onInit() {
     super.onInit();
     load();
+    _badgePoll = Timer.periodic(_badgeRefreshInterval, (_) => _refreshBadge());
+  }
+
+  @override
+  void onClose() {
+    _badgePoll?.cancel();
+    super.onClose();
+  }
+
+  /// Cheap poll used to keep the bottom-nav badge fresh without churning
+  /// the visible list.
+  Future<void> _refreshBadge() async {
+    try {
+      final res = await _repo.list(role: 'farmer', page: 1, limit: 1);
+      unreadCount.value = res.unreadCount;
+    } catch (_) {
+      // Silent.
+    }
   }
 
   Future<void> load() async {
     isLoading.value = true;
     errorMessage.value = null;
+    currentPage.value = 1;
+    hasMore.value = true;
     try {
-      final res = await _repo.list(role: 'farmer');
+      final res = await _repo.list(
+        role: 'farmer',
+        page: 1,
+        limit: _pageSize,
+      );
       items.assignAll(res.items);
       unreadCount.value = res.unreadCount;
+      hasMore.value = res.items.length >= _pageSize &&
+          items.length < res.total;
     } on AppException catch (e, st) {
       debugPrint('[FarmerNotifications] load failed: $e\n$st');
       errorMessage.value = e.message;
@@ -35,6 +71,33 @@ class FarmerNotificationsController extends GetxController {
       errorMessage.value = 'Bildirimler yüklenemedi. Lütfen tekrar deneyin.';
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> loadMore() async {
+    if (isLoading.value || isLoadingMore.value || !hasMore.value) return;
+    isLoadingMore.value = true;
+    try {
+      final nextPage = currentPage.value + 1;
+      final res = await _repo.list(
+        role: 'farmer',
+        page: nextPage,
+        limit: _pageSize,
+      );
+      if (res.items.isEmpty) {
+        hasMore.value = false;
+      } else {
+        items.addAll(res.items);
+        currentPage.value = nextPage;
+        hasMore.value = res.items.length >= _pageSize &&
+            items.length < res.total;
+      }
+    } on AppException catch (e, st) {
+      debugPrint('[FarmerNotifications] loadMore failed: $e\n$st');
+    } catch (e, st) {
+      debugPrint('[FarmerNotifications] loadMore unexpected: $e\n$st');
+    } finally {
+      isLoadingMore.value = false;
     }
   }
 

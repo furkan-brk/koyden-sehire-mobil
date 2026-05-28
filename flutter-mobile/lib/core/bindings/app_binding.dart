@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:koyden_sehire/controllers/customer/customer_profile_controller.dart';
 import 'package:koyden_sehire/core/services/push_notification_service.dart';
 import 'package:koyden_sehire/services/admin_repository.dart';
+import 'package:koyden_sehire/services/audit_log_repository.dart';
 import 'package:koyden_sehire/services/auth_repository.dart';
 import 'package:koyden_sehire/services/customer_profile_repository.dart';
 import 'package:koyden_sehire/services/push_token_repository.dart';
@@ -31,9 +32,11 @@ import 'package:koyden_sehire/core/services/favorites_service.dart';
 import 'package:koyden_sehire/core/storage/secure_storage_service.dart';
 import 'package:koyden_sehire/services/favorites_repository.dart';
 import 'package:koyden_sehire/services/notification_repository.dart';
+import 'package:koyden_sehire/services/report_repository.dart';
 import 'package:koyden_sehire/controllers/farmer/farmer_notifications_controller.dart';
 import 'package:koyden_sehire/controllers/customer/customer_notifications_controller.dart';
 import 'package:koyden_sehire/core/services/recent_views_service.dart';
+import 'package:koyden_sehire/core/services/tab_scroll_service.dart';
 
 class AppBinding extends Bindings {
   @override
@@ -66,6 +69,8 @@ class AppBinding extends Bindings {
     );
 
     Get.put<RecentViewsService>(RecentViewsService(), permanent: true);
+
+    Get.put<TabScrollService>(TabScrollService(), permanent: true);
 
     Get.lazyPut<PushTokenRepository>(
       () => PushTokenRepository(Get.find<ApiClient>()),
@@ -128,8 +133,16 @@ class AppBinding extends Bindings {
       () => AdminRepository(Get.find<ApiClient>()),
       fenix: true,
     );
+    Get.lazyPut<AuditLogRepository>(
+      () => AuditLogRepository(Get.find<ApiClient>()),
+      fenix: true,
+    );
     Get.lazyPut<NotificationRepository>(
       () => NotificationRepository(Get.find<ApiClient>()),
+      fenix: true,
+    );
+    Get.lazyPut<ReportRepository>(
+      () => ReportRepository(Get.find<ApiClient>()),
       fenix: true,
     );
 

@@ -27,7 +27,7 @@ func isOtpWhitelisted(phone string) bool {
 }
 
 type Service struct {
-	repo            *Repository
+	repo            AuditWriter
 	rdb             *redis.Client
 	smsProvider     sms.Provider
 	expirySeconds   int
@@ -37,6 +37,19 @@ type Service struct {
 }
 
 func NewService(repo *Repository, rdb *redis.Client, smsProv sms.Provider, expiry, maxAttempts, cooldown int, appEnv string) *Service {
+	return &Service{
+		repo:            repo,
+		rdb:             rdb,
+		smsProvider:     smsProv,
+		expirySeconds:   expiry,
+		maxAttempts:     maxAttempts,
+		cooldownSeconds: cooldown,
+		appEnv:          appEnv,
+	}
+}
+
+// newServiceWithAudit is used by tests to inject a mock AuditWriter.
+func newServiceWithAudit(repo AuditWriter, rdb *redis.Client, smsProv sms.Provider, expiry, maxAttempts, cooldown int, appEnv string) *Service {
 	return &Service{
 		repo:            repo,
 		rdb:             rdb,

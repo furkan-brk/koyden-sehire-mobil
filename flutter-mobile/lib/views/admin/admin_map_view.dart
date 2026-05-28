@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:koyden_sehire/services/admin_repository.dart';
+import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
+import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
+import 'package:koyden_sehire/shared/widgets/app_loading.dart';
+import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/controllers/admin/admin_map_controller.dart';
+import 'package:koyden_sehire/shared/widgets/search_field.dart';
 
 class AdminMapView extends StatefulWidget {
   const AdminMapView({super.key});
@@ -30,29 +35,24 @@ class _AdminMapViewState extends State<AdminMapView> {
   }
 
   Color _riskColor(String level) {
-    switch (level) {
-      case 'high':
-        return const Color(0xFFE63946);
-      case 'medium':
-        return const Color(0xFFF59E0B);
-      default:
-        return const Color(0xFF10B981);
-    }
+    return switch (level) {
+      'high' => AppColors.error,
+      'medium' => AppColors.warning,
+      _ => AppColors.success,
+    };
   }
 
   String _riskLabel(String level) {
-    switch (level) {
-      case 'high':
-        return 'Yüksek Risk';
-      case 'medium':
-        return 'Orta Risk';
-      default:
-        return 'Düşük Risk';
-    }
+    return switch (level) {
+      'high' => 'Yüksek Risk',
+      'medium' => 'Orta Risk',
+      _ => 'Düşük Risk',
+    };
   }
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Column(
       children: [
         Padding(
@@ -68,17 +68,14 @@ class _AdminMapViewState extends State<AdminMapView> {
                 style: Theme.of(context)
                     .textTheme
                     .bodySmall
-                    ?.copyWith(color: Colors.grey[600]),
+                    ?.copyWith(color: cs.onSurfaceVariant),
               ),
               const SizedBox(height: 12),
-              TextField(
+              SearchField(
                 controller: _searchController,
-                decoration: const InputDecoration(
-                  hintText: 'Şehir ara...',
-                  prefixIcon: Icon(Icons.search),
-                  isDense: true,
-                ),
+                hintText: 'Şehir ara...',
                 onChanged: (v) => _ctrl.search.value = v,
+                onClear: () => _ctrl.search.value = '',
               ),
             ],
           ),
@@ -86,24 +83,17 @@ class _AdminMapViewState extends State<AdminMapView> {
         Expanded(
           child: Obx(() {
             if (_ctrl.isLoading.value) {
-              return const Center(child: CircularProgressIndicator());
+              return const AppLoading();
             }
             if (_ctrl.error.value.isNotEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(_ctrl.error.value),
-                    TextButton(
-                        onPressed: _ctrl.load,
-                        child: const Text('Tekrar Dene')),
-                  ],
-                ),
+              return AppErrorWidget(
+                message: _ctrl.error.value,
+                onRetry: _ctrl.load,
               );
             }
             final items = _ctrl.filteredItems;
             if (items.isEmpty) {
-              return const Center(child: Text('Veri bulunamadı.'));
+              return const AppEmptyWidget(message: 'Veri bulunamadı.');
             }
             return RefreshIndicator(
               onRefresh: _ctrl.load,
@@ -189,12 +179,13 @@ class _StatRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Row(
       children: [
-        Icon(icon, size: 14, color: Colors.grey[500]),
+        Icon(icon, size: 14, color: cs.onSurfaceVariant),
         const SizedBox(width: 4),
         Text(label,
-            style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
         const Spacer(),
         Text(value,
             style: const TextStyle(

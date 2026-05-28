@@ -15,6 +15,7 @@ import 'package:koyden_sehire/models/auth/auth_state.dart';
 import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_mode_chip.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
+import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/shared/widgets/customer_bottom_nav.dart';
@@ -305,31 +306,21 @@ class _ProfileBody extends StatelessWidget {
             return const SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.all(24),
-                child: Center(child: CircularProgressIndicator()),
+                child: AppLoading(),
               ),
             );
           }
           if (ctrl.productsError.value != null) {
             return SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                child: Text(
-                  'Ürünler yüklenemedi',
-                  style: TextStyle(color: cs.onSurfaceVariant),
-                ),
+              child: AppErrorWidget(
+                message: 'Ürünler yüklenemedi',
+                onRetry: ctrl.loadProducts,
               ),
             );
           }
           if (ctrl.products.isEmpty) {
-            return SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Text(
-                  'Bu üreticinin aktif ürünü yok.',
-                  style: TextStyle(color: cs.onSurfaceVariant),
-                  textAlign: TextAlign.center,
-                ),
-              ),
+            return const SliverToBoxAdapter(
+              child: AppEmptyWidget(message: 'Bu üreticinin aktif ürünü yok.'),
             );
           }
           return SliverPadding(

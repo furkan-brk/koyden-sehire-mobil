@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
@@ -14,6 +15,7 @@ import 'package:koyden_sehire/shared/widgets/farmer_mode_chip.dart';
 import 'package:koyden_sehire/shared/widgets/section_header.dart';
 import 'package:koyden_sehire/shared/widgets/status_badge.dart';
 import 'package:koyden_sehire/models/farmer_product_model.dart';
+import 'package:koyden_sehire/models/farmer/dashboard_stats.dart';
 import 'package:koyden_sehire/models/dashboard_model.dart';
 import 'package:koyden_sehire/controllers/farmer/dashboard_controller.dart';
 
@@ -121,25 +123,25 @@ class _Body extends StatelessWidget {
           children: [
             _StatCard(
               label: 'Aktif Ürünler',
-              value: data.activeCount,
+              value: data.productStats.active,
               color: AppColors.success,
               icon: Icons.check_circle_outline,
             ),
             _StatCard(
               label: 'Bekleyen',
-              value: data.pendingCount,
+              value: data.productStats.pending,
               color: AppColors.warning,
               icon: Icons.hourglass_bottom,
             ),
             _StatCard(
               label: 'Pasif',
-              value: data.hiddenCount,
+              value: data.productStats.passive,
               color: AppColors.onSurfaceVariant,
               icon: Icons.visibility_off_outlined,
             ),
             _StatCard(
               label: 'Davet Hakkı',
-              value: data.inviteRemaining,
+              value: data.inviteStats.remaining,
               color: AppColors.primary,
               icon: Icons.card_giftcard_outlined,
             ),
@@ -147,6 +149,10 @@ class _Body extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         _QuickActions(),
+        if (data.weeklyViews.isNotEmpty) ...[
+          const SizedBox(height: 24),
+          _WeeklyViewsChart(points: data.weeklyViews),
+        ],
         const SizedBox(height: 24),
         SectionHeader(
           title: 'Son Ürünlerim',
@@ -256,6 +262,116 @@ class _QuickActions extends StatelessWidget {
   }
 }
 
+/// Weekly product views chart — `weekly_views` returns a fixed 7-day
+/// series (oldest → newest). x-axis labels are short day-of-month, y is
+/// view count.
+class _WeeklyViewsChart extends StatelessWidget {
+  final List<DailyCount> points;
+  const _WeeklyViewsChart({required this.points});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final maxY = points.fold<int>(0, (m, p) => p.count > m ? p.count : m);
+    // Render a non-flat axis even when there are no views yet.
+    final axisMax = (maxY <= 0 ? 4 : (maxY + 1)).toDouble();
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Haftalık Görüntülenme',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Son 7 gün boyunca ürünlerinizin görüntülenme sayısı.',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: cs.onSurfaceVariant),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 180,
+              child: LineChart(
+                LineChartData(
+                  minY: 0,
+                  maxY: axisMax,
+                  gridData: FlGridData(
+                    drawVerticalLine: false,
+                    horizontalInterval: (axisMax / 4).clamp(1, double.infinity),
+                    getDrawingHorizontalLine: (_) => const FlLine(
+                      color: AppColors.outlineVariant,
+                      strokeWidth: 1,
+                    ),
+                  ),
+                  titlesData: FlTitlesData(
+                    leftTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 22,
+                        getTitlesWidget: (v, _) {
+                          final i = v.toInt();
+                          if (i < 0 || i >= points.length) {
+                            return const SizedBox.shrink();
+                          }
+                          final d = points[i].date;
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              '${d.day}/${d.month}',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: cs.onSurfaceVariant,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: points
+                          .asMap()
+                          .entries
+                          .map((e) =>
+                              FlSpot(e.key.toDouble(), e.value.count.toDouble()))
+                          .toList(),
+                      isCurved: true,
+                      color: AppColors.success,
+                      barWidth: 3,
+                      dotData: const FlDotData(show: true),
+                      belowBarData: BarAreaData(
+                        show: true,
+                        color: AppColors.success.withValues(alpha: 0.10),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _RecentProductTile extends StatelessWidget {
   final FarmerProductModel product;
   const _RecentProductTile({required this.product});
@@ -313,4 +429,3 @@ class _RecentProductTile extends StatelessWidget {
     );
   }
 }
-

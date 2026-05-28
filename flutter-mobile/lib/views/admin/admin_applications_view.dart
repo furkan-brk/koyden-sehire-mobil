@@ -9,6 +9,7 @@ import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/views/admin/widgets/admin_risk_badge.dart';
 import 'package:koyden_sehire/views/admin/widgets/admin_status_badge.dart';
 import 'package:koyden_sehire/controllers/admin/admin_applications_controller.dart';
+import 'package:koyden_sehire/shared/widgets/search_field.dart';
 import 'package:koyden_sehire/core/utils/date_formatter.dart' show AppFormatters;
 
 class AdminApplicationsView extends StatefulWidget {
@@ -59,14 +60,11 @@ class _AdminApplicationsViewState
                     ?.copyWith(color: cs.onSurfaceVariant),
               ),
               const SizedBox(height: 12),
-              TextField(
+              SearchField(
                 controller: _searchController,
-                decoration: const InputDecoration(
-                  hintText: 'İsim, şehir veya davet kodu ara...',
-                  prefixIcon: Icon(Icons.search),
-                  isDense: true,
-                ),
+                hintText: 'İsim, şehir veya davet kodu ara...',
                 onChanged: (v) => _ctrl.search.value = v,
+                onClear: () => _ctrl.search.value = '',
               ),
             ],
           ),

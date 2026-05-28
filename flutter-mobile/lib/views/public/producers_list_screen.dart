@@ -5,8 +5,10 @@ import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/shared/widgets/location_filter_sheet.dart';
 import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
+import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/shared/widgets/customer_bottom_nav.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_card.dart';
+import 'package:koyden_sehire/shared/widgets/search_field.dart';
 import 'package:koyden_sehire/controllers/public/producers_list_controller.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_mode_chip.dart';
 import 'package:koyden_sehire/services/farmer_repository.dart';
@@ -61,7 +63,6 @@ class _ProducersListScreenState extends State<ProducersListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -79,36 +80,12 @@ class _ProducersListScreenState extends State<ProducersListScreen> {
               AppSpacing.md,
               AppSpacing.sm,
             ),
-            child: TextField(
+            child: SearchField(
               controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Üretici adı ara...',
-                prefixIcon: const Icon(Icons.search, size: 20),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, size: 18),
-                        onPressed: () {
-                          _searchController.clear();
-                          _ctrl.applySearch(null);
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: cs.surfaceContainerLowest,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                  borderSide: BorderSide(color: cs.outlineVariant),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                  borderSide: BorderSide(color: cs.outlineVariant),
-                ),
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-              ),
-              onChanged: (v) => setState(() {}),
+              hintText: 'Üretici adı ara...',
+              onChanged: (_) => setState(() {}),
               onSubmitted: _onSearchSubmitted,
-              textInputAction: TextInputAction.search,
+              onClear: () => _ctrl.applySearch(null),
             ),
           ),
           Obx(() {
@@ -131,7 +108,7 @@ class _ProducersListScreenState extends State<ProducersListScreen> {
           Expanded(
             child: Obx(() {
               if (_ctrl.isLoading.value && _ctrl.items.isEmpty) {
-                return const Center(child: CircularProgressIndicator());
+                return const AppLoading();
               }
               if (_ctrl.errorMessage.value != null && _ctrl.items.isEmpty) {
                 return AppErrorWidget(
@@ -160,7 +137,7 @@ class _ProducersListScreenState extends State<ProducersListScreen> {
                       (_ctrl.isLoadingMore.value ? 2 : 0),
                   itemBuilder: (_, i) {
                     if (i >= _ctrl.items.length) {
-                      return const Center(child: CircularProgressIndicator());
+                      return const AppLoading();
                     }
                     return FarmerCard(farmer: _ctrl.items[i]);
                   },

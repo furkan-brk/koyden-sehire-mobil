@@ -12,6 +12,7 @@ class CustomerProfileController extends GetxController {
   final Rxn<CustomerProfileModel> profile = Rxn();
   final RxBool isLoading = false.obs;
   final RxBool isSaving = false.obs;
+  final RxBool isUploadingImage = false.obs;
   final RxnString errorMessage = RxnString();
 
   @override
@@ -51,6 +52,32 @@ class CustomerProfileController extends GetxController {
       return false;
     } finally {
       isSaving.value = false;
+    }
+  }
+
+  Future<bool> uploadProfileImage(
+    List<int> bytes, {
+    String filename = 'photo.jpg',
+    String contentType = 'image/jpeg',
+  }) async {
+    isUploadingImage.value = true;
+    errorMessage.value = null;
+    try {
+      final url = await _repo.uploadProfileImage(
+        bytes,
+        filename: filename,
+        contentType: contentType,
+      );
+      profile.value = profile.value?.copyWith(profileImageUrl: url);
+      return true;
+    } on AppException catch (e) {
+      errorMessage.value = e.message;
+      return false;
+    } catch (_) {
+      errorMessage.value = 'Görsel yüklenemedi';
+      return false;
+    } finally {
+      isUploadingImage.value = false;
     }
   }
 }

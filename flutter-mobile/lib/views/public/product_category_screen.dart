@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/controllers/public/category_controller.dart';
 import 'package:koyden_sehire/models/category_model.dart';
+import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/shared/widgets/customer_bottom_nav.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_mode_chip.dart';
 
@@ -76,7 +77,7 @@ class ProductCategoryScreen extends StatelessWidget {
       body: SafeArea(
         child: Obx(() {
           if (catCtrl.isLoading.value) {
-            return const Center(child: CircularProgressIndicator());
+            return const AppLoading();
           }
           final roots = catCtrl.categories.where((c) => c.isRoot).toList();
           return Padding(

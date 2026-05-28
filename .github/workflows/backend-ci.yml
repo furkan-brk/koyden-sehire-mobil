@@ -1,0 +1,45 @@
+name: Backend CI
+on:
+  push:
+    paths: ['backend/**']
+  pull_request:
+    paths: ['backend/**']
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: admin
+          POSTGRES_PASSWORD: localpass
+          POSTGRES_DB: koydensehire
+        ports: ['5433:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache-dependency-path: backend/go.sum
+      - name: Download deps
+        run: cd backend && go mod download
+      - name: Lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          working-directory: backend
+          version: latest
+      - name: Build
+        run: cd backend && go build ./...
+      - name: Test
+        run: cd backend && go test ./... -v -timeout 60s
+        env:
+          DATABASE_URL: postgres://admin:localpass@localhost:5433/koydensehire?sslmode=disable
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test-secret-key-ci
+          AUTO_MIGRATE: "true"

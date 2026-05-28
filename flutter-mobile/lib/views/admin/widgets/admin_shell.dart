@@ -117,6 +117,12 @@ class _AdminDrawer extends StatelessWidget {
                   route: '/admin/invite-network',
                   currentLocation: currentLocation,
                 ),
+                _NavItem(
+                  icon: Icons.history,
+                  label: 'Denetim Günlüğü',
+                  route: '/admin/audit-logs',
+                  currentLocation: currentLocation,
+                ),
               ],
             ),
           ),

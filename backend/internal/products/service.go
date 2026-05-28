@@ -10,14 +10,47 @@ import (
 	apperrors "github.com/koydensehire/backend/pkg/errors"
 )
 
+// CategoryRow is the minimal DB record returned when validating a category.
+type CategoryRow struct {
+	ParentID *string `db:"parent_id"`
+	IsActive bool    `db:"is_active"`
+}
+
+// CategoryGetter is the data-access interface for category validation.
+type CategoryGetter interface {
+	GetCategory(id string) (*CategoryRow, error)
+	ExecRaw(query string, args ...interface{}) error
+}
+
+// sqlxCategoryGetter wraps *sqlx.DB to satisfy CategoryGetter.
+type sqlxCategoryGetter struct{ db *sqlx.DB }
+
+func (s *sqlxCategoryGetter) GetCategory(id string) (*CategoryRow, error) {
+	var cat CategoryRow
+	if err := s.db.Get(&cat, "SELECT parent_id, is_active FROM categories WHERE id = $1", id); err != nil {
+		return nil, err
+	}
+	return &cat, nil
+}
+
+func (s *sqlxCategoryGetter) ExecRaw(query string, args ...interface{}) error {
+	_, err := s.db.Exec(query, args...)
+	return err
+}
+
 type Service struct {
-	repo      *Repository
-	db        *sqlx.DB
+	repo      ProductRepository
+	db        CategoryGetter
 	publicURL string
 	appEnv    string
 }
 
 func NewService(repo *Repository, db *sqlx.DB, publicURL, appEnv string) *Service {
+	return &Service{repo: repo, db: &sqlxCategoryGetter{db: db}, publicURL: publicURL, appEnv: appEnv}
+}
+
+// newServiceWithInterfaces is used by tests to inject mocks.
+func newServiceWithInterfaces(repo ProductRepository, db CategoryGetter, publicURL, appEnv string) *Service {
 	return &Service{repo: repo, db: db, publicURL: publicURL, appEnv: appEnv}
 }
 
@@ -50,11 +83,8 @@ func (s *Service) Create(farmerID string, req *CreateProductRequest) (*Product, 
 		return nil, err
 	}
 
-	var cat struct {
-		ParentID *string `db:"parent_id"`
-		IsActive bool    `db:"is_active"`
-	}
-	if err := s.db.Get(&cat, "SELECT parent_id, is_active FROM categories WHERE id = $1", req.CategoryID); err != nil {
+	cat, err := s.db.GetCategory(req.CategoryID)
+	if err != nil {
 		return nil, apperrors.New("INVALID_CATEGORY", "Kategori bulunamadı", 400)
 	}
 	if !cat.IsActive {
@@ -118,10 +148,10 @@ func (s *Service) AdminReject(id, note string) error {
 	if err != nil {
 		return err
 	}
-	_, err = s.db.Exec(`
-		UPDATE products SET status = 'rejected', admin_note = $1, updated_at = NOW() WHERE id = $2
-	`, note, id)
-	return err
+	return s.db.ExecRaw(
+		`UPDATE products SET status = 'rejected', admin_note = $1, updated_at = NOW() WHERE id = $2`,
+		note, id,
+	)
 }
 
 func (s *Service) AdminHide(id string) error {

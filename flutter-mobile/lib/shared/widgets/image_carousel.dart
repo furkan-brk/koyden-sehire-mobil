@@ -6,11 +6,13 @@ import 'package:koyden_sehire/app/theme.dart';
 class ImageCarousel extends StatefulWidget {
   final List<String> imageUrls;
   final double height;
+  final void Function(int index)? onImageTap;
 
   const ImageCarousel({
     super.key,
     required this.imageUrls,
     this.height = 280,
+    this.onImageTap,
   });
 
   @override
@@ -50,15 +52,21 @@ class _ImageCarouselState extends State<ImageCarousel> {
             controller: _controller,
             itemCount: widget.imageUrls.length,
             onPageChanged: (i) => setState(() => _index = i),
-            itemBuilder: (_, i) => CachedNetworkImage(
-              imageUrl: widget.imageUrls[i],
-              fit: BoxFit.cover,
-              width: double.infinity,
-              placeholder: (_, __) => Container(color: AppColors.outlineVariant),
-              errorWidget: (_, __, ___) => Container(
-                color: AppColors.outlineVariant,
-                alignment: Alignment.center,
-                child: const Icon(Icons.broken_image_outlined),
+            itemBuilder: (_, i) => GestureDetector(
+              onTap: widget.onImageTap == null
+                  ? null
+                  : () => widget.onImageTap!(i),
+              child: CachedNetworkImage(
+                imageUrl: widget.imageUrls[i],
+                fit: BoxFit.cover,
+                width: double.infinity,
+                placeholder: (_, __) =>
+                    Container(color: AppColors.outlineVariant),
+                errorWidget: (_, __, ___) => Container(
+                  color: AppColors.outlineVariant,
+                  alignment: Alignment.center,
+                  child: const Icon(Icons.broken_image_outlined),
+                ),
               ),
             ),
           ),

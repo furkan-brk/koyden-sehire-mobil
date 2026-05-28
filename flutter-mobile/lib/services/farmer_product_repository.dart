@@ -60,6 +60,23 @@ class FarmerProductRepository {
     );
   }
 
+  /// Updates a product's listing status (e.g. `active`, `passive`).
+  Future<void> setStatus(String id, String status) async {
+    await _api.patch(
+      ApiEndpoints.farmerProductStatus(id),
+      data: {'status': status},
+      parse: (_) => null,
+    );
+  }
+
+  /// Deletes the farmer's product.
+  Future<void> delete(String id) async {
+    await _api.delete(
+      ApiEndpoints.farmerProduct(id),
+      parse: (_) => null,
+    );
+  }
+
   /// Uploads a product image via multipart POST.
   /// Returns the public URL of the uploaded image.
   Future<String> uploadProductImage(

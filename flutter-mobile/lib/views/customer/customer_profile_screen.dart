@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/controllers/customer/customer_notifications_controller.dart';
@@ -69,6 +70,44 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
     super.dispose();
   }
 
+  Future<void> _pickProfileImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+      imageQuality: 85,
+    );
+    if (picked == null) return;
+
+    final List<int> bytes;
+    try {
+      bytes = await picked.readAsBytes();
+    } catch (_) {
+      if (!mounted) return;
+      context.snack('Fotoğraf okunamadı. Lütfen tekrar deneyin.',
+          isError: true);
+      return;
+    }
+
+    final ext = picked.name.split('.').last.toLowerCase();
+    final contentType = ext == 'png'
+        ? 'image/png'
+        : ext == 'webp'
+            ? 'image/webp'
+            : 'image/jpeg';
+    final filename = '${DateTime.now().millisecondsSinceEpoch}_profile.$ext';
+
+    final ok = await _ctrl.uploadProfileImage(bytes,
+        filename: filename, contentType: contentType);
+    if (!mounted) return;
+    if (ok) {
+      context.toast('Profil resmi güncellendi');
+    } else {
+      final err = _ctrl.errorMessage.value;
+      if (err != null) context.snack(err, isError: true);
+    }
+  }
+
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final email = _emailCtrl.text.trim();
@@ -125,7 +164,11 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
               horizontal: 16, vertical: 20),
           children: [
             // ── Header ────────────────────────────────────────────────
-            _ProfileHeaderCard(name: profile.fullName),
+            _ProfileHeaderCard(
+              profile: profile,
+              ctrl: _ctrl,
+              onPickImage: _pickProfileImage,
+            ),
             const SizedBox(height: 24),
 
             // ── Hesap Bilgileri ───────────────────────────────────────
@@ -372,8 +415,15 @@ class _SectionHeader extends StatelessWidget {
 }
 
 class _ProfileHeaderCard extends StatelessWidget {
-  final String name;
-  const _ProfileHeaderCard({required this.name});
+  final CustomerProfileModel profile;
+  final CustomerProfileController ctrl;
+  final VoidCallback onPickImage;
+
+  const _ProfileHeaderCard({
+    required this.profile,
+    required this.ctrl,
+    required this.onPickImage,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -388,11 +438,50 @@ class _ProfileHeaderCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: cs.secondaryContainer,
-            child:
-                Icon(Icons.person, size: 28, color: cs.primaryContainer),
+          Stack(
+            children: [
+              CircleAvatar(
+                radius: 32,
+                backgroundColor: cs.secondaryContainer,
+                backgroundImage: profile.profileImageUrl == null
+                    ? null
+                    : CachedNetworkImageProvider(profile.profileImageUrl!),
+                child: profile.profileImageUrl == null
+                    ? Icon(Icons.person,
+                        size: 32, color: cs.primaryContainer)
+                    : null,
+              ),
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Obx(() {
+                  final uploading = ctrl.isUploadingImage.value;
+                  return Material(
+                    color: AppColors.primary,
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      onTap: uploading ? null : onPickImage,
+                      customBorder: const CircleBorder(),
+                      child: Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: uploading
+                            ? const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white),
+                                ),
+                              )
+                            : const Icon(Icons.camera_alt,
+                                color: Colors.white, size: 14),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ],
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -400,7 +489,7 @@ class _ProfileHeaderCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  name,
+                  profile.fullName,
                   style: Theme.of(context)
                       .textTheme
                       .titleMedium

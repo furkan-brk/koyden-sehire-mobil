@@ -25,15 +25,9 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return macos;
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -47,29 +41,49 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyC6DUFFFHiIUByT0pIFxrqtDj4w4jFp-bI',
-    appId: '1:167692479721:web:7767e48648b23bb1701478',
-    messagingSenderId: '167692479721',
-    projectId: 'sehirden-koye',
-    storageBucket: 'sehirden-koye.firebasestorage.app',
-    authDomain: 'sehirden-koye.firebaseapp.com',
-    measurementId: 'G-87NR8F5WV1',
+    apiKey: 'AIzaSyBH7IBQOHsZjdHlhA-Hb8S78Ru8tGLMAUY',
+    appId: '1:15307976336:web:77e296797293cf3f473215',
+    messagingSenderId: '15307976336',
+    projectId: 'koyden-sehire-d3e7c',
+    authDomain: 'koyden-sehire-d3e7c.firebaseapp.com',
+    storageBucket: 'koyden-sehire-d3e7c.firebasestorage.app',
+    measurementId: 'G-L4M7X7KG3W',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBLS1VfIN_MK2SdxcPm2OzkxH9fJvlL1cI',
-    appId: '1:167692479721:android:f950c5ef5e7f2e95701478',
-    messagingSenderId: '167692479721',
-    projectId: 'sehirden-koye',
-    storageBucket: 'sehirden-koye.firebasestorage.app',
+    apiKey: 'AIzaSyBeopau5gRAUiHcVUcILE6OjliUsPQeiqU',
+    appId: '1:15307976336:android:f3d14ff52e1e3fa4473215',
+    messagingSenderId: '15307976336',
+    projectId: 'koyden-sehire-d3e7c',
+    storageBucket: 'koyden-sehire-d3e7c.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyAVz0i8Cf0zNOWTDp6B8fv6JL07MztlEUU',
-    appId: '1:167692479721:ios:6e49ddef7a32561d701478',
-    messagingSenderId: '167692479721',
-    projectId: 'sehirden-koye',
-    storageBucket: 'sehirden-koye.firebasestorage.app',
+    apiKey: 'AIzaSyCzRThB4RqoxCb2O7G0h_8sE3sLPTt6ghk',
+    appId: '1:15307976336:ios:6ff6e111753c646e473215',
+    messagingSenderId: '15307976336',
+    projectId: 'koyden-sehire-d3e7c',
+    storageBucket: 'koyden-sehire-d3e7c.firebasestorage.app',
     iosBundleId: 'com.koydensehire.koydenSehire',
   );
+
+  static const FirebaseOptions macos = FirebaseOptions(
+    apiKey: 'AIzaSyCzRThB4RqoxCb2O7G0h_8sE3sLPTt6ghk',
+    appId: '1:15307976336:ios:6ff6e111753c646e473215',
+    messagingSenderId: '15307976336',
+    projectId: 'koyden-sehire-d3e7c',
+    storageBucket: 'koyden-sehire-d3e7c.firebasestorage.app',
+    iosBundleId: 'com.koydensehire.koydenSehire',
+  );
+
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: 'AIzaSyBH7IBQOHsZjdHlhA-Hb8S78Ru8tGLMAUY',
+    appId: '1:15307976336:web:559031738610753c473215',
+    messagingSenderId: '15307976336',
+    projectId: 'koyden-sehire-d3e7c',
+    authDomain: 'koyden-sehire-d3e7c.firebaseapp.com',
+    storageBucket: 'koyden-sehire-d3e7c.firebasestorage.app',
+    measurementId: 'G-VG7MKKFFK8',
+  );
+
 }

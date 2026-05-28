@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
@@ -132,7 +133,148 @@ class _InviteCard extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              icon: const Icon(Icons.qr_code, size: 18),
+              label: const Text('QR Göster'),
+              onPressed: () => _showQrSheet(
+                context,
+                code: item.code,
+                link: _shareLink,
+                shareMessage: _shareMessage,
+              ),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+void _showQrSheet(
+  BuildContext context, {
+  required String code,
+  required String link,
+  required String shareMessage,
+}) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: AppColors.surface,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.md)),
+    ),
+    builder: (ctx) => _InviteQrSheet(
+      code: code,
+      link: link,
+      shareMessage: shareMessage,
+    ),
+  );
+}
+
+class _InviteQrSheet extends StatelessWidget {
+  final String code;
+  final String link;
+  final String shareMessage;
+
+  const _InviteQrSheet({
+    required this.code,
+    required this.link,
+    required this.shareMessage,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Davet Bağlantısı',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Davet etmek istediğiniz kişi bu QR kodu tarayarak başvuru sayfasına gidebilir.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: cs.onSurfaceVariant),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border.all(color: AppColors.outlineVariant),
+              ),
+              child: QrImageView(
+                data: link,
+                size: 220,
+                backgroundColor: Colors.white,
+                version: QrVersions.auto,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                code,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  letterSpacing: 2,
+                  fontFamily: 'monospace',
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              link,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                color: cs.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: AppButton(
+                label: 'Paylaş',
+                icon: const Icon(Icons.share, color: Colors.white),
+                onPressed: () => Share.share(shareMessage),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

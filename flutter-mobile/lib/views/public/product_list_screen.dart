@@ -161,40 +161,11 @@ class _ProductListScreenState extends State<ProductListScreen> {
               AppSpacing.md,
               AppSpacing.sm,
             ),
-            child: TextField(
+            child: SearchField(
               controller: _searchController,
-              textInputAction: TextInputAction.search,
+              hintText: 'Ürün veya üretici ara...',
               onSubmitted: _onSearchSubmitted,
-              decoration: InputDecoration(
-                hintText: 'Ürün veya üretici ara...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isEmpty
-                    ? null
-                    : IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          _onSearchSubmitted('');
-                        },
-                      ),
-                filled: true,
-                fillColor: AppColors.surfaceContainerLowest,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(999),
-                  borderSide: const BorderSide(color: AppColors.outlineVariant),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(999),
-                  borderSide: const BorderSide(color: AppColors.outlineVariant),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(999),
-                  borderSide: const BorderSide(
-                    color: AppColors.primaryContainer,
-                    width: 2,
-                  ),
-                ),
-              ),
+              onClear: () => _onSearchSubmitted(''),
             ),
           ),
           Obx(() {
@@ -253,7 +224,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                 AppSpacing.sm,
               ),
               child: ctrl.isLoading.value
-                  ? Text('Yükleniyor...', style: TextStyle(color: cs.onSurfaceVariant))
+                  ? const SizedBox.shrink()
                   : RichText(
                       text: TextSpan(
                         style: Theme.of(context)

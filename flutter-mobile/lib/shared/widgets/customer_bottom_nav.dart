@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:koyden_sehire/controllers/customer/customer_notifications_controller.dart';
 import 'package:koyden_sehire/core/services/auth_service.dart';
+import 'package:koyden_sehire/core/services/tab_scroll_service.dart';
 import 'package:koyden_sehire/models/auth/auth_state.dart';
 
 /// Customer bottom navigation tabs.
@@ -13,6 +15,14 @@ import 'package:koyden_sehire/models/auth/auth_state.dart';
 /// [favorites] → `/favorites`
 /// [profile] → `/customer/profile` (or /login when logged out)
 enum CustomerTab { home, market, producers, favorites, profile }
+
+const _customerTabKeys = <CustomerTab, String>{
+  CustomerTab.home: TabScrollKeys.customerHome,
+  CustomerTab.market: TabScrollKeys.customerMarket,
+  CustomerTab.producers: TabScrollKeys.customerProducers,
+  CustomerTab.favorites: TabScrollKeys.customerFavorites,
+  CustomerTab.profile: TabScrollKeys.customerProfile,
+};
 
 class CustomerBottomNav extends StatelessWidget {
   final CustomerTab current;
@@ -50,8 +60,14 @@ class CustomerBottomNav extends StatelessWidget {
             label: 'Favoriler',
           ),
           NavigationDestination(
-            icon: Icon(isCustomer ? Icons.person_outline : Icons.login_outlined),
-            selectedIcon: Icon(isCustomer ? Icons.person : Icons.login),
+            icon: _ProfileTabIcon(
+              icon: isCustomer ? Icons.person_outline : Icons.login_outlined,
+              showBadge: isCustomer,
+            ),
+            selectedIcon: _ProfileTabIcon(
+              icon: isCustomer ? Icons.person : Icons.login,
+              showBadge: isCustomer,
+            ),
             label: isCustomer ? 'Profil' : 'Giriş',
           ),
         ],
@@ -60,7 +76,14 @@ class CustomerBottomNav extends StatelessWidget {
   }
 
   void _navigate(BuildContext context, int i) {
-    if (i == current.index) return;
+    // Re-tap on the active tab → scroll the current screen back to the top.
+    if (i == current.index) {
+      final key = _customerTabKeys[current];
+      if (key != null && Get.isRegistered<TabScrollService>()) {
+        Get.find<TabScrollService>().scrollToTop(key);
+      }
+      return;
+    }
     final auth = Get.find<AuthService>();
     final isFarmerBrowsing = auth.status.value == AuthStatus.farmerActive &&
         auth.isBrowsingAsCustomer.value;
@@ -83,5 +106,32 @@ class CustomerBottomNav extends StatelessWidget {
           context.go('/login');
         }
     }
+  }
+}
+
+/// Profile tab icon decorated with the unread-notifications [Badge].
+///
+/// We resolve the count lazily so that signed-out users (who never
+/// instantiate the CustomerNotificationsController) don't pay a cost here.
+class _ProfileTabIcon extends StatelessWidget {
+  final IconData icon;
+  final bool showBadge;
+  const _ProfileTabIcon({required this.icon, required this.showBadge});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!showBadge) return Icon(icon);
+    if (!Get.isRegistered<CustomerNotificationsController>()) {
+      return Icon(icon);
+    }
+    final c = Get.find<CustomerNotificationsController>();
+    return Obx(() {
+      final unread = c.unreadCount.value;
+      if (unread <= 0) return Icon(icon);
+      return Badge(
+        label: Text(unread > 99 ? '99+' : '$unread'),
+        child: Icon(icon),
+      );
+    });
   }
 }

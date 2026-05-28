@@ -26,6 +26,7 @@ class ApiEndpoints {
 
   // Farmer panel
   static const String farmerProfile = '/farmer/profile';
+  static const String farmerDashboard = '/farmer/dashboard';
   static const String farmerProducts2 = '/farmer/products';
   static const String farmerInvites = '/farmer/invites';
   static const String uploadProductImage = '/farmer/uploads/product-image';
@@ -60,6 +61,11 @@ class ApiEndpoints {
   static const String customerProfile = '/customer/profile';
   static const String customerFavorites = '/customer/favorites';
   static String customerFavoriteById(String id) => '/customer/favorites/$id';
+  static const String customerUploadProfileImage =
+      '/customer/uploads/profile-image';
+
+  // Reports
+  static const String reports = '/reports';
 
   // Admin - Dashboard
   static const String adminDashboard = '/admin/dashboard';

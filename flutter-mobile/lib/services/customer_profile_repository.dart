@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import 'package:koyden_sehire/core/api/api_client.dart';
 import 'package:koyden_sehire/core/api/api_endpoints.dart';
 import 'package:koyden_sehire/models/customer_profile_model.dart';
@@ -31,6 +33,30 @@ class CustomerProfileRepository {
         final data =
             ((env as Map)['data'] as Map?)?.cast<String, dynamic>() ?? {};
         return CustomerProfileModel.fromJson(data);
+      },
+    );
+  }
+
+  /// Uploads a customer profile image via multipart POST.
+  /// Returns the public URL of the uploaded image.
+  Future<String> uploadProfileImage(
+    List<int> bytes, {
+    String filename = 'photo.jpg',
+    String contentType = 'image/jpeg',
+  }) {
+    return _api.post(
+      ApiEndpoints.customerUploadProfileImage,
+      data: FormData.fromMap({
+        'file': MultipartFile.fromBytes(
+          bytes,
+          filename: filename,
+          contentType: DioMediaType.parse(contentType),
+        ),
+      }),
+      parse: (env) {
+        final data = ((env as Map)['data'] as Map?)?.cast<String, dynamic>() ??
+            const {};
+        return data['url']?.toString() ?? '';
       },
     );
   }

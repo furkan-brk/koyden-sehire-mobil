@@ -10,6 +10,7 @@ import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/views/admin/widgets/admin_status_badge.dart';
 import 'package:koyden_sehire/controllers/admin/admin_products_controller.dart';
+import 'package:koyden_sehire/shared/widgets/search_field.dart';
 
 class AdminProductsView extends StatefulWidget {
   const AdminProductsView({super.key});
@@ -58,14 +59,11 @@ class _AdminProductsViewState extends State<AdminProductsView> {
                     ?.copyWith(color: cs.onSurfaceVariant),
               ),
               const SizedBox(height: 12),
-              TextField(
+              SearchField(
                 controller: _searchController,
-                decoration: const InputDecoration(
-                  hintText: 'Ürün, üretici veya kategori ara...',
-                  prefixIcon: Icon(Icons.search),
-                  isDense: true,
-                ),
+                hintText: 'Ürün, üretici veya kategori ara...',
                 onChanged: (v) => _ctrl.search.value = v,
+                onClear: () => _ctrl.search.value = '',
               ),
             ],
           ),

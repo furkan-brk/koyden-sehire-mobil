@@ -9,6 +9,7 @@ import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/views/admin/widgets/admin_status_badge.dart';
 import 'package:koyden_sehire/controllers/admin/admin_farmers_controller.dart';
+import 'package:koyden_sehire/shared/widgets/search_field.dart';
 
 class AdminFarmersView extends StatefulWidget {
   const AdminFarmersView({super.key});
@@ -62,14 +63,11 @@ class _AdminFarmersViewState extends State<AdminFarmersView> {
                     ?.copyWith(color: cs.onSurfaceVariant),
               ),
               const SizedBox(height: 12),
-              TextField(
+              SearchField(
                 controller: _searchController,
-                decoration: const InputDecoration(
-                  hintText: 'İsim, şehir veya davet kodu ara...',
-                  prefixIcon: Icon(Icons.search),
-                  isDense: true,
-                ),
+                hintText: 'İsim, şehir veya davet kodu ara...',
                 onChanged: (v) => _ctrl.search.value = v,
+                onClear: () => _ctrl.search.value = '',
               ),
             ],
           ),

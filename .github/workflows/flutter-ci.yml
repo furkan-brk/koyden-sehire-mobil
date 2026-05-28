@@ -1,0 +1,23 @@
+name: Flutter CI
+on:
+  push:
+    paths: ['flutter-mobile/**']
+  pull_request:
+    paths: ['flutter-mobile/**']
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 'stable'
+          cache: true
+      - name: Get dependencies
+        run: cd flutter-mobile && flutter pub get
+      - name: Analyze
+        run: cd flutter-mobile && flutter analyze --fatal-infos
+      - name: Test
+        run: cd flutter-mobile && flutter test
+      - name: Build APK (smoke)
+        run: cd flutter-mobile && flutter build apk --debug --dart-define=BASE_URL=http://10.0.2.2:8080/api/v1
