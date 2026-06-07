@@ -143,8 +143,8 @@ func (s *Service) AdminApprove(id string) error {
 	if err != nil {
 		return err
 	}
-	if p.Status != "pending" {
-		return apperrors.New("INVALID_STATUS", "Sadece bekleyen ürünler onaylanabilir", 400)
+	if p.Status != "pending" && p.Status != "hidden" {
+		return apperrors.New("INVALID_STATUS", "Sadece bekleyen veya gizli ürünler onaylanabilir", 400)
 	}
 	return s.repo.AdminApprove(id)
 }

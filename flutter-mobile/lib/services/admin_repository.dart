@@ -210,6 +210,13 @@ class AdminRepository {
     );
   }
 
+  Future<void> deleteCategory(String id) async {
+    await _client.delete<void>(
+      '${ApiEndpoints.adminCategories}/$id',
+      parse: (_) {},
+    );
+  }
+
   Future<List<AdminCategory>> getCategories() async {
     return _client.get<List<AdminCategory>>(
       ApiEndpoints.adminCategories,

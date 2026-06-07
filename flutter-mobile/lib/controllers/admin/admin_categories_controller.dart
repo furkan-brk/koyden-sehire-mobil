@@ -45,6 +45,16 @@ class AdminCategoriesController extends GetxController {
     }
   }
 
+  Future<bool> deleteSubcategory(String id) async {
+    try {
+      await _repo.deleteCategory(id);
+      await load();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   static String _toSlug(String input) {
     const trMap = {
       'ç': 'c', 'Ç': 'c',

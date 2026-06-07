@@ -50,6 +50,42 @@ class _AdminCategoriesViewState extends State<AdminCategoriesView> {
     }
   }
 
+  Future<void> _confirmDeleteSubcategory(
+    BuildContext context,
+    AdminCategory child,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Alt kategoriyi sil'),
+        content: Text(
+          '"${child.name}" alt kategorisini silmek istediğine emin misin?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Vazgeç'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Sil'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final ok = await _ctrl.deleteSubcategory(child.id);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok
+            ? 'Alt kategori silindi.'
+            : 'Alt kategori silinemedi. Bu kategoriye bağlı ürünler olabilir.'),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -144,6 +180,8 @@ class _AdminCategoriesViewState extends State<AdminCategoriesView> {
                           category: parents[i],
                           onAdd: () => _showAddSubcategoryDialog(
                               context, parents[i]),
+                          onDeleteChild: (child) =>
+                              _confirmDeleteSubcategory(context, child),
                         ),
                         childCount: parents.length,
                       ),
@@ -158,6 +196,8 @@ class _AdminCategoriesViewState extends State<AdminCategoriesView> {
                           category: parents[i],
                           onAdd: () => _showAddSubcategoryDialog(
                               context, parents[i]),
+                          onDeleteChild: (child) =>
+                              _confirmDeleteSubcategory(context, child),
                         ),
                         childCount: parents.length,
                       ),
@@ -177,7 +217,12 @@ class _AdminCategoriesViewState extends State<AdminCategoriesView> {
 class _CategoryCard extends StatelessWidget {
   final AdminCategory category;
   final VoidCallback onAdd;
-  const _CategoryCard({required this.category, required this.onAdd});
+  final ValueChanged<AdminCategory> onDeleteChild;
+  const _CategoryCard({
+    required this.category,
+    required this.onAdd,
+    required this.onDeleteChild,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -274,6 +319,20 @@ class _CategoryCard extends StatelessWidget {
                               size: 10,
                               color: cs.onSurfaceVariant),
                         ],
+                        const SizedBox(width: 4),
+                        InkWell(
+                          onTap: () => onDeleteChild(child),
+                          borderRadius:
+                              BorderRadius.circular(AppRadius.pill),
+                          child: Padding(
+                            padding: const EdgeInsets.all(2),
+                            child: Icon(
+                              Icons.close,
+                              size: 12,
+                              color: cs.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   );

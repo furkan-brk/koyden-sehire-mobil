@@ -41,10 +41,22 @@ class _AdminProductDetailViewState
 
   Future<void> _confirmModerate(String action) async {
     final reasonCtrl = TextEditingController();
+    final title = switch (action) {
+      'approve' => 'Ürünü Onayla',
+      'reject' => 'Ürünü Reddet',
+      'hide' => 'Ürünü Yayından Kaldır',
+      _ => 'Ürün',
+    };
+    final confirmLabel = switch (action) {
+      'approve' => 'Onayla',
+      'reject' => 'Reddet',
+      'hide' => 'Yayından Kaldır',
+      _ => 'Onayla',
+    };
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(action == 'approve' ? 'Ürünü Onayla' : 'Ürünü Reddet'),
+        title: Text(title),
         content: action == 'reject'
             ? Column(
                 mainAxisSize: MainAxisSize.min,
@@ -58,7 +70,9 @@ class _AdminProductDetailViewState
                   ),
                 ],
               )
-            : const Text('Bu ürünü onaylamak istiyor musunuz?'),
+            : Text(action == 'approve'
+                ? 'Bu ürünü onaylamak istiyor musunuz?'
+                : 'Bu ürünü yayından kaldırmak istiyor musunuz? Ürün listelerde görünmeyecek.'),
         actions: [
           AppButton(
             label: 'İptal',
@@ -67,7 +81,7 @@ class _AdminProductDetailViewState
             onPressed: () => Navigator.pop(ctx, false),
           ),
           AppButton(
-            label: action == 'approve' ? 'Onayla' : 'Reddet',
+            label: confirmLabel,
             variant: action == 'approve'
                 ? AppButtonVariant.primary
                 : AppButtonVariant.destructive,
@@ -82,9 +96,15 @@ class _AdminProductDetailViewState
     if (confirmed == true && mounted) {
       final ok = await _ctrl.moderate(action, reason: action == 'reject' ? reason : null);
       if (ok && mounted) {
+        final successMsg = switch (action) {
+          'approve' => 'Ürün onaylandı.',
+          'reject' => 'Ürün reddedildi.',
+          'hide' => 'Ürün yayından kaldırıldı.',
+          _ => 'İşlem tamamlandı.',
+        };
         context.snack(
-          action == 'approve' ? 'Ürün onaylandı.' : 'Ürün reddedildi.',
-          isError: action == 'reject',
+          successMsg,
+          isError: action != 'approve',
         );
       }
     }
@@ -191,6 +211,52 @@ class _AdminProductDetailViewState
                     ),
                   ),
                 ],
+              ] else if (product.status == 'active' ||
+                  product.status == 'successful') ...[
+                const SizedBox(width: 12),
+                if (_ctrl.isSubmitting.value)
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child:
+                        CircularProgressIndicator(strokeWidth: 2),
+                  )
+                else
+                  OutlinedButton.icon(
+                    onPressed: () => _confirmModerate('hide'),
+                    icon: Icon(Icons.visibility_off_outlined,
+                        size: 15, color: cs.error),
+                    label: Text('Yayından Kaldır',
+                        style:
+                            TextStyle(color: cs.error, fontSize: 13)),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: cs.error),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      minimumSize: Size.zero,
+                    ),
+                  ),
+              ] else if (product.status == 'hidden') ...[
+                const SizedBox(width: 12),
+                if (_ctrl.isSubmitting.value)
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child:
+                        CircularProgressIndicator(strokeWidth: 2),
+                  )
+                else
+                  FilledButton.icon(
+                    onPressed: () => _confirmModerate('approve'),
+                    icon: const Icon(Icons.visibility_outlined, size: 15),
+                    label: const Text('Yayına Al',
+                        style: TextStyle(fontSize: 13)),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      minimumSize: Size.zero,
+                    ),
+                  ),
               ],
             ],
           ),
@@ -272,7 +338,48 @@ class _AdminProductDetailViewState
                   ),
                 ],
               ]
-            : null,
+            : (product.status == 'active' ||
+                    product.status == 'successful')
+                ? [
+                    if (_ctrl.isSubmitting.value)
+                      const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2)),
+                      )
+                    else
+                      TextButton.icon(
+                        onPressed: () => _confirmModerate('hide'),
+                        icon: Icon(Icons.visibility_off_outlined,
+                            color: cs.error),
+                        label: Text('Yayından Kaldır',
+                            style: TextStyle(color: cs.error)),
+                      ),
+                  ]
+                : (product.status == 'hidden')
+                    ? [
+                        if (_ctrl.isSubmitting.value)
+                          const Padding(
+                            padding: EdgeInsets.all(12),
+                            child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2)),
+                          )
+                        else
+                          TextButton.icon(
+                            onPressed: () => _confirmModerate('approve'),
+                            icon: Icon(Icons.visibility_outlined,
+                                color: cs.primary),
+                            label: Text('Yayına Al',
+                                style: TextStyle(color: cs.primary)),
+                          ),
+                      ]
+                    : null,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
