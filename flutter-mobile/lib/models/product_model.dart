@@ -1,3 +1,4 @@
+import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/models/farmer_model.dart';
 
 class ProductModel {
@@ -52,8 +53,8 @@ class ProductModel {
     final imagesRaw = (json['images'] ?? json['image_urls']) as List?;
     final images = (imagesRaw ?? const [])
         .map((e) {
-          if (e is String) return e;
-          if (e is Map) return (e['image_url'] ?? e['url'])?.toString() ?? '';
+          if (e is String) return AppConstants.formatDevUrl(e);
+          if (e is Map) return AppConstants.formatDevUrl((e['image_url'] ?? e['url'])?.toString() ?? '');
           return '';
         })
         .where((s) => s.isNotEmpty)

@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
 
@@ -31,6 +32,7 @@ class _ImageCarouselState extends State<ImageCarousel> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     if (widget.imageUrls.isEmpty) {
       return Container(
         height: widget.height,
@@ -60,8 +62,13 @@ class _ImageCarouselState extends State<ImageCarousel> {
                 imageUrl: widget.imageUrls[i],
                 fit: BoxFit.cover,
                 width: double.infinity,
-                placeholder: (_, __) =>
-                    Container(color: AppColors.outlineVariant),
+                placeholder: (_, __) => Shimmer.fromColors(
+                  baseColor: cs.surfaceContainer,
+                  highlightColor: cs.surfaceContainerLow,
+                  child: Container(
+                    color: Colors.white,
+                  ),
+                ),
                 errorWidget: (_, __, ___) => Container(
                   color: AppColors.outlineVariant,
                   alignment: Alignment.center,

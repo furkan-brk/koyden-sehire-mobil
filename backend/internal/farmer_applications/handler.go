@@ -204,7 +204,7 @@ func (h *Handler) VideoPresign(c *fiber.Ctx) error {
 	timestamp := time.Now().Unix()
 	key := fmt.Sprintf("application-videos/pending/%s/%d.mp4", req.Phone, timestamp)
 
-	url, err := h.storage.GeneratePresignedPutURL(ctx, key, 15*time.Minute)
+	url, err := h.storage.GeneratePresignedPutURL(ctx, key, "video/mp4", nil, 15*time.Minute)
 	if err != nil {
 		return response.Error(c, apperrors.ErrInternal)
 	}

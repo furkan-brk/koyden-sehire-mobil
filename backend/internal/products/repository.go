@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	apperrors "github.com/koydensehire/backend/pkg/errors"
@@ -21,7 +22,7 @@ func NewRepository(db *sqlx.DB, publicURL string) *Repository {
 func (r *Repository) ListPublic(f *ProductFilter) ([]PublicProduct, int, error) {
 	args := []interface{}{}
 	argIdx := 1
-	conditions := []string{"p.status = 'active'"}
+	conditions := []string{"p.status IN ('active', 'successful')"}
 
 	if f.Search != "" {
 		conditions = append(conditions, fmt.Sprintf("p.title ILIKE $%d", argIdx))
@@ -124,7 +125,7 @@ func (r *Repository) ListPublic(f *ProductFilter) ([]PublicProduct, int, error) 
 			COALESCE(
 				json_agg(
 					json_build_object(
-						'url', pi.image_url,
+						'url', pi.image_key,
 						'sort_order', pi.sort_order
 					) ORDER BY pi.sort_order
 				) FILTER (WHERE pi.id IS NOT NULL),
@@ -159,7 +160,7 @@ func (r *Repository) ListPublic(f *ProductFilter) ([]PublicProduct, int, error) 
 		if err := rows.StructScan(&row); err != nil {
 			return nil, 0, err
 		}
-		products = append(products, mapRowToPublicProduct(row))
+		products = append(products, mapRowToPublicProduct(row, r.publicURL))
 	}
 
 	if products == nil {
@@ -185,7 +186,7 @@ func (r *Repository) GetPublicByID(id string) (*PublicProduct, error) {
 			COALESCE(
 				json_agg(
 					json_build_object(
-						'url', pi.image_url,
+						'url', pi.image_key,
 						'sort_order', pi.sort_order
 					) ORDER BY pi.sort_order
 				) FILTER (WHERE pi.id IS NOT NULL),
@@ -196,7 +197,7 @@ func (r *Repository) GetPublicByID(id string) (*PublicProduct, error) {
 		JOIN categories c ON c.id = p.category_id
 		LEFT JOIN categories pc ON pc.id = c.parent_id
 		LEFT JOIN product_images pi ON pi.product_id = p.id
-		WHERE p.id = $1 AND p.status = 'active'
+		WHERE p.id = $1 AND p.status IN ('active', 'successful')
 		GROUP BY
 			p.id, fp.display_name, fp.is_verified,
 			fp.is_founding_farmer, fp.profile_image_url,
@@ -210,7 +211,7 @@ func (r *Repository) GetPublicByID(id string) (*PublicProduct, error) {
 	if err := r.db.QueryRowx(query, id).StructScan(&row); err != nil {
 		return nil, apperrors.ErrNotFound
 	}
-	p := mapRowToPublicProduct(row)
+	p := mapRowToPublicProduct(row, r.publicURL)
 	return &p, nil
 }
 
@@ -232,14 +233,56 @@ func (r *Repository) GetByIDAndFarmer(id, farmerID string) (*Product, error) {
 	return &p, nil
 }
 
-func (r *Repository) ListByFarmer(farmerID string) ([]Product, error) {
-	var products []Product
-	err := r.db.Select(&products, "SELECT * FROM products WHERE farmer_id = $1 ORDER BY created_at DESC", farmerID)
+func (r *Repository) ListByFarmer(farmerID string) ([]FarmerProductDetail, error) {
+	query := `
+		SELECT
+			p.id, p.farmer_id, p.title, p.description,
+			p.price, p.unit, p.city, p.district, p.village,
+			p.status, p.stock_status, p.admin_note, p.created_at,
+			c.id   AS category_id,
+			c.name AS category_name,
+			c.slug AS category_slug,
+			pc.id   AS parent_category_id,
+			pc.name AS parent_category_name,
+			pc.slug AS parent_category_slug,
+			COALESCE(
+				json_agg(
+					json_build_object('url', pi.image_key, 'sort_order', pi.sort_order)
+					ORDER BY pi.sort_order
+				) FILTER (WHERE pi.id IS NOT NULL),
+				'[]'
+			) AS images
+		FROM products p
+		LEFT JOIN categories      c  ON c.id          = p.category_id
+		LEFT JOIN categories      pc ON pc.id         = c.parent_id
+		LEFT JOIN product_images  pi ON pi.product_id = p.id
+		WHERE p.farmer_id = $1 AND p.status != 'on-going'
+		GROUP BY
+			p.id, p.farmer_id, p.title, p.description,
+			p.price, p.unit, p.city, p.district, p.village,
+			p.status, p.stock_status, p.admin_note, p.created_at,
+			c.id, c.name, c.slug,
+			pc.id, pc.name, pc.slug
+		ORDER BY p.created_at DESC
+	`
+
+	rows, err := r.db.Queryx(query, farmerID)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
+
+	var products []FarmerProductDetail
+	for rows.Next() {
+		var row AdminProductRow
+		if err := rows.StructScan(&row); err != nil {
+			return nil, err
+		}
+		products = append(products, mapRowToFarmerDetail(row, r.publicURL))
+	}
+
 	if products == nil {
-		products = []Product{}
+		products = []FarmerProductDetail{}
 	}
 	return products, nil
 }
@@ -261,7 +304,7 @@ func (r *Repository) ListByFarmerPublic(farmerID string) ([]PublicProduct, error
 			COALESCE(
 				json_agg(
 					json_build_object(
-						'url', pi.image_url,
+						'url', pi.image_key,
 						'sort_order', pi.sort_order
 					) ORDER BY pi.sort_order
 				) FILTER (WHERE pi.id IS NOT NULL),
@@ -272,7 +315,7 @@ func (r *Repository) ListByFarmerPublic(farmerID string) ([]PublicProduct, error
 		JOIN categories c ON c.id = p.category_id
 		LEFT JOIN categories pc ON pc.id = c.parent_id
 		LEFT JOIN product_images pi ON pi.product_id = p.id
-		WHERE p.farmer_id = $1 AND p.status = 'active'
+		WHERE p.farmer_id = $1 AND p.status IN ('active', 'successful')
 		GROUP BY
 			p.id, fp.display_name, fp.is_verified,
 			fp.is_founding_farmer, fp.profile_image_url,
@@ -295,7 +338,7 @@ func (r *Repository) ListByFarmerPublic(farmerID string) ([]PublicProduct, error
 		if err := rows.StructScan(&row); err != nil {
 			return nil, err
 		}
-		products = append(products, mapRowToPublicProduct(row))
+		products = append(products, mapRowToPublicProduct(row, r.publicURL))
 	}
 	if products == nil {
 		products = []PublicProduct{}
@@ -322,10 +365,11 @@ func (r *Repository) Create(farmerID string, req *CreateProductRequest) (*Produc
 	}
 
 	for i, url := range req.ImageURLs {
+		key := extractImageKey(url, r.publicURL)
 		_, err = tx.Exec(`
-			INSERT INTO product_images (product_id, image_url, sort_order)
+			INSERT INTO product_images (product_id, image_key, sort_order)
 			VALUES ($1, $2, $3)
-		`, p.ID, url, i)
+		`, p.ID, key, i)
 		if err != nil {
 			return nil, err
 		}
@@ -359,10 +403,11 @@ func (r *Repository) Update(id, farmerID string, req *UpdateProductRequest) (*Pr
 	}
 
 	for i, url := range req.ImageURLs {
+		key := extractImageKey(url, r.publicURL)
 		if _, err := tx.Exec(`
-			INSERT INTO product_images (product_id, image_url, sort_order)
+			INSERT INTO product_images (product_id, image_key, sort_order)
 			VALUES ($1, $2, $3)
-		`, id, url, i); err != nil {
+		`, id, key, i); err != nil {
 			return nil, err
 		}
 	}
@@ -411,16 +456,78 @@ func (r *Repository) AdminDelete(id string) error {
 	return err
 }
 
+func (r *Repository) CreateDraft(id, farmerID string) error {
+	_, err := r.db.Exec(`
+		INSERT INTO products (id, farmer_id, status)
+		VALUES ($1, $2, 'on-going')
+		ON CONFLICT (id) DO NOTHING
+	`, id, farmerID)
+	return err
+}
+
+func (r *Repository) Complete(id, farmerID string, req *CompleteProductRequest) (*Product, error) {
+	tx, err := r.db.Beginx()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	var p Product
+	err = tx.Get(&p, `
+		UPDATE products
+		SET category_id = $1, title = $2, description = $3, price = $4,
+		    unit = $5, city = $6, district = $7, village = $8, status = 'successful', updated_at = NOW()
+		WHERE id = $9 AND farmer_id = $10
+		RETURNING *
+	`, req.CategoryID, req.Title, req.Description, req.Price, req.Unit,
+		req.City, req.District, req.Village, id, farmerID)
+	if err != nil {
+		return nil, apperrors.ErrNotFound
+	}
+
+	if _, err := tx.Exec("DELETE FROM product_images WHERE product_id = $1", id); err != nil {
+		return nil, err
+	}
+
+	for i, key := range req.ImageKeys {
+		if _, err := tx.Exec(`
+			INSERT INTO product_images (product_id, image_key, sort_order)
+			VALUES ($1, $2, $3)
+		`, id, key, i); err != nil {
+			return nil, err
+		}
+	}
+
+	return &p, tx.Commit()
+}
+
+func (r *Repository) GetExpiredDrafts(olderThan time.Duration) ([]Product, error) {
+	var products []Product
+	query := `
+		SELECT * FROM products
+		WHERE status = 'on-going' AND created_at < NOW() - $1::interval
+	`
+	intervalStr := fmt.Sprintf("%d seconds", int(olderThan.Seconds()))
+	err := r.db.Select(&products, query, intervalStr)
+	if err != nil {
+		return nil, err
+	}
+	if products == nil {
+		products = []Product{}
+	}
+	return products, nil
+}
+
 func (r *Repository) ListAll(page, limit int) ([]Product, int, error) {
 	var total int
-	if err := r.db.Get(&total, "SELECT COUNT(*) FROM products"); err != nil {
+	if err := r.db.Get(&total, "SELECT COUNT(*) FROM products WHERE status != 'on-going'"); err != nil {
 		return nil, 0, err
 	}
 
 	var products []Product
 	offset := (page - 1) * limit
 	err := r.db.Select(&products, `
-		SELECT * FROM products ORDER BY created_at DESC LIMIT $1 OFFSET $2
+		SELECT * FROM products WHERE status != 'on-going' ORDER BY created_at DESC LIMIT $1 OFFSET $2
 	`, limit, offset)
 	if err != nil {
 		return nil, 0, err
@@ -468,7 +575,7 @@ func (r *Repository) GetAdminProductByID(id string) (*AdminProductDetail, error)
 			pc.slug AS parent_category_slug,
 			COALESCE(
 				json_agg(
-					json_build_object('url', pi.image_url, 'sort_order', pi.sort_order)
+					json_build_object('url', pi.image_key, 'sort_order', pi.sort_order)
 					ORDER BY pi.sort_order
 				) FILTER (WHERE pi.id IS NOT NULL),
 				'[]'
@@ -494,13 +601,13 @@ func (r *Repository) GetAdminProductByID(id string) (*AdminProductDetail, error)
 	if err := r.db.QueryRowx(query, id).StructScan(&row); err != nil {
 		return nil, apperrors.ErrNotFound
 	}
-	d := mapAdminRowToDetail(row)
+	d := mapAdminRowToDetail(row, r.publicURL)
 	return &d, nil
 }
 
 func (r *Repository) ListAdminProducts(page, limit int) ([]AdminProductDetail, int, error) {
 	var total int
-	if err := r.db.Get(&total, "SELECT COUNT(*) FROM products"); err != nil {
+	if err := r.db.Get(&total, "SELECT COUNT(*) FROM products WHERE status != 'on-going'"); err != nil {
 		return nil, 0, err
 	}
 
@@ -527,7 +634,7 @@ func (r *Repository) ListAdminProducts(page, limit int) ([]AdminProductDetail, i
 			pc.slug AS parent_category_slug,
 			COALESCE(
 				json_agg(
-					json_build_object('url', pi.image_url, 'sort_order', pi.sort_order)
+					json_build_object('url', pi.image_key, 'sort_order', pi.sort_order)
 					ORDER BY pi.sort_order
 				) FILTER (WHERE pi.id IS NOT NULL),
 				'[]'
@@ -538,6 +645,7 @@ func (r *Repository) ListAdminProducts(page, limit int) ([]AdminProductDetail, i
 		LEFT JOIN categories      c  ON c.id          = p.category_id
 		LEFT JOIN categories      pc ON pc.id         = c.parent_id
 		LEFT JOIN product_images  pi ON pi.product_id = p.id
+		WHERE p.status != 'on-going'
 		GROUP BY
 			p.id, p.farmer_id, p.title, p.description,
 			p.price, p.unit, p.city, p.district, p.village,
@@ -563,7 +671,7 @@ func (r *Repository) ListAdminProducts(page, limit int) ([]AdminProductDetail, i
 		if err := rows.StructScan(&row); err != nil {
 			return nil, 0, err
 		}
-		products = append(products, mapAdminRowToDetail(row))
+		products = append(products, mapAdminRowToDetail(row, r.publicURL))
 	}
 	if products == nil {
 		products = []AdminProductDetail{}
@@ -571,13 +679,16 @@ func (r *Repository) ListAdminProducts(page, limit int) ([]AdminProductDetail, i
 	return products, total, nil
 }
 
-func mapAdminRowToDetail(row AdminProductRow) AdminProductDetail {
+func mapAdminRowToDetail(row AdminProductRow, publicURL string) AdminProductDetail {
 	var images []ImageItem
 	if len(row.ImagesJSON) > 0 {
 		json.Unmarshal(row.ImagesJSON, &images)
 	}
 	if images == nil {
 		images = []ImageItem{}
+	}
+	for i := range images {
+		images[i].URL = FormatImageURL(images[i].URL, publicURL)
 	}
 
 	var cat *CategoryInfo
@@ -616,13 +727,13 @@ func mapAdminRowToDetail(row AdminProductRow) AdminProductDetail {
 	return AdminProductDetail{
 		ID:          row.ID,
 		FarmerID:    row.FarmerID,
-		Title:       row.Title,
-		Description: row.Description,
-		Price:       row.Price,
-		Unit:        row.Unit,
-		City:        row.City,
-		District:    row.District,
-		Village:     row.Village,
+		Title:       derefStr(row.Title),
+		Description: derefStr(row.Description),
+		Price:       derefFloat(row.Price),
+		Unit:        derefStr(row.Unit),
+		City:        derefStr(row.City),
+		District:    derefStr(row.District),
+		Village:     derefStr(row.Village),
 		Status:      row.Status,
 		StockStatus: row.StockStatus,
 		AdminNote:   row.AdminNote,
@@ -640,13 +751,33 @@ func derefStr(s *string) string {
 	return *s
 }
 
-func mapRowToPublicProduct(row PublicProductRow) PublicProduct {
+func derefFloat(f *float64) float64 {
+	if f == nil {
+		return 0.0
+	}
+	return *f
+}
+
+func FormatImageURL(keyOrURL, publicURL string) string {
+	if keyOrURL == "" {
+		return ""
+	}
+	if strings.HasPrefix(keyOrURL, "http://") || strings.HasPrefix(keyOrURL, "https://") {
+		return keyOrURL
+	}
+	return strings.TrimRight(publicURL, "/") + "/" + strings.TrimLeft(keyOrURL, "/")
+}
+
+func mapRowToPublicProduct(row PublicProductRow, publicURL string) PublicProduct {
 	var images []ImageItem
 	if len(row.ImagesJSON) > 0 {
 		json.Unmarshal(row.ImagesJSON, &images)
 	}
 	if images == nil {
 		images = []ImageItem{}
+	}
+	for i := range images {
+		images[i].URL = FormatImageURL(images[i].URL, publicURL)
 	}
 
 	cat := CategoryInfo{
@@ -688,3 +819,63 @@ func mapRowToPublicProduct(row PublicProductRow) PublicProduct {
 		},
 	}
 }
+
+func extractImageKey(rawURL, publicURL string) string {
+	if publicURL == "" || rawURL == "" {
+		return rawURL
+	}
+	baseURL := strings.TrimRight(publicURL, "/")
+	if strings.HasPrefix(rawURL, baseURL) {
+		key := strings.TrimPrefix(rawURL, baseURL)
+		return strings.TrimLeft(key, "/")
+	}
+	return rawURL
+}
+
+func mapRowToFarmerDetail(row AdminProductRow, publicURL string) FarmerProductDetail {
+	var images []ImageItem
+	if len(row.ImagesJSON) > 0 {
+		json.Unmarshal(row.ImagesJSON, &images)
+	}
+	if images == nil {
+		images = []ImageItem{}
+	}
+	for i := range images {
+		images[i].URL = FormatImageURL(images[i].URL, publicURL)
+	}
+
+	var cat *CategoryInfo
+	if row.CategoryID != nil {
+		cat = &CategoryInfo{
+			ID:   *row.CategoryID,
+			Name: derefStr(row.CategoryName),
+			Slug: derefStr(row.CategorySlug),
+		}
+		if row.ParentCategoryID != nil {
+			cat.Parent = &ParentInfo{
+				ID:   *row.ParentCategoryID,
+				Name: derefStr(row.ParentCategoryName),
+				Slug: derefStr(row.ParentCategorySlug),
+			}
+		}
+	}
+
+	return FarmerProductDetail{
+		ID:          row.ID,
+		Title:       derefStr(row.Title),
+		Description: derefStr(row.Description),
+		Price:       derefFloat(row.Price),
+		Unit:        derefStr(row.Unit),
+		City:        derefStr(row.City),
+		District:    derefStr(row.District),
+		Village:     derefStr(row.Village),
+		CategoryID:  row.CategoryID,
+		Status:      row.Status,
+		StockStatus: row.StockStatus,
+		AdminNote:   row.AdminNote,
+		CreatedAt:   row.CreatedAt,
+		Images:      images,
+		Category:    cat,
+	}
+}
+

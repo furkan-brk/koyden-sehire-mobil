@@ -1,13 +1,17 @@
 package products
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"net/url"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	apperrors "github.com/koydensehire/backend/pkg/errors"
+	pkgstorage "github.com/koydensehire/backend/pkg/storage"
 )
 
 // CategoryRow is the minimal DB record returned when validating a category.
@@ -41,18 +45,20 @@ func (s *sqlxCategoryGetter) ExecRaw(query string, args ...interface{}) error {
 type Service struct {
 	repo      ProductRepository
 	db        CategoryGetter
+	storage   pkgstorage.Provider
 	publicURL string
 	appEnv    string
 }
 
-func NewService(repo *Repository, db *sqlx.DB, publicURL, appEnv string) *Service {
-	return &Service{repo: repo, db: &sqlxCategoryGetter{db: db}, publicURL: publicURL, appEnv: appEnv}
+func NewService(repo *Repository, db *sqlx.DB, stor pkgstorage.Provider, publicURL, appEnv string) *Service {
+	return &Service{repo: repo, db: &sqlxCategoryGetter{db: db}, storage: stor, publicURL: publicURL, appEnv: appEnv}
 }
 
 // newServiceWithInterfaces is used by tests to inject mocks.
-func newServiceWithInterfaces(repo ProductRepository, db CategoryGetter, publicURL, appEnv string) *Service {
-	return &Service{repo: repo, db: db, publicURL: publicURL, appEnv: appEnv}
+func newServiceWithInterfaces(repo ProductRepository, db CategoryGetter, stor pkgstorage.Provider, publicURL, appEnv string) *Service {
+	return &Service{repo: repo, db: db, storage: stor, publicURL: publicURL, appEnv: appEnv}
 }
+
 
 func (s *Service) ListPublic(f *ProductFilter) ([]PublicProduct, int, error) {
 	return s.repo.ListPublic(f)
@@ -70,7 +76,7 @@ func (s *Service) GetByIDAndFarmer(id, farmerID string) (*Product, error) {
 	return s.repo.GetByIDAndFarmer(id, farmerID)
 }
 
-func (s *Service) ListByFarmer(farmerID string) ([]Product, error) {
+func (s *Service) ListByFarmer(farmerID string) ([]FarmerProductDetail, error) {
 	return s.repo.ListByFarmer(farmerID)
 }
 
@@ -214,3 +220,90 @@ func (s *Service) validateImageURLs(imageURLs []string) error {
 	}
 	return nil
 }
+
+func (s *Service) Complete(ctx context.Context, farmerID string, id string, req *CompleteProductRequest) (*Product, error) {
+	// 1. Verify category exists and is valid Alt kategori (sub-category)
+	cat, err := s.db.GetCategory(req.CategoryID)
+	if err != nil {
+		return nil, apperrors.New("INVALID_CATEGORY", "Kategori bulunamadı", 400)
+	}
+	if !cat.IsActive {
+		return nil, apperrors.New("INVALID_CATEGORY", "Bu kategori aktif değil", 400)
+	}
+	if cat.ParentID == nil {
+		return nil, apperrors.New("INVALID_CATEGORY", "Ana kategori seçilemez, alt kategori seçin", 400)
+	}
+
+	// 2. Verify each image key actually exists in MinIO/R2
+	expectedPrefix := fmt.Sprintf("products/images/%s/%s/", farmerID, id)
+	for _, key := range req.ImageKeys {
+		if !strings.HasPrefix(key, expectedPrefix) {
+			return nil, apperrors.New("INVALID_IMAGE_KEY", fmt.Sprintf("Geçersiz resim yolu: %s", key), 400)
+		}
+
+		if s.storage != nil {
+			exists, err := s.storage.Exists(ctx, key)
+			if err != nil {
+				log.Printf("[product:service] failed to verify S3 object existance for key %s: %v", key, err)
+				return nil, apperrors.ErrInternal
+			}
+			if !exists {
+				return nil, apperrors.New("IMAGE_NOT_FOUND", fmt.Sprintf("Resim yüklenmemiş veya bulunamadı: %s", key), 400)
+			}
+		}
+	}
+
+	// 3. Call repo to complete and save product
+	return s.repo.Complete(id, farmerID, req)
+}
+
+func (s *Service) CleanupDrafts(ctx context.Context) error {
+	// Get draft products older than 24 hours
+	drafts, err := s.repo.GetExpiredDrafts(24 * time.Hour)
+	if err != nil {
+		return fmt.Errorf("getting expired drafts: %w", err)
+	}
+
+	if len(drafts) == 0 {
+		return nil
+	}
+
+	log.Printf("[products:cleaner] found %d expired draft products to clean up", len(drafts))
+
+	for _, p := range drafts {
+		// Delete S3/MinIO files under products/images/{farmer_id}/{product_id}/
+		if s.storage != nil {
+			prefix := fmt.Sprintf("products/images/%s/%s/", p.FarmerID, p.ID)
+			if err := s.storage.DeletePrefix(ctx, prefix); err != nil {
+				log.Printf("[products:cleaner] failed to delete S3 folder prefix %s: %v", prefix, err)
+			}
+		}
+
+		// Delete the product from database (cascade deletes product_images)
+		if err := s.repo.AdminDelete(p.ID); err != nil {
+			log.Printf("[products:cleaner] failed to delete expired draft product %s from DB: %v", p.ID, err)
+		}
+	}
+
+	return nil
+}
+
+func (s *Service) StartDraftCleanupWorker(ctx context.Context, interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	go func() {
+		log.Printf("[products:cleaner] starting draft product cleanup worker with interval %v", interval)
+		for {
+			select {
+			case <-ctx.Done():
+				ticker.Stop()
+				return
+			case <-ticker.C:
+				if err := s.CleanupDrafts(ctx); err != nil {
+					log.Printf("[products:cleaner] failed to cleanup draft products: %v", err)
+				}
+			}
+		}
+	}()
+}
+
+

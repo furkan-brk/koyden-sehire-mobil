@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shimmer/shimmer.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/core/utils/date_formatter.dart';
@@ -323,6 +324,13 @@ class _MyProductCard extends StatelessWidget {
                           : CachedNetworkImage(
                               imageUrl: product.imageUrls.first,
                               fit: BoxFit.cover,
+                              placeholder: (_, __) => Shimmer.fromColors(
+                                baseColor: cs.surfaceContainer,
+                                highlightColor: cs.surfaceContainerLow,
+                                child: Container(
+                                  color: Colors.white,
+                                ),
+                              ),
                               errorWidget: (_, __, ___) => Container(
                                 color: cs.surfaceContainerLow,
                                 alignment: Alignment.center,

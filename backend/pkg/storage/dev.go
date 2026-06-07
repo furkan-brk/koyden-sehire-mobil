@@ -18,9 +18,9 @@ func (d *DevProvider) Upload(ctx context.Context, key string, file io.Reader, co
 	return url, nil
 }
 
-func (d *DevProvider) GeneratePresignedPutURL(ctx context.Context, key string, ttl time.Duration) (string, error) {
+func (d *DevProvider) GeneratePresignedPutURL(ctx context.Context, key string, contentType string, metadata map[string]string, ttl time.Duration) (string, error) {
 	url := "http://localhost:8080/dev-noop-presign"
-	log.Printf("[storage:dev] GeneratePresignedPutURL key=%s → %s", key, url)
+	log.Printf("[storage:dev] GeneratePresignedPutURL key=%s contentType=%s metadata=%v → %s", key, contentType, metadata, url)
 	return url, nil
 }
 
@@ -34,6 +34,23 @@ func (d *DevProvider) Delete(ctx context.Context, key string) error {
 	log.Printf("[storage:dev] Delete key=%s (no-op)", key)
 	return nil
 }
+
+func (d *DevProvider) Exists(ctx context.Context, key string) (bool, error) {
+	log.Printf("[storage:dev] Exists key=%s (no-op -> true)", key)
+	return true, nil
+}
+
+func (d *DevProvider) DeletePrefix(ctx context.Context, prefix string) error {
+	log.Printf("[storage:dev] DeletePrefix prefix=%s (no-op)", prefix)
+	return nil
+}
+
+func (d *DevProvider) GetPublicURL(key string) string {
+	return placeholderURL(key)
+}
+
+
+
 
 func placeholderURL(key string) string {
 	if strings.HasPrefix(key, "profile-images/") {

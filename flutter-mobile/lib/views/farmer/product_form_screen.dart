@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shimmer/shimmer.dart';
 
 import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/app/theme.dart';
@@ -602,6 +603,7 @@ class _ImagePickerSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return SizedBox(
       height: 104,
       child: ListView.separated(
@@ -625,6 +627,13 @@ class _ImagePickerSection extends StatelessWidget {
                   child: CachedNetworkImage(
                     imageUrl: imageUrls[i],
                     fit: BoxFit.cover,
+                    placeholder: (_, __) => Shimmer.fromColors(
+                      baseColor: cs.surfaceContainer,
+                      highlightColor: cs.surfaceContainerLow,
+                      child: Container(
+                        color: Colors.white,
+                      ),
+                    ),
                     errorWidget: (_, __, ___) => Container(
                       color: AppColors.surfaceContainerLow,
                       alignment: Alignment.center,

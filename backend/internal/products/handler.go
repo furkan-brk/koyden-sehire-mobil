@@ -125,6 +125,30 @@ func (h *Handler) FarmerUpdate(c *fiber.Ctx) error {
 	return response.Success(c, p, "Ürün güncellendi")
 }
 
+func (h *Handler) FarmerComplete(c *fiber.Ctx) error {
+	farmerID, _ := c.Locals(middleware.UserIDKey).(string)
+	if farmerID == "" {
+		return response.Unauthorized(c, "Kimlik doğrulama gerekli")
+	}
+	id := c.Params("id")
+
+	var req CompleteProductRequest
+	if err := c.BodyParser(&req); err != nil {
+		return response.BadRequest(c, "Geçersiz istek gövdesi")
+	}
+	if err := validator.Validate(&req); err != nil {
+		return response.BadRequest(c, "Zorunlu alanlar eksik veya geçersiz")
+	}
+
+	p, err := h.svc.Complete(c.Context(), farmerID, id, &req)
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.Success(c, p, "Ürün başarıyla tamamlandı ve yayına alındı")
+}
+
+
 func (h *Handler) FarmerUpdateStatus(c *fiber.Ctx) error {
 	farmerID, _ := c.Locals(middleware.UserIDKey).(string)
 	if farmerID == "" {
@@ -180,7 +204,11 @@ func (h *Handler) AdminApprove(c *fiber.Ctx) error {
 		return response.Error(c, err)
 	}
 	if p != nil && h.push != nil {
-		go h.push.ProductApproved(p.FarmerID, p.Title)
+		title := ""
+		if p.Title != nil {
+			title = *p.Title
+		}
+		go h.push.ProductApproved(p.FarmerID, title)
 	}
 	return response.Success(c, nil, "Ürün onaylandı")
 }
@@ -196,7 +224,11 @@ func (h *Handler) AdminReject(c *fiber.Ctx) error {
 		return response.Error(c, err)
 	}
 	if p != nil && h.push != nil {
-		go h.push.ProductRejected(p.FarmerID, p.Title)
+		title := ""
+		if p.Title != nil {
+			title = *p.Title
+		}
+		go h.push.ProductRejected(p.FarmerID, title)
 	}
 	return response.Success(c, nil, "Ürün reddedildi")
 }

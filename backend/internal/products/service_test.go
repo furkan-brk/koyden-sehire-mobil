@@ -44,11 +44,36 @@ func (m *mockProductRepo) GetByIDAndFarmer(id, farmerID string) (*Product, error
 	return p, nil
 }
 
-func (m *mockProductRepo) ListByFarmer(farmerID string) ([]Product, error) {
-	var out []Product
+func (m *mockProductRepo) ListByFarmer(farmerID string) ([]FarmerProductDetail, error) {
+	var out []FarmerProductDetail
 	for _, p := range m.products {
 		if p.FarmerID == farmerID {
-			out = append(out, *p)
+			var title, desc, unit, city, dist, village string
+			if p.Title != nil { title = *p.Title }
+			if p.Description != nil { desc = *p.Description }
+			if p.Unit != nil { unit = *p.Unit }
+			if p.City != nil { city = *p.City }
+			if p.District != nil { dist = *p.District }
+			if p.Village != nil { village = *p.Village }
+			var price float64
+			if p.Price != nil { price = *p.Price }
+
+			out = append(out, FarmerProductDetail{
+				ID:          p.ID,
+				Title:       title,
+				Description: desc,
+				Price:       price,
+				Unit:        unit,
+				City:        city,
+				District:    dist,
+				Village:     village,
+				CategoryID:  p.CategoryID,
+				Status:      p.Status,
+				StockStatus: p.StockStatus,
+				AdminNote:   p.AdminNote,
+				CreatedAt:   p.CreatedAt,
+				Images:      []ImageItem{},
+			})
 		}
 	}
 	return out, nil
@@ -62,14 +87,14 @@ func (m *mockProductRepo) Create(farmerID string, req *CreateProductRequest) (*P
 	p := &Product{
 		ID:          "prod-new-001",
 		FarmerID:    farmerID,
-		CategoryID:  req.CategoryID,
-		Title:       req.Title,
-		Description: req.Description,
-		Price:       req.Price,
-		Unit:        req.Unit,
-		City:        req.City,
-		District:    req.District,
-		Village:     req.Village,
+		CategoryID:  &req.CategoryID,
+		Title:       &req.Title,
+		Description: &req.Description,
+		Price:       &req.Price,
+		Unit:        &req.Unit,
+		City:        &req.City,
+		District:    &req.District,
+		Village:     &req.Village,
 		Status:      "pending",
 		StockStatus: "available",
 		CreatedAt:   time.Now(),
@@ -84,7 +109,7 @@ func (m *mockProductRepo) Update(id, farmerID string, req *UpdateProductRequest)
 	if !ok {
 		return nil, apperrors.ErrNotFound
 	}
-	p.Title = req.Title
+	p.Title = &req.Title
 	return p, nil
 }
 
@@ -140,6 +165,75 @@ func (m *mockProductRepo) ListAll(page, limit int) ([]Product, int, error) {
 	return out, len(out), nil
 }
 
+func (m *mockProductRepo) GetAdminProductByID(id string) (*AdminProductDetail, error) {
+	p, ok := m.products[id]
+	if !ok {
+		return nil, apperrors.ErrNotFound
+	}
+	title := ""
+	if p.Title != nil {
+		title = *p.Title
+	}
+	return &AdminProductDetail{ID: p.ID, Title: title}, nil
+}
+
+func (m *mockProductRepo) CreateDraft(id, farmerID string) error {
+	if _, ok := m.products[id]; !ok {
+		m.products[id] = &Product{
+			ID:          id,
+			FarmerID:    farmerID,
+			Status:      "on-going",
+			StockStatus: "available",
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+		}
+	}
+	return nil
+}
+
+func (m *mockProductRepo) Complete(id, farmerID string, req *CompleteProductRequest) (*Product, error) {
+	p, ok := m.products[id]
+	if !ok {
+		p = &Product{ID: id, FarmerID: farmerID}
+		m.products[id] = p
+	}
+	p.CategoryID = &req.CategoryID
+	p.Title = &req.Title
+	p.Description = &req.Description
+	p.Price = &req.Price
+	p.Unit = &req.Unit
+	p.City = &req.City
+	p.District = &req.District
+	p.Village = &req.Village
+	p.Status = "successful"
+	return p, nil
+}
+
+func (m *mockProductRepo) ListAdminProducts(page, limit int) ([]AdminProductDetail, int, error) {
+	var out []AdminProductDetail
+	for _, p := range m.products {
+		title := ""
+		if p.Title != nil {
+			title = *p.Title
+		}
+		out = append(out, AdminProductDetail{ID: p.ID, Title: title})
+	}
+	return out, len(out), nil
+}
+
+func (m *mockProductRepo) GetExpiredDrafts(olderThan time.Duration) ([]Product, error) {
+	var out []Product
+	for _, p := range m.products {
+		if p.Status == "on-going" && time.Since(p.CreatedAt) > olderThan {
+			out = append(out, *p)
+		}
+	}
+	return out, nil
+}
+
+
+
+
 // ---------- mock category getter ----------
 
 type mockCategoryGetter struct {
@@ -170,7 +264,7 @@ func newTestProductService(t *testing.T) (*Service, *mockProductRepo) {
 			"cat-parent":  {ParentID: nil, IsActive: true},
 		},
 	}
-	svc := newServiceWithInterfaces(repo, catGetter, "", "development")
+	svc := newServiceWithInterfaces(repo, catGetter, nil, "", "development")
 	return svc, repo
 }
 
@@ -195,8 +289,8 @@ func TestCreateProduct_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected success, got: %v", err)
 	}
-	if p.Title != req.Title {
-		t.Errorf("title mismatch: got %q, want %q", p.Title, req.Title)
+	if p.Title == nil || *p.Title != req.Title {
+		t.Errorf("title mismatch: got %v, want %q", p.Title, req.Title)
 	}
 	if p.Status != "pending" {
 		t.Errorf("expected status=pending, got %q", p.Status)

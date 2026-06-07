@@ -8,14 +8,14 @@ import (
 type Product struct {
 	ID             string    `db:"id" json:"id"`
 	FarmerID       string    `db:"farmer_id" json:"farmer_id"`
-	CategoryID     string    `db:"category_id" json:"category_id"`
-	Title          string    `db:"title" json:"title"`
-	Description    string    `db:"description" json:"description"`
-	Price          float64   `db:"price" json:"price"`
-	Unit           string    `db:"unit" json:"unit"`
-	City           string    `db:"city" json:"city"`
-	District       string    `db:"district" json:"district"`
-	Village        string    `db:"village" json:"village"`
+	CategoryID     *string   `db:"category_id" json:"category_id"`
+	Title          *string   `db:"title" json:"title"`
+	Description    *string   `db:"description" json:"description"`
+	Price          *float64  `db:"price" json:"price"`
+	Unit           *string   `db:"unit" json:"unit"`
+	City           *string   `db:"city" json:"city"`
+	District       *string   `db:"district" json:"district"`
+	Village        *string   `db:"village" json:"village"`
 	Status         string    `db:"status" json:"status"`
 	PreviousStatus *string   `db:"previous_status" json:"previous_status,omitempty"`
 	StockStatus    string    `db:"stock_status" json:"stock_status"`
@@ -27,10 +27,11 @@ type Product struct {
 type ProductImage struct {
 	ID        string    `db:"id" json:"id"`
 	ProductID string    `db:"product_id" json:"product_id"`
-	ImageURL  string    `db:"image_url" json:"url"`
+	ImageKey  string    `db:"image_key" json:"key"`
 	SortOrder int       `db:"sort_order" json:"sort_order"`
 	CreatedAt time.Time `db:"created_at" json:"created_at"`
 }
+
 
 type PublicProductRow struct {
 	ID                    string          `db:"id"`
@@ -126,13 +127,13 @@ type AdminProductFarmerInfo struct {
 type AdminProductRow struct {
 	ID          string          `db:"id"`
 	FarmerID    string          `db:"farmer_id"`
-	Title       string          `db:"title"`
-	Description string          `db:"description"`
-	Price       float64         `db:"price"`
-	Unit        string          `db:"unit"`
-	City        string          `db:"city"`
-	District    string          `db:"district"`
-	Village     string          `db:"village"`
+	Title       *string         `db:"title"`
+	Description *string         `db:"description"`
+	Price       *float64        `db:"price"`
+	Unit        *string         `db:"unit"`
+	City        *string         `db:"city"`
+	District    *string         `db:"district"`
+	Village     *string         `db:"village"`
 	Status      string          `db:"status"`
 	StockStatus string          `db:"stock_status"`
 	AdminNote   *string         `db:"admin_note"`
@@ -175,4 +176,22 @@ type AdminProductDetail struct {
 	Images      []ImageItem             `json:"images"`
 	Category    *CategoryInfo           `json:"category,omitempty"`
 	Farmer      *AdminProductFarmerInfo `json:"farmer,omitempty"`
+}
+
+type FarmerProductDetail struct {
+	ID          string        `json:"id"`
+	Title       string        `json:"title"`
+	Description string        `json:"description"`
+	Price       float64       `json:"price"`
+	Unit        string        `json:"unit"`
+	City        string        `json:"city"`
+	District    string        `json:"district"`
+	Village     string        `json:"village"`
+	CategoryID  *string       `json:"category_id,omitempty"`
+	Status      string        `json:"status"`
+	StockStatus string        `json:"stock_status"`
+	AdminNote   *string       `json:"admin_note,omitempty"`
+	CreatedAt   time.Time     `json:"created_at"`
+	Images      []ImageItem   `json:"images"`
+	Category    *CategoryInfo `json:"category,omitempty"`
 }

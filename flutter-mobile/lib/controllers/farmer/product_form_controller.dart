@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:get/get.dart';
 
 import 'package:koyden_sehire/core/errors/app_exception.dart';
@@ -15,7 +16,18 @@ class ProductFormController extends GetxController {
   final RxnString errorMessage = RxnString();
   final RxBool saved = false.obs;
 
+  final RxnString productId = RxnString();
+  final RxList<String> imageKeys = <String>[].obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    productId.value = _generateUuid();
+  }
+
   void hydrate(FarmerProductModel m) {
+    productId.value = m.id;
+    imageKeys.value = m.imageUrls.map((url) => _extractKey(url)).toList();
     data.value = ProductFormData(
       title: m.title,
       description: m.description,
@@ -36,6 +48,8 @@ class ProductFormController extends GetxController {
 
   void reset() {
     data.value = const ProductFormData();
+    productId.value = _generateUuid();
+    imageKeys.clear();
     isSubmitting.value = false;
     isUploadingImage.value = false;
     errorMessage.value = null;
@@ -50,19 +64,26 @@ class ProductFormController extends GetxController {
     isUploadingImage.value = true;
     errorMessage.value = null;
     try {
-      final url = await _repo.uploadProductImage(
+      final pId = productId.value ?? _generateUuid();
+      if (productId.value == null) {
+        productId.value = pId;
+      }
+      final result = await _repo.uploadProductImage(
+        pId,
         bytes,
-        filename: filename,
         contentType: contentType,
       );
       data.value =
-          data.value.copyWith(imageUrls: [...data.value.imageUrls, url]);
+          data.value.copyWith(imageUrls: [...data.value.imageUrls, result.url]);
+      imageKeys.add(result.key);
       return true;
     } on AppException catch (e) {
       errorMessage.value = e.message;
       return false;
-    } catch (_) {
-      errorMessage.value = 'Görsel yüklenemedi';
+    } catch (e, stack) {
+      print('[uploadImage] Error: $e');
+      print('[uploadImage] Stack trace: $stack');
+      errorMessage.value = 'Görsel yüklenemedi: $e';
       return false;
     } finally {
       isUploadingImage.value = false;
@@ -72,6 +93,9 @@ class ProductFormController extends GetxController {
   void removeImage(int index) {
     final list = [...data.value.imageUrls]..removeAt(index);
     data.value = data.value.copyWith(imageUrls: list);
+    if (index < imageKeys.length) {
+      imageKeys.removeAt(index);
+    }
   }
 
   Future<bool> submit({String? editingId}) async {
@@ -79,7 +103,8 @@ class ProductFormController extends GetxController {
     errorMessage.value = null;
     try {
       if (editingId == null) {
-        await _repo.create(data.value);
+        final pId = productId.value ?? _generateUuid();
+        await _repo.complete(pId, data.value, imageKeys);
       } else {
         await _repo.update(editingId, data.value);
       }
@@ -95,4 +120,35 @@ class ProductFormController extends GetxController {
       isSubmitting.value = false;
     }
   }
+
+  String _generateUuid() {
+    final random = Random.secure();
+    final values = List<int>.generate(16, (i) => random.nextInt(256));
+    values[6] = (values[6] & 0x0f) | 0x40;
+    values[8] = (values[8] & 0x3f) | 0x80;
+    final hex = values.map((val) => val.toRadixString(16).padLeft(2, '0')).toList();
+    return '${hex.sublist(0, 4).join()}-${hex.sublist(4, 6).join()}-${hex.sublist(6, 8).join()}-${hex.sublist(8, 10).join()}-${hex.sublist(10, 16).join()}';
+  }
+
+  String _extractKey(String url) {
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      return url;
+    }
+    try {
+      final uri = Uri.parse(url);
+      final pathSegments = uri.pathSegments;
+      final index = pathSegments.indexOf('products');
+      if (index != -1) {
+        return pathSegments.sublist(index).join('/');
+      }
+      final altIndex = pathSegments.indexOf('product-images');
+      if (altIndex != -1) {
+        return pathSegments.sublist(altIndex).join('/');
+      }
+      return uri.path;
+    } catch (_) {
+      return url;
+    }
+  }
 }
+

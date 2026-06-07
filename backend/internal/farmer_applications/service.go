@@ -34,7 +34,7 @@ func (s *FullService) GenerateVideoPresignURL(phone, inviteCode, contentType str
 	timestamp := time.Now().Unix()
 	key := fmt.Sprintf("application-videos/pending/%s/%d.mp4", phone, timestamp)
 
-	url, err := s.storage.GeneratePresignedPutURL(ctx, key, 15*time.Minute)
+	url, err := s.storage.GeneratePresignedPutURL(ctx, key, "video/mp4", nil, 15*time.Minute)
 	if err != nil {
 		return nil, apperrors.ErrInternal
 	}

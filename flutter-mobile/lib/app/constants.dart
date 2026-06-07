@@ -67,4 +67,17 @@ class AppConstants {
     'Kırıkkale', 'Batman', 'Şırnak', 'Bartın', 'Ardahan',
     'Iğdır', 'Yalova', 'Karabük', 'Kilis', 'Osmaniye', 'Düzce',
   ];
+  static String formatDevUrl(String url) {
+    if (url.isEmpty) return url;
+    String formatted = url;
+    if (isDevDefaultBaseUrl) {
+      formatted = formatted
+          .replaceAll('//localhost:', '//10.0.2.2:')
+          .replaceAll('//127.0.0.1:', '//10.0.2.2:')
+          .replaceAll('//minio:', '//10.0.2.2:');
+    } else {
+      formatted = formatted.replaceAll('//minio:', '//localhost:');
+    }
+    return formatted;
+  }
 }

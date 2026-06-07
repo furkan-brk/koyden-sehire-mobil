@@ -1,3 +1,5 @@
+import 'package:koyden_sehire/app/constants.dart';
+
 /// Compact representation embedded in a product response.
 class FarmerSummary {
   final String id;
@@ -27,7 +29,9 @@ class FarmerSummary {
         displayName: json['display_name']?.toString() ??
             json['full_name']?.toString() ??
             '',
-        profileImageUrl: json['profile_image_url']?.toString(),
+        profileImageUrl: json['profile_image_url'] != null
+            ? AppConstants.formatDevUrl(json['profile_image_url'].toString())
+            : null,
         city: json['city']?.toString() ?? '',
         district: json['district']?.toString() ?? '',
         village: json['village']?.toString(),
@@ -69,7 +73,9 @@ class FarmerProfile {
   factory FarmerProfile.fromJson(Map<String, dynamic> json) => FarmerProfile(
         id: (json['id'] ?? json['user_id'])?.toString() ?? '',
         displayName: json['display_name']?.toString() ?? '',
-        profileImageUrl: json['profile_image_url']?.toString(),
+        profileImageUrl: json['profile_image_url'] != null
+            ? AppConstants.formatDevUrl(json['profile_image_url'].toString())
+            : null,
         city: json['city']?.toString() ?? '',
         district: json['district']?.toString() ?? '',
         village: json['village']?.toString(),

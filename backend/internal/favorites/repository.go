@@ -10,11 +10,12 @@ import (
 )
 
 type Repository struct {
-	db *sqlx.DB
+	db        *sqlx.DB
+	publicURL string
 }
 
-func NewRepository(db *sqlx.DB) *Repository {
-	return &Repository{db: db}
+func NewRepository(db *sqlx.DB, publicURL string) *Repository {
+	return &Repository{db: db, publicURL: publicURL}
 }
 
 func (r *Repository) Add(userID, productID string) error {
@@ -59,7 +60,7 @@ func (r *Repository) ListWithProducts(userID string) ([]products.PublicProduct, 
 			COALESCE(
 				json_agg(
 					json_build_object(
-						'url', pi.image_url,
+						'url', pi.image_key,
 						'sort_order', pi.sort_order
 					) ORDER BY pi.sort_order
 				) FILTER (WHERE pi.id IS NOT NULL),
@@ -95,7 +96,7 @@ func (r *Repository) ListWithProducts(userID string) ([]products.PublicProduct, 
 		if err := rows.StructScan(&row); err != nil {
 			return nil, err
 		}
-		result = append(result, mapRow(row))
+		result = append(result, r.mapRow(row))
 	}
 
 	if result == nil {
@@ -104,13 +105,16 @@ func (r *Repository) ListWithProducts(userID string) ([]products.PublicProduct, 
 	return result, nil
 }
 
-func mapRow(row products.PublicProductRow) products.PublicProduct {
+func (r *Repository) mapRow(row products.PublicProductRow) products.PublicProduct {
 	var images []products.ImageItem
 	if len(row.ImagesJSON) > 0 {
 		json.Unmarshal(row.ImagesJSON, &images)
 	}
 	if images == nil {
 		images = []products.ImageItem{}
+	}
+	for i := range images {
+		images[i].URL = products.FormatImageURL(images[i].URL, r.publicURL)
 	}
 
 	cat := products.CategoryInfo{

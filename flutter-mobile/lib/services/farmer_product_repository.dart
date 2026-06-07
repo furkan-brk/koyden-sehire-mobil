@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/core/api/api_client.dart';
 import 'package:koyden_sehire/core/api/api_endpoints.dart';
 import 'package:koyden_sehire/models/product_form_config.dart';
@@ -77,31 +78,6 @@ class FarmerProductRepository {
     );
   }
 
-  /// Uploads a product image via multipart POST.
-  /// Returns the public URL of the uploaded image.
-  Future<String> uploadProductImage(
-    List<int> bytes, {
-    String filename = 'photo.jpg',
-    String contentType = 'image/jpeg',
-  }) {
-    return _api.post(
-      ApiEndpoints.uploadProductImage,
-      data: FormData.fromMap({
-        'file': MultipartFile.fromBytes(
-          bytes,
-          filename: filename,
-          contentType: DioMediaType.parse(contentType),
-        ),
-      }),
-      parse: (env) {
-        // Backend uploads handler always returns `{success, data: {url: "..."}}`
-        // (see backend/internal/uploads/dto.go::UploadImageResponse).
-        final data = ((env as Map)['data'] as Map?)?.cast<String, dynamic>() ??
-            const {};
-        return data['url']?.toString() ?? '';
-      },
-    );
-  }
 
   /// Uploads a profile image via multipart POST.
   /// Returns the public URL of the uploaded image.
@@ -128,4 +104,80 @@ class FarmerProductRepository {
       },
     );
   }
+
+  /// Uploads a product image via S3 presigned URL.
+  /// First obtains a presigned URL, then uploads the file directly to S3.
+  /// Returns the key and public URL.
+  Future<UploadResult> uploadProductImage(
+    String productId,
+    List<int> bytes, {
+    String contentType = 'image/jpeg',
+  }) async {
+    // 1. Get presigned URL
+    final Map<String, dynamic> presignData = await _api.post(
+      ApiEndpoints.uploadProductImagePresign,
+      data: {
+        'product_id': productId,
+        'file_size': bytes.length,
+        'content_type': contentType,
+      },
+      parse: (env) {
+        final data = ((env as Map)['data'] as Map?)?.cast<String, dynamic>() ??
+            const {};
+        return data;
+      },
+    );
+
+    final uploadUrl = AppConstants.formatDevUrl(presignData['upload_url']?.toString() ?? '');
+    final key = presignData['key']?.toString() ?? '';
+    final publicUrl = AppConstants.formatDevUrl(presignData['url']?.toString() ?? '');
+
+    if (uploadUrl.isEmpty || key.isEmpty) {
+      throw Exception('Presigned URL alınamadı');
+    }
+
+    final Map<String, dynamic> headersMap = (presignData['headers'] as Map?)?.cast<String, dynamic>() ?? {};
+
+    // 2. Direct PUT to S3 using a clean Dio client to prevent JWT headers insertion
+    final response = await Dio().put(
+      uploadUrl,
+      data: bytes,
+      options: Options(
+        headers: headersMap.isNotEmpty
+            ? headersMap
+            : {
+                Headers.contentTypeHeader: contentType,
+              },
+      ),
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw Exception('Görsel sunucuya yüklenemedi: ${response.statusCode}');
+    }
+
+    return UploadResult(url: publicUrl, key: key);
+  }
+
+  /// Completes a product draft and updates its status to 'successful'
+  Future<void> complete(
+    String id,
+    ProductFormData data,
+    List<String> imageKeys,
+  ) async {
+    await _api.post(
+      ApiEndpoints.farmerProductComplete(id),
+      data: {
+        ...data.toJson(),
+        'image_keys': imageKeys,
+      },
+      parse: (_) => null,
+    );
+  }
 }
+
+class UploadResult {
+  final String url;
+  final String key;
+  UploadResult({required this.url, required this.key});
+}
+

@@ -1,5 +1,7 @@
 package products
 
+import "time"
+
 // ProductRepository is the data-access interface used by Service.
 // The concrete *Repository satisfies this interface.
 type ProductRepository interface {
@@ -7,7 +9,7 @@ type ProductRepository interface {
 	GetPublicByID(id string) (*PublicProduct, error)
 	GetByID(id string) (*Product, error)
 	GetByIDAndFarmer(id, farmerID string) (*Product, error)
-	ListByFarmer(farmerID string) ([]Product, error)
+	ListByFarmer(farmerID string) ([]FarmerProductDetail, error)
 	ListByFarmerPublic(farmerID string) ([]PublicProduct, error)
 	Create(farmerID string, req *CreateProductRequest) (*Product, error)
 	Update(id, farmerID string, req *UpdateProductRequest) (*Product, error)
@@ -19,4 +21,7 @@ type ProductRepository interface {
 	ListAll(page, limit int) ([]Product, int, error)
 	GetAdminProductByID(id string) (*AdminProductDetail, error)
 	ListAdminProducts(page, limit int) ([]AdminProductDetail, int, error)
+	CreateDraft(id, farmerID string) error
+	Complete(id, farmerID string, req *CompleteProductRequest) (*Product, error)
+	GetExpiredDrafts(olderThan time.Duration) ([]Product, error)
 }

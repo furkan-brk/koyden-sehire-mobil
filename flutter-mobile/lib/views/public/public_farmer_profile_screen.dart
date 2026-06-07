@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
@@ -179,8 +180,12 @@ class _ProfileBody extends StatelessWidget {
                   CachedNetworkImage(
                     imageUrl: profile.profileImageUrl!,
                     fit: BoxFit.cover,
-                    placeholder: (_, __) => Container(
-                      color: cs.surfaceContainerLow,
+                    placeholder: (_, __) => Shimmer.fromColors(
+                      baseColor: cs.surfaceContainer,
+                      highlightColor: cs.surfaceContainerLow,
+                      child: Container(
+                        color: Colors.white,
+                      ),
                     ),
                     errorWidget: (_, __, ___) =>
                         _PlaceholderHero(cs: cs),

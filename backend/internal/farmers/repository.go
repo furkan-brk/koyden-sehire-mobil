@@ -8,14 +8,16 @@ import (
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	apperrors "github.com/koydensehire/backend/pkg/errors"
+	"github.com/koydensehire/backend/internal/products"
 )
 
 type Repository struct {
-	db *sqlx.DB
+	db        *sqlx.DB
+	publicURL string
 }
 
-func NewRepository(db *sqlx.DB) *Repository {
-	return &Repository{db: db}
+func NewRepository(db *sqlx.DB, publicURL string) *Repository {
+	return &Repository{db: db, publicURL: publicURL}
 }
 
 func (r *Repository) GetPublicByID(id string) (*PublicFarmerDetail, error) {
@@ -356,17 +358,18 @@ func (r *Repository) GetRecentProductsByFarmerID(farmerID uuid.UUID, limit int) 
 		Title     string    `db:"title"`
 		Status    string    `db:"status"`
 		CreatedAt time.Time `db:"created_at"`
-		ImageURL  *string   `db:"image_url"`
+		ImageKey  *string   `db:"image_key"`
 	}
 	var rows []row
 	err := r.db.Select(&rows, `
-		SELECT p.id, p.title, p.status, p.created_at,
-		       (SELECT pi.image_url FROM product_images pi
+		SELECT p.id, COALESCE(p.title, '') AS title, COALESCE(p.status, '') AS status, p.created_at,
+		       (SELECT pi.image_key FROM product_images pi
 		        WHERE pi.product_id = p.id
 		        ORDER BY pi.sort_order ASC
-		        LIMIT 1) AS image_url
+		        LIMIT 1) AS image_key
 		FROM products p
 		WHERE p.farmer_id = $1
+		  AND p.status NOT IN ('on-going', 'successful', 'failed')
 		ORDER BY p.created_at DESC
 		LIMIT $2
 	`, farmerID, limit)
@@ -374,15 +377,15 @@ func (r *Repository) GetRecentProductsByFarmerID(farmerID uuid.UUID, limit int) 
 		return nil, err
 	}
 	items := make([]RecentProductItem, len(rows))
-	for i, r := range rows {
+	for i, row := range rows {
 		items[i] = RecentProductItem{
-			ID:        r.ID,
-			Name:      r.Title,
-			Status:    r.Status,
-			CreatedAt: r.CreatedAt,
+			ID:        row.ID,
+			Name:      row.Title,
+			Status:    row.Status,
+			CreatedAt: row.CreatedAt,
 		}
-		if r.ImageURL != nil {
-			items[i].ImageURL = *r.ImageURL
+		if row.ImageKey != nil {
+			items[i].ImageURL = products.FormatImageURL(*row.ImageKey, r.publicURL)
 		}
 	}
 	return items, nil

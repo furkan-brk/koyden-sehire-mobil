@@ -12,6 +12,19 @@ type CreateProductRequest struct {
 	ImageURLs   []string `json:"image_urls"`
 }
 
+type CompleteProductRequest struct {
+	CategoryID  string   `json:"category_id" validate:"required"`
+	Title       string   `json:"title" validate:"required"`
+	Description string   `json:"description" validate:"required"`
+	Price       float64  `json:"price" validate:"required,gt=0"`
+	Unit        string   `json:"unit" validate:"required"`
+	City        string   `json:"city" validate:"required"`
+	District    string   `json:"district" validate:"required"`
+	Village     string   `json:"village" validate:"required"`
+	ImageKeys   []string `json:"image_keys" validate:"required,min=1"`
+}
+
+
 type UpdateProductRequest struct {
 	CategoryID  string   `json:"category_id" validate:"required"`
 	Title       string   `json:"title" validate:"required"`

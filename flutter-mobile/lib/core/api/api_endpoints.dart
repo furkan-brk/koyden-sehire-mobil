@@ -34,9 +34,11 @@ class ApiEndpoints {
   static const String farmerProducts2 = '/farmer/products';
   static const String farmerInvites = '/farmer/invites';
   static const String uploadProductImage = '/farmer/uploads/product-image';
+  static const String uploadProductImagePresign = '/farmer/uploads/product-image/presign';
   static const String uploadProfileImage = '/farmer/uploads/profile-image';
 
   static String farmerProduct(String id) => '/farmer/products/$id';
+  static String farmerProductComplete(String id) => '/farmer/products/$id/complete';
   static String farmerProductStatus(String id) =>
       '/farmer/products/$id/status';
 

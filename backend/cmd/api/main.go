@@ -87,6 +87,7 @@ func main() {
 	if storageConfigured {
 		storageProvider, err = pkgstorage.NewR2Provider(
 			cfg.Storage.Endpoint,
+			cfg.Storage.PresignEndpoint,
 			cfg.Storage.AccessKey,
 			cfg.Storage.SecretKey,
 			cfg.Storage.Bucket,
@@ -143,7 +144,7 @@ func main() {
 	catHandler := categories.NewHandler(catSvc)
 
 	productRepo := products.NewRepository(db, cfg.Storage.PublicURL)
-	productSvc := products.NewService(productRepo, db, cfg.Storage.PublicURL, cfg.App.Env)
+	productSvc := products.NewService(productRepo, db, storageProvider, cfg.Storage.PublicURL, cfg.App.Env)
 	productHandler := products.NewHandler(productSvc)
 
 	inviteRepo := invites.NewRepository(db)
@@ -153,16 +154,16 @@ func main() {
 	appRepo := farmer_applications.NewRepository(db)
 	appHandler := farmer_applications.NewHandler(appRepo, rdb, db, storageProvider, cfg.App.Env)
 
-	farmerRepo := farmers.NewRepository(db)
+	farmerRepo := farmers.NewRepository(db, cfg.Storage.PublicURL)
 	farmerSvc := farmers.NewService(farmerRepo)
 	farmerHandler := farmers.NewHandler(farmerSvc)
 	farmerHandler.SetPushNotifier(pushSvc)
 
-	uploadSvc := uploads.NewService(storageProvider)
+	uploadSvc := uploads.NewService(storageProvider, productRepo)
 	uploadHandler := uploads.NewHandler(uploadSvc)
 	productHandler.SetPushNotifier(pushSvc)
 
-	favRepo := favorites.NewRepository(db)
+	favRepo := favorites.NewRepository(db, cfg.Storage.PublicURL)
 	favSvc := favorites.NewService(favRepo)
 	favHandler := favorites.NewHandler(favSvc)
 
@@ -265,9 +266,11 @@ func main() {
 	farmer.Post("/products", append(fm, productHandler.FarmerCreate)...)
 	farmer.Get("/products/:id", append(fm, productHandler.FarmerGetByID)...)
 	farmer.Put("/products/:id", append(fm, productHandler.FarmerUpdate)...)
+	farmer.Post("/products/:id/complete", append(fm, productHandler.FarmerComplete)...)
 	farmer.Patch("/products/:id/status", append(fm, productHandler.FarmerUpdateStatus)...)
 	farmer.Get("/invites", append(fm, inviteHandler.FarmerInvites)...)
 	farmer.Post("/uploads/product-image", append(fm, uploadHandler.UploadProductImage)...)
+	farmer.Post("/uploads/product-image/presign", append(fm, uploadHandler.GetProductImagePresignedURL)...)
 	farmer.Post("/uploads/profile-image", append(fm, uploadHandler.UploadProfileImage)...)
 	farmer.Post("/push-token", append(fm, dtHandler.Upsert)...)
 	farmer.Delete("/push-token", append(fm, dtHandler.Remove)...)
@@ -318,6 +321,9 @@ func main() {
 	adminGroup.Get("/audit-logs", adminHandler.ListAuditLogs)
 	adminGroup.Get("/reports", reportHandler.AdminList)
 	adminGroup.Patch("/reports/:id/review", reportHandler.AdminReview)
+
+	// Start draft products cleanup worker (checks every hour)
+	productSvc.StartDraftCleanupWorker(context.Background(), 1*time.Hour)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)

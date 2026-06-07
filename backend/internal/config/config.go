@@ -52,12 +52,13 @@ type OTPConfig struct {
 }
 
 type StorageConfig struct {
-	Provider  string
-	Endpoint  string
-	Bucket    string
-	AccessKey string
-	SecretKey string
-	PublicURL string
+	Provider        string
+	Endpoint        string
+	PresignEndpoint string // S3_PRESIGN_ENDPOINT — client-accessible URL for presigned PUT URLs
+	Bucket          string
+	AccessKey       string
+	SecretKey       string
+	PublicURL       string
 }
 
 type SMSConfig struct {
@@ -128,12 +129,13 @@ func Load() (*Config, error) {
 			ResendCooldownSeconds: otpCooldown,
 		},
 		Storage: StorageConfig{
-			Provider:  getEnv("STORAGE_PROVIDER", "r2"),
-			Endpoint:  getEnv("S3_ENDPOINT", ""),
-			Bucket:    getEnv("S3_BUCKET", "koydensehre"),
-			AccessKey: getEnv("S3_ACCESS_KEY", ""),
-			SecretKey: getEnv("S3_SECRET_KEY", ""),
-			PublicURL: getEnv("S3_PUBLIC_URL", ""),
+			Provider:        getEnv("STORAGE_PROVIDER", "r2"),
+			Endpoint:        getEnv("S3_ENDPOINT", ""),
+			PresignEndpoint: getEnv("S3_PRESIGN_ENDPOINT", getEnv("S3_ENDPOINT", "")),
+			Bucket:          getEnv("S3_BUCKET", "koydensehre"),
+			AccessKey:       getEnv("S3_ACCESS_KEY", ""),
+			SecretKey:       getEnv("S3_SECRET_KEY", ""),
+			PublicURL:       getEnv("S3_PUBLIC_URL", ""),
 		},
 		SMS: SMSConfig{
 			Username: getEnv("NETGSM_USERNAME", ""),

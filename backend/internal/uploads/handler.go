@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/koydensehire/backend/internal/middleware"
 	"github.com/koydensehire/backend/pkg/response"
+	"github.com/koydensehire/backend/pkg/validator"
 )
 
 type Handler struct {
@@ -57,3 +58,23 @@ func (h *Handler) UploadProfileImage(c *fiber.Ctx) error {
 
 	return response.Success(c, resp, "Profil resmi yüklendi")
 }
+
+func (h *Handler) GetProductImagePresignedURL(c *fiber.Ctx) error {
+	farmerID := c.Locals(middleware.UserIDKey).(string)
+
+	var req PresignedURLRequest
+	if err := c.BodyParser(&req); err != nil {
+		return response.BadRequest(c, "Geçersiz istek gövdesi")
+	}
+	if err := validator.Validate(&req); err != nil {
+		return response.BadRequest(c, "Zorunlu alanlar eksik veya geçersiz")
+	}
+
+	resp, err := h.svc.GenerateProductImagePresignedURL(c.Context(), farmerID, &req)
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	return response.Success(c, resp, "Presigned URL oluşturuldu")
+}
+
