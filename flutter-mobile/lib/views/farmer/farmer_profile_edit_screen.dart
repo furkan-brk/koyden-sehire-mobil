@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/core/utils/validators.dart';
@@ -28,10 +29,24 @@ class _FarmerProfileEditScreenState extends State<FarmerProfileEditScreen> {
 
   FarmerProfileController get _ctrl => Get.find<FarmerProfileController>();
 
-  Future<void> _pickProfileImage() async {
+  Future<void> _pickProfileImage(ImageSource source) async {
+    if (source == ImageSource.camera) {
+      final status = await Permission.camera.request();
+      if (status.isPermanentlyDenied) {
+        if (mounted) {
+          context.snack(
+            'Kamerayı açmak için lütfen ayarlardan kamera iznini verin.',
+            isError: true,
+          );
+        }
+        return;
+      }
+      if (!status.isGranted) return;
+    }
+
     final picker = ImagePicker();
     final picked = await picker.pickImage(
-      source: ImageSource.gallery,
+      source: source,
       maxWidth: 1024,
       imageQuality: 85,
     );
@@ -79,6 +94,49 @@ class _FarmerProfileEditScreenState extends State<FarmerProfileEditScreen> {
     }
   }
 
+  void _showImageSourceSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      ),
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.outlineVariant,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Galeriden Seç'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickProfileImage(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: const Text('Kameradan Çek'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickProfileImage(ImageSource.camera);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -104,7 +162,7 @@ class _FarmerProfileEditScreenState extends State<FarmerProfileEditScreen> {
               profile: p,
               ctrl: ctrl,
               formKey: _formKey,
-              onPickImage: _pickProfileImage,
+              onPickImage: _showImageSourceSheet,
               onSave: _save,
             ),
             const SizedBox(height: 32),
@@ -239,6 +297,14 @@ class _ProfileFormCard extends StatelessWidget {
                       ctrl.edit((e) => e.copyWith(village: v)),
                   validator: (v) =>
                       Validators.required(v, field: 'Köy/Mahalle'),
+                ),
+                const SizedBox(height: 12),
+                AppTextField(
+                  label: 'Açık Adres',
+                  initialValue: profile.address,
+                  maxLines: 2,
+                  onChanged: (v) =>
+                      ctrl.edit((e) => e.copyWith(address: v)),
                 ),
                 const SizedBox(height: 12),
                 AppTextField(

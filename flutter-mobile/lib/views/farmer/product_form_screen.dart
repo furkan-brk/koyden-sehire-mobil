@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shimmer/shimmer.dart';
 
 import 'package:koyden_sehire/app/constants.dart';
@@ -108,6 +109,20 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       );
       return;
     }
+    if (source == ImageSource.camera) {
+      final status = await Permission.camera.request();
+      if (status.isPermanentlyDenied) {
+        if (mounted) {
+          context.snack(
+            'Kamerayı açmak için lütfen ayarlardan kamera iznini verin.',
+            isError: true,
+          );
+        }
+        return;
+      }
+      if (!status.isGranted) return;
+    }
+
     final picker = ImagePicker();
     final picked = await picker.pickImage(
       source: source,

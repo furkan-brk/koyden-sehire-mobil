@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -224,7 +223,11 @@ class PushNotificationService extends GetxService {
     if (token == null) return;
 
     final auth = Get.find<AuthService>();
-    final platform = kIsWeb ? 'web' : Platform.isIOS ? 'ios' : 'android';
+    final platform = kIsWeb
+        ? 'web'
+        : Platform.isIOS
+            ? 'ios'
+            : 'android';
     try {
       switch (auth.status.value) {
         case AuthStatus.farmerActive:

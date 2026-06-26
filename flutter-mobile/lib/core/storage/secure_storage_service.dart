@@ -7,6 +7,7 @@ class SecureStorageService {
   static const _kUserRole = 'user_role';
   static const _kUserStatus = 'user_status';
   static const _kDisplayName = 'display_name';
+  static const _kRememberMe = 'remember_me';
 
   static const _storage = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
@@ -44,6 +45,15 @@ class SecureStorageService {
   Future<String?> getUserRole() => _storage.read(key: _kUserRole);
   Future<String?> getUserStatus() => _storage.read(key: _kUserStatus);
   Future<String?> getDisplayName() => _storage.read(key: _kDisplayName);
+
+  Future<void> saveRememberMe(bool value) =>
+      _storage.write(key: _kRememberMe, value: value.toString());
+
+  /// Returns `true` (persist session) by default when the key has never been written.
+  Future<bool> getRememberMe() async {
+    final v = await _storage.read(key: _kRememberMe);
+    return v != 'false';
+  }
 
   Future<void> clearAll() => _storage.deleteAll();
 }

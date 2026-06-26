@@ -23,6 +23,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscure = true;
+  bool _rememberMe = true;
 
   AuthService get _auth => Get.find<AuthService>();
 
@@ -83,6 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
     await _auth.login(
       phone: _phoneController.text.trim(),
       password: _passwordController.text,
+      rememberMe: _rememberMe,
     );
   }
 
@@ -151,12 +153,29 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: () => setState(() => _obscure = !_obscure),
                   ),
                 ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () => context.push('/forgot-password'),
-                    child: const Text('Şifremi Unuttum'),
-                  ),
+                Row(
+                  children: [
+                    Checkbox(
+                      value: _rememberMe,
+                      onChanged: (v) =>
+                          setState(() => _rememberMe = v ?? true),
+                      visualDensity: VisualDensity.compact,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    GestureDetector(
+                      onTap: () =>
+                          setState(() => _rememberMe = !_rememberMe),
+                      child: Text(
+                        'Beni Hatırla',
+                        style: context.text.bodySmall,
+                      ),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () => context.push('/forgot-password'),
+                      child: const Text('Şifremi Unuttum'),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 Obx(() => AppButton(

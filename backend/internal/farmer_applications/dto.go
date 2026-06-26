@@ -12,6 +12,7 @@ type CreateApplicationRequest struct {
 	City                string   `json:"city" validate:"required"`
 	District            string   `json:"district" validate:"required"`
 	Village             string   `json:"village"`
+	Address             *string  `json:"address"`
 	Bio                 string   `json:"bio" validate:"required"`
 	ProductCategories   []string `json:"product_categories" validate:"required"`
 	ProductExamples     string   `json:"product_examples" validate:"required"`

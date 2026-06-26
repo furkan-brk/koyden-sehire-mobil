@@ -1,7 +1,8 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -40,6 +41,9 @@ class _SelectLocationScreenState extends State<SelectLocationScreen>
   String _addressLine1 = '';
   String _addressLine2 = '';
 
+  final _searchController = TextEditingController();
+  bool _isSearching = false;
+
   @override
   void initState() {
     super.initState();
@@ -69,6 +73,7 @@ class _SelectLocationScreenState extends State<SelectLocationScreen>
 
   @override
   void dispose() {
+    _searchController.dispose();
     _debounce?.cancel();
     _pinAnimCtrl.dispose();
     super.dispose();
@@ -77,10 +82,31 @@ class _SelectLocationScreenState extends State<SelectLocationScreen>
   void _onMapMoved(LatLng center) {
     _center = center;
     _debounce?.cancel();
+    if (!_isGeocodingLoading) setState(() => _isGeocodingLoading = true);
+    
     _debounce = Timer(
       const Duration(milliseconds: 600),
       () => _reverseGeocode(center),
     );
+  }
+
+  Future<void> _searchLocation(String query) async {
+    if (query.trim().isEmpty) return;
+    setState(() => _isSearching = true);
+    FocusScope.of(context).unfocus();
+    try {
+      final pos = await _geocoding.searchAddress(query.trim());
+      if (pos != null && mounted) {
+        _mapController.move(pos, 15);
+        _onMapMoved(pos);
+      } else if (mounted) {
+        context.snack('Konum bulunamadı', isError: true);
+      }
+    } catch (_) {
+      if (mounted) context.snack('Arama başarısız', isError: true);
+    } finally {
+      if (mounted) setState(() => _isSearching = false);
+    }
   }
 
   Future<void> _reverseGeocode(LatLng pos) async {
@@ -93,12 +119,16 @@ class _SelectLocationScreenState extends State<SelectLocationScreen>
         _city = addr.city;
         _district = addr.district;
         _village = addr.village;
-        _addressLine1 = addr.streetAddress.isNotEmpty
-            ? addr.streetAddress
-            : addr.formattedAddress;
+        _addressLine1 = addr.formattedAddress.isNotEmpty 
+            ? addr.formattedAddress 
+            : addr.streetAddress;
         _addressLine2 = [addr.district, addr.city]
             .where((s) => s.isNotEmpty)
             .join(', ');
+
+        if (!_isSearching && _addressLine1.isNotEmpty) {
+          _searchController.text = _addressLine1;
+        }
       });
     } catch (_) {
       // Geocoding failed
@@ -146,7 +176,9 @@ class _SelectLocationScreenState extends State<SelectLocationScreen>
         city: _city,
         district: _district,
         village: _village.isNotEmpty ? _village : _district,
-        formattedAddress: _addressLine1.isNotEmpty ? _addressLine1 : _addressLine2,
+        formattedAddress: _addressLine1.isNotEmpty 
+            ? _addressLine1 
+            : (_addressLine2.isNotEmpty ? _addressLine2 : 'Seçilen Konum'),
         lat: _center.latitude,
         lng: _center.longitude,
       ),
@@ -170,11 +202,13 @@ class _SelectLocationScreenState extends State<SelectLocationScreen>
               onPositionChanged: (camera, hasGesture) {
                 if (hasGesture) _onMapMoved(camera.center);
               },
+              onTap: (_, __) => FocusScope.of(context).unfocus(),
             ),
             children: [
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.koydensehire.app',
+                tileProvider: CancellableNetworkTileProvider(),
               ),
             ],
           ),
@@ -189,6 +223,9 @@ class _SelectLocationScreenState extends State<SelectLocationScreen>
                 _SearchCard(
                   isLocating: _isLocating,
                   onLocate: _goToCurrentLocation,
+                  isSearching: _isSearching,
+                  searchController: _searchController,
+                  onSearch: _searchLocation,
                 ),
               ],
             ),
@@ -207,7 +244,7 @@ class _SelectLocationScreenState extends State<SelectLocationScreen>
               addressLine2: _addressLine2,
               isLoading: _isGeocodingLoading,
               hasAddress: _hasAddress,
-              onConfirm: _hasAddress ? _confirm : null,
+              onConfirm: _isGeocodingLoading ? null : _confirm,
             ),
           ),
         ],
@@ -249,7 +286,7 @@ class _TopBar extends StatelessWidget {
               boxShadow: AppShadows.soft,
             ),
             child: const Text(
-              'Ã‡iftlik Konumu',
+              'Çiftlik Konumu',
               style: TextStyle(
                 fontFamily: 'PlusJakartaSans',
                 fontSize: 17,
@@ -267,7 +304,17 @@ class _TopBar extends StatelessWidget {
 class _SearchCard extends StatelessWidget {
   final bool isLocating;
   final VoidCallback onLocate;
-  const _SearchCard({required this.isLocating, required this.onLocate});
+  final bool isSearching;
+  final TextEditingController searchController;
+  final Function(String) onSearch;
+
+  const _SearchCard({
+    required this.isLocating,
+    required this.onLocate,
+    required this.isSearching,
+    required this.searchController,
+    required this.onSearch,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -285,44 +332,72 @@ class _SearchCard extends StatelessWidget {
             const SizedBox(width: 16),
             const Icon(Icons.search, color: AppColors.onSurfaceVariant, size: 20),
             const SizedBox(width: 8),
-            const Expanded(
-              child: Text(
-                'HaritayÄ± sÃ¼rÃ¼kleyerek konum seÃ§in',
-                style: TextStyle(
+            Expanded(
+              child: TextField(
+                controller: searchController,
+                textInputAction: TextInputAction.search,
+                onSubmitted: onSearch,
+                style: const TextStyle(
                   fontFamily: 'PlusJakartaSans',
                   fontSize: 14,
-                  color: AppColors.outline,
+                  color: AppColors.onSurface,
+                ),
+                decoration: const InputDecoration(
+                  hintText: 'Adres veya konum ara...',
+                  hintStyle: TextStyle(
+                    fontFamily: 'PlusJakartaSans',
+                    fontSize: 14,
+                    color: AppColors.outline,
+                  ),
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  isDense: true,
+                  contentPadding: EdgeInsets.symmetric(vertical: 14),
                 ),
               ),
             ),
-            isLocating
-                ? const Padding(
-                    padding: EdgeInsets.all(14),
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  )
-                : GestureDetector(
-                    onTap: onLocate,
-                    child: Container(
-                      margin: const EdgeInsets.all(6),
-                      padding: const EdgeInsets.all(10),
-                      decoration: const BoxDecoration(
-                        color: AppColors.secondaryContainer,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.my_location,
-                        color: AppColors.onSecondaryContainer,
-                        size: 18,
-                      ),
-                    ),
+            if (isSearching)
+              const Padding(
+                padding: EdgeInsets.all(14),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.primary,
                   ),
+                ),
+              )
+            else if (isLocating)
+              const Padding(
+                padding: EdgeInsets.all(14),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.primary,
+                  ),
+                ),
+              )
+            else
+              GestureDetector(
+                onTap: onLocate,
+                child: Container(
+                  margin: const EdgeInsets.all(6),
+                  padding: const EdgeInsets.all(10),
+                  decoration: const BoxDecoration(
+                    color: AppColors.secondaryContainer,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.my_location,
+                    color: AppColors.onSecondaryContainer,
+                    size: 18,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -433,7 +508,7 @@ class _BottomCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'SeÃ§ilen Konum',
+                      'Seçilen Konum',
                       style: TextStyle(
                         fontFamily: 'PlusJakartaSans',
                         fontSize: 16,
@@ -475,7 +550,7 @@ class _BottomCard extends StatelessWidget {
                                             ? (addressLine1.isNotEmpty
                                                 ? addressLine1
                                                 : addressLine2)
-                                            : 'HaritayÄ± sÃ¼rÃ¼kleyerek konum seÃ§in',
+                                            : 'Haritayı sürükleyerek konum seçin',
                                         style: TextStyle(
                                           fontFamily: 'PlusJakartaSans',
                                           fontSize: 14,

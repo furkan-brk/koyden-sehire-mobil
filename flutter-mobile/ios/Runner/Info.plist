@@ -6,6 +6,12 @@
 	<string>Çiftlik konumunuzu doğrulamak için konumunuza erişim gerekiyor.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Çiftlik konumunuzu doğrulamak için konumunuza erişim gerekiyor.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Profil ve ürün fotoğraflarınızı çekmek için kameranıza erişim gerekiyor.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Profil ve ürün fotoğraflarınızı yüklemek için galerisinize erişim gerekiyor.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Video çekebilmek için mikrofonunuza erişim gerekiyor.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

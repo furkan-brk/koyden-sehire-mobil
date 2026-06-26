@@ -145,7 +145,7 @@ func (h *Handler) FarmerComplete(c *fiber.Ctx) error {
 		return response.Error(c, err)
 	}
 
-	return response.Success(c, p, "Ürün başarıyla tamamlandı ve yayına alındı")
+	return response.Success(c, p, "Ürün başarıyla oluşturuldu ve onay bekliyor")
 }
 
 

@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:video_compress/video_compress.dart';
 
 import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/app/theme.dart';
@@ -502,8 +504,9 @@ class _StepPersonalFarmState extends State<_StepPersonalFarm> {
         city: d.city,
         district: d.district,
         village: d.village,
-        formattedAddress:
-            [d.district, d.city].where((s) => s.isNotEmpty).join(', '),
+        formattedAddress: (d.address != null && d.address!.isNotEmpty)
+            ? d.address!
+            : [d.district, d.city].where((s) => s.isNotEmpty).join(', '),
         lat: 0,
         lng: 0,
       );
@@ -532,6 +535,7 @@ class _StepPersonalFarmState extends State<_StepPersonalFarm> {
         city: _selectedLocation?.city ?? '',
         district: _selectedLocation?.district ?? '',
         village: _selectedLocation?.village ?? '',
+        address: _selectedLocation?.formattedAddress,
         bio: _bio.text.trim(),
       ),
     );
@@ -810,14 +814,56 @@ class _StepProductionVideoState extends State<_StepProductionVideo> {
 
   Future<void> _pickVideo(ImageSource source) async {
     try {
+      if (source == ImageSource.camera) {
+        final cameraStatus = await Permission.camera.request();
+        final micStatus = await Permission.microphone.request();
+        if (cameraStatus.isPermanentlyDenied || micStatus.isPermanentlyDenied) {
+          if (mounted) {
+            context.snack(
+              'Video çekebilmek için lütfen ayarlardan kamera ve mikrofon izinlerini verin.',
+              isError: true,
+            );
+          }
+          return;
+        }
+        if (!cameraStatus.isGranted || !micStatus.isGranted) return;
+      }
+
       final picker = ImagePicker();
       final picked = await picker.pickVideo(
         source: source,
         maxDuration: const Duration(seconds: 90),
       );
       if (picked == null) return;
-      final file = File(picked.path);
-      final size = await file.length();
+      
+      final originalFile = File(picked.path);
+      final originalSize = await originalFile.length();
+      
+      File file = originalFile;
+      int size = originalSize;
+      
+      // Only attempt compression if original size is larger than 10MB.
+      // Small videos (e.g. 2s) can bypass compression to prevent video_compress library failures.
+      if (originalSize > 10 * 1024 * 1024) {
+        if (mounted) {
+          context.toast('Video sıkıştırılıyor, lütfen bekleyin...');
+        }
+        try {
+          final info = await VideoCompress.compressVideo(
+            picked.path,
+            quality: VideoQuality.MediumQuality,
+            deleteOrigin: false,
+            includeAudio: true,
+          );
+          if (info != null && info.file != null) {
+            file = info.file!;
+            size = await file.length();
+          }
+        } catch (e) {
+          debugPrint('Video compression failed, using original file: $e');
+        }
+      }
+      
       if (size > AppConstants.maxApplicationVideoBytes) {
         if (!mounted) return;
         context.snack(
@@ -831,7 +877,7 @@ class _StepProductionVideoState extends State<_StepProductionVideo> {
         _videoSize = size;
       });
     } catch (_) {
-      if (mounted) context.snack('Video seçilemedi', isError: true);
+      if (mounted) context.snack('Video seçilemedi veya sıkıştırılamadı', isError: true);
     }
   }
 

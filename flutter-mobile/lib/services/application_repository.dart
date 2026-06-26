@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 
+import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/core/api/api_client.dart';
 import 'package:koyden_sehire/core/api/api_endpoints.dart';
 import 'package:koyden_sehire/core/errors/error_handler.dart';
@@ -40,7 +41,7 @@ class ApplicationRepository {
         final data = ((env as Map)['data'] as Map?)?.cast<String, dynamic>() ??
             const {};
         return (
-          uploadUrl: data['upload_url']?.toString() ?? '',
+          uploadUrl: AppConstants.formatDevUrl(data['upload_url']?.toString() ?? ''),
           key: data['key']?.toString() ?? '',
         );
       },

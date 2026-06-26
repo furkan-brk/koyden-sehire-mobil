@@ -15,6 +15,7 @@ type FarmerApplication struct {
 	City         string `db:"city" json:"city"`
 	District     string `db:"district" json:"district"`
 	Village      string `db:"village" json:"village"`
+	Address      *string `db:"address" json:"address"`
 	Bio          string `db:"bio" json:"bio"`
 
 	ProductCategories   []byte  `db:"product_categories" json:"product_categories"`

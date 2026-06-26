@@ -31,6 +31,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscure = true;
+  bool _rememberMe = true;
 
   AuthService get _auth => Get.find<AuthService>();
 
@@ -77,6 +78,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     await _auth.login(
       phone: _phoneController.text.trim(),
       password: _passwordController.text,
+      rememberMe: _rememberMe,
     );
   }
 
@@ -142,7 +144,28 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                             setState(() => _obscure = !_obscure),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: _rememberMe,
+                          onChanged: (v) =>
+                              setState(() => _rememberMe = v ?? true),
+                          visualDensity: VisualDensity.compact,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        GestureDetector(
+                          onTap: () =>
+                              setState(() => _rememberMe = !_rememberMe),
+                          child: Text(
+                            'Beni Hatırla',
+                            style: context.text.bodySmall,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
                     Obx(() => AppButton(
                           label: 'Giriş Yap',
                           isLoading: _auth.isSubmitting.value,

@@ -4,6 +4,7 @@ class FarmerProfileEdit {
   final String city;
   final String district;
   final String village;
+  final String? address;
   final String bio;
   final String publicPhone;
   final bool showPhone;
@@ -15,6 +16,7 @@ class FarmerProfileEdit {
     this.city = '',
     this.district = '',
     this.village = '',
+    this.address,
     this.bio = '',
     this.publicPhone = '',
     this.showPhone = true,
@@ -28,6 +30,7 @@ class FarmerProfileEdit {
         city: json['city']?.toString() ?? '',
         district: json['district']?.toString() ?? '',
         village: json['village']?.toString() ?? '',
+        address: json['address']?.toString(),
         bio: json['bio']?.toString() ?? '',
         publicPhone: json['public_phone']?.toString() ?? '',
         showPhone: json['show_phone'] != false,
@@ -40,6 +43,7 @@ class FarmerProfileEdit {
     String? city,
     String? district,
     String? village,
+    String? address,
     String? bio,
     String? publicPhone,
     bool? showPhone,
@@ -51,6 +55,7 @@ class FarmerProfileEdit {
         city: city ?? this.city,
         district: district ?? this.district,
         village: village ?? this.village,
+        address: address ?? this.address,
         bio: bio ?? this.bio,
         publicPhone: publicPhone ?? this.publicPhone,
         showPhone: showPhone ?? this.showPhone,
@@ -63,7 +68,9 @@ class FarmerProfileEdit {
         'city': city.trim(),
         'district': district.trim(),
         'village': village.trim(),
+        if (address != null) 'address': address!.trim(),
         'bio': bio.trim(),
+        'public_phone': publicPhone.trim(),
         'show_phone': showPhone,
         if (profileImageUrl != null) 'profile_image_url': profileImageUrl,
       };

@@ -18,7 +18,7 @@ AppException mapDioError(Object error) {
       type == DioExceptionType.receiveTimeout ||
       type == DioExceptionType.sendTimeout) {
     if (kDebugMode) {
-      return const NetworkException(
+      return NetworkException(
         message: 'Sunucuya ulaşılamıyor (${AppConstants.baseUrl}). '
             'Backend çalışıyor mu? BASE_URL doğru mu?',
       );

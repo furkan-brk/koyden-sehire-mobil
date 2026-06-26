@@ -47,6 +47,15 @@ class AuthService extends GetxService {
 
   /// Read persisted state and decide where the splash should land.
   Future<void> bootstrap() async {
+    // If "remember me" was unchecked on the last login, clear the session so
+    // the user must log in again on the next app launch.
+    final remember = await _storage.getRememberMe();
+    if (!remember) {
+      await _storage.clearAll();
+      _resetTo(AuthStatus.loggedOut);
+      return;
+    }
+
     final token = await _storage.getToken();
     if (token == null || token.isEmpty) {
       _resetTo(AuthStatus.loggedOut);
@@ -74,14 +83,18 @@ class AuthService extends GetxService {
     }
   }
 
-  Future<void> login({required String phone, required String password}) async {
+  Future<void> login({
+    required String phone,
+    required String password,
+    bool rememberMe = true,
+  }) async {
     isSubmitting.value = true;
     errorMessage.value = null;
     try {
       final res = await _repo.login(
         LoginRequest(phone: phone, password: password),
       );
-      await _applyLoginResponse(res);
+      await _applyLoginResponse(res, rememberMe: rememberMe);
     } on AppException catch (e) {
       errorMessage.value = _mapAuthError(e);
     } catch (_) {
@@ -163,12 +176,13 @@ class AuthService extends GetxService {
 
   /// Shared post-login: persists token + user info, then sets [status]
   /// to the correct AuthStatus value for the role/account state.
-  Future<void> _applyLoginResponse(LoginResponse res) async {
+  Future<void> _applyLoginResponse(LoginResponse res, {bool rememberMe = true}) async {
     if (!res.user.isActive) {
       errorMessage.value = 'Hesabınız askıya alınmıştır';
       return;
     }
 
+    await _storage.saveRememberMe(rememberMe);
     await _storage.saveToken(res.accessToken);
     if (res.refreshToken.isNotEmpty) {
       await _storage.saveRefreshToken(res.refreshToken);

@@ -35,11 +35,11 @@ func (r *Repository) UpdateFarmerProfile(userID string, req *UpdateProfileReques
 	_, err := r.db.Exec(`
 		UPDATE farmer_profiles
 		SET display_name = $1, producer_type = $2, city = $3, district = $4,
-		    village = $5, bio = $6, public_phone = $7, show_phone = $8,
-		    profile_image_url = $9, updated_at = NOW()
-		WHERE user_id = $10
+		    village = $5, address = $6, bio = $7, public_phone = $8, show_phone = $9,
+		    profile_image_url = $10, updated_at = NOW()
+		WHERE user_id = $11
 	`, req.DisplayName, req.ProducerType, req.City, req.District,
-		req.Village, req.Bio, req.PublicPhone, req.ShowPhone,
+		req.Village, req.Address, req.Bio, req.PublicPhone, req.ShowPhone,
 		req.ProfileImageURL, userID)
 	return err
 }

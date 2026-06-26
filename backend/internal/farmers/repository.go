@@ -28,6 +28,7 @@ func (r *Repository) GetPublicByID(id string) (*PublicFarmerDetail, error) {
 		City             string  `db:"city"`
 		District         string  `db:"district"`
 		Village          string  `db:"village"`
+		Address          *string `db:"address"`
 		Bio              string  `db:"bio"`
 		ProfileImageURL  *string `db:"profile_image_url"`
 		PublicPhone      string  `db:"public_phone"`
@@ -36,7 +37,7 @@ func (r *Repository) GetPublicByID(id string) (*PublicFarmerDetail, error) {
 		IsFoundingFarmer bool    `db:"is_founding_farmer"`
 	}
 	err := r.db.Get(&row, `
-		SELECT fp.user_id, fp.display_name, fp.producer_type, fp.city, fp.district, fp.village,
+		SELECT fp.user_id, fp.display_name, fp.producer_type, fp.city, fp.district, fp.village, fp.address,
 		       fp.bio, fp.profile_image_url, fp.public_phone, fp.show_phone,
 		       fp.is_verified, fp.is_founding_farmer
 		FROM farmer_profiles fp
@@ -54,6 +55,7 @@ func (r *Repository) GetPublicByID(id string) (*PublicFarmerDetail, error) {
 		City:             row.City,
 		District:         row.District,
 		Village:          row.Village,
+		Address:          row.Address,
 		Bio:              row.Bio,
 		ProfileImageURL:  row.ProfileImageURL,
 		IsVerified:       row.IsVerified,
@@ -69,7 +71,7 @@ func (r *Repository) GetAdminDetail(id string) (*FarmerDetail, error) {
 	var d FarmerDetail
 	err := r.db.Get(&d, `
 		SELECT u.id, u.full_name, u.phone, u.email, u.status, u.created_at,
-		       fp.display_name, fp.producer_type, fp.city, fp.district, fp.village, fp.bio,
+		       fp.display_name, fp.producer_type, fp.city, fp.district, fp.village, fp.address, fp.bio,
 		       fp.profile_image_url, fp.public_phone, fp.show_phone,
 		       fp.is_verified, fp.is_founding_farmer, fp.invite_quota,
 		       ic.code AS invite_code, COALESCE(ic.used_count, 0) AS used_invites
@@ -217,7 +219,7 @@ func (r *Repository) ListAdmin(page, limit int, city string) ([]FarmerDetail, in
 	var farmers []FarmerDetail
 	err := r.db.Select(&farmers, `
 		SELECT u.id, u.full_name, u.phone, u.email, u.status, u.created_at,
-		       fp.display_name, fp.producer_type, fp.city, fp.district, fp.village, fp.bio,
+		       fp.display_name, fp.producer_type, fp.city, fp.district, fp.village, fp.address, fp.bio,
 		       fp.profile_image_url, fp.public_phone, fp.show_phone,
 		       fp.is_verified, fp.is_founding_farmer, fp.invite_quota,
 		       ic.code AS invite_code, COALESCE(ic.used_count, 0) AS used_invites

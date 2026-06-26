@@ -8,6 +8,7 @@ type UpdateProfileRequest struct {
 	City            string  `json:"city" validate:"required"`
 	District        string  `json:"district" validate:"required"`
 	Village         string  `json:"village" validate:"required"`
+	Address         *string `json:"address"`
 	Bio             string  `json:"bio" validate:"required"`
 	PublicPhone     string  `json:"public_phone" validate:"required"`
 	ShowPhone       bool    `json:"show_phone"`

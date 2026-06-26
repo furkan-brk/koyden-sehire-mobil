@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:latlong2/latlong.dart';
 
 import 'package:koyden_sehire/app/constants.dart';
 
@@ -111,6 +112,48 @@ class GoogleGeocodingService {
       );
     } on DioException {
       return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<LatLng?> searchAddress(String searchQuery) async {
+    const apiKey = AppConstants.googleMapsApiKey;
+    if (apiKey.isEmpty) return null;
+
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        'https://maps.googleapis.com/maps/api/place/textsearch/json',
+        queryParameters: {
+          'query': searchQuery,
+          'key': apiKey,
+          'language': 'tr',
+        },
+        options: Options(
+          receiveTimeout: const Duration(seconds: 10),
+          sendTimeout: const Duration(seconds: 10),
+        ),
+      );
+
+      final data = response.data;
+      if (data == null) return null;
+
+      final status = data['status'] as String?;
+      if (status != 'OK') return null;
+
+      final results = data['results'] as List<dynamic>?;
+      if (results == null || results.isEmpty) return null;
+
+      final geometry = results.first['geometry'] as Map<String, dynamic>?;
+      if (geometry == null) return null;
+
+      final location = geometry['location'] as Map<String, dynamic>?;
+      if (location == null) return null;
+
+      final lat = (location['lat'] as num).toDouble();
+      final lng = (location['lng'] as num).toDouble();
+
+      return LatLng(lat, lng);
     } catch (_) {
       return null;
     }

@@ -48,6 +48,7 @@ class FarmerProfile {
   final String city;
   final String district;
   final String? village;
+  final String? address;
   final String? producerType;
   final String? bio;
   final String? publicPhone;
@@ -62,6 +63,7 @@ class FarmerProfile {
     required this.city,
     required this.district,
     this.village,
+    this.address,
     this.producerType,
     this.bio,
     this.publicPhone,
@@ -79,6 +81,7 @@ class FarmerProfile {
         city: json['city']?.toString() ?? '',
         district: json['district']?.toString() ?? '',
         village: json['village']?.toString(),
+        address: json['address']?.toString(),
         producerType: json['producer_type']?.toString(),
         bio: json['bio']?.toString(),
         publicPhone: json['public_phone']?.toString(),

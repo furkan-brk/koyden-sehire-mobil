@@ -1,4 +1,3 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -7,6 +6,8 @@ import 'package:koyden_sehire/models/admin/admin_dashboard_model.dart';
 import 'package:koyden_sehire/services/admin_repository.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_loading.dart';
+import 'package:koyden_sehire/shared/widgets/echart/echart.dart';
+import 'package:koyden_sehire/views/admin/widgets/admin_chart_options.dart';
 import 'package:koyden_sehire/views/admin/widgets/admin_stat_card.dart';
 import 'package:koyden_sehire/controllers/admin/admin_dashboard_controller.dart';
 
@@ -43,31 +44,81 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
       final data = _ctrl.data.value;
       if (data == null) return const SizedBox.shrink();
 
-      return RefreshIndicator(
-        onRefresh: _ctrl.load,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _DashboardHeader(onRefresh: _ctrl.load),
-              const SizedBox(height: 24),
-              _StatsGrid(stats: data.stats),
-              if (data.applicationsByDay.isNotEmpty) ...[
-                const SizedBox(height: 24),
-                _ApplicationsChart(points: data.applicationsByDay),
+      final s = data.stats;
+
+      // ── Fixed top section (KPIs — no scroll) ─────────────────────
+      // ── Scrollable bottom section (charts) ────────────────────────
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _DashboardHeader(onRefresh: _ctrl.load),
+                const SizedBox(height: 16),
+                _StatsGrid(stats: s),
               ],
-              const SizedBox(height: 16),
-            ],
+            ),
           ),
-        ),
+          const Divider(height: 1),
+          // ── Charts section — scrollable ──────────────────────────
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _ctrl.load,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (s.totalProducts > 0 || s.totalFarmers > 0) ...[
+                      _GaugesRow(stats: s),
+                      const SizedBox(height: 14),
+                    ],
+                    if (data.applicationsByDay.isNotEmpty) ...[
+                      _ChartCard(
+                        title: 'Başvuru Trendi',
+                        subtitle: 'Son 14 günde gelen başvuru sayısı',
+                        child: EChart(
+                          option: applicationsTrendOption(
+                              data.applicationsByDay),
+                          height: 220,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                    ],
+                    if (data.productsByCategory.isNotEmpty ||
+                        data.producersByCity.isNotEmpty) ...[
+                      _SecondaryChartsRow(
+                        categoryPoints: data.productsByCategory,
+                        cityPoints: data.producersByCity,
+                      ),
+                      const SizedBox(height: 14),
+                    ],
+                    if (s.totalProducts > 0)
+                      _ChartCard(
+                        title: 'Ürün Durumu',
+                        subtitle:
+                            'Toplam ${s.totalProducts} ürünün yayın durumuna göre dağılımı',
+                        child: EChart(
+                          option: productStatusDonutOption(s),
+                          height: 300,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       );
     });
   }
 }
 
-// ── Page header ────────────────────────────────────────────────────────────
+// ── Page header ──────────────────────────────────────────────────────────────
 
 class _DashboardHeader extends StatelessWidget {
   final VoidCallback onRefresh;
@@ -106,9 +157,11 @@ class _DashboardHeader extends StatelessWidget {
           icon: const Icon(Icons.refresh_outlined, size: 16),
           label: const Text('Yenile'),
           style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             minimumSize: Size.zero,
-            textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+            textStyle:
+                const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
           ),
         ),
       ],
@@ -116,7 +169,7 @@ class _DashboardHeader extends StatelessWidget {
   }
 }
 
-// ── Stats grid ─────────────────────────────────────────────────────────────
+// ── KPI stats grid ───────────────────────────────────────────────────────────
 
 class _StatsGrid extends StatelessWidget {
   final DashboardStats stats;
@@ -129,7 +182,9 @@ class _StatsGrid extends StatelessWidget {
         'Bekleyen Başvurular',
         stats.pendingApplications,
         Icons.access_time_outlined,
-        stats.todayApplications > 0 ? '+${stats.todayApplications} bugün' : null,
+        stats.todayApplications > 0
+            ? '+${stats.todayApplications} bugün'
+            : null,
         AppColors.warning,
       ),
       (
@@ -171,19 +226,27 @@ class _StatsGrid extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        final w = constraints.maxWidth;
         final int cols;
-        if (constraints.maxWidth >= 900) {
+        final double aspect;
+        if (w >= 1200) {
+          cols = 6; // all 6 in one row — no vertical scroll needed
+          aspect = 2.6;
+        } else if (w >= 900) {
           cols = 3;
-        } else if (constraints.maxWidth >= 560) {
+          aspect = 2.2;
+        } else if (w >= 560) {
           cols = 2;
+          aspect = 2.0;
         } else {
           cols = 1;
+          aspect = 3.0;
         }
         return GridView.count(
           crossAxisCount: cols,
-          crossAxisSpacing: 14,
-          mainAxisSpacing: 14,
-          childAspectRatio: constraints.maxWidth >= 900 ? 1.8 : 1.5,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: aspect,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           children: cards
@@ -201,11 +264,87 @@ class _StatsGrid extends StatelessWidget {
   }
 }
 
-// ── Chart ──────────────────────────────────────────────────────────────────
+// ── Gauge row (two side-by-side ratio gauges) ────────────────────────────────
 
-class _ApplicationsChart extends StatelessWidget {
-  final List<ChartPoint> points;
-  const _ApplicationsChart({required this.points});
+class _GaugesRow extends StatelessWidget {
+  final DashboardStats stats;
+  const _GaugesRow({required this.stats});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      final wide = constraints.maxWidth >= 600;
+
+      final productGauge = stats.totalProducts > 0
+          ? _ChartCard(
+              title: 'Aktif Ürün Oranı',
+              subtitle:
+                  '${stats.activeProducts} / ${stats.totalProducts} ürün yayında',
+              child: EChart(
+                option: ratioGaugeOption(
+                  title: 'Aktif Ürünler',
+                  value: stats.activeProducts,
+                  total: stats.totalProducts,
+                ),
+                height: 200,
+              ),
+            )
+          : null;
+
+      final farmerGauge = stats.totalFarmers > 0
+          ? _ChartCard(
+              title: 'Aktif Çiftçi Oranı',
+              subtitle:
+                  '${stats.activeFarmers} / ${stats.totalFarmers} çiftçi aktif',
+              child: EChart(
+                option: ratioGaugeOption(
+                  title: 'Aktif Çiftçiler',
+                  value: stats.activeFarmers,
+                  total: stats.totalFarmers,
+                ),
+                height: 200,
+              ),
+            )
+          : null;
+
+      if (productGauge == null && farmerGauge == null) {
+        return const SizedBox.shrink();
+      }
+      if (productGauge == null) return farmerGauge!;
+      if (farmerGauge == null) return productGauge;
+
+      if (wide) {
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: productGauge),
+            const SizedBox(width: 14),
+            Expanded(child: farmerGauge),
+          ],
+        );
+      } else {
+        return Column(children: [
+          productGauge,
+          const SizedBox(height: 14),
+          farmerGauge,
+        ]);
+      }
+    });
+  }
+}
+
+// ── Reusable chart card shell ────────────────────────────────────────────────
+
+class _ChartCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final Widget child;
+
+  const _ChartCard({
+    required this.title,
+    required this.subtitle,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -216,103 +355,91 @@ class _ApplicationsChart extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Başvuru Trendi',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Son günlerde gelen başvuru sayısı',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: cs.onSurfaceVariant,
-                          ),
-                    ),
-                  ],
-                ),
-              ],
+            Text(
+              title,
+              style: Theme.of(context)
+                  .textTheme
+                  .titleSmall
+                  ?.copyWith(fontWeight: FontWeight.w600),
             ),
-            const SizedBox(height: 20),
-            SizedBox(
-              height: 180,
-              child: LineChart(
-                LineChartData(
-                  gridData: FlGridData(
-                    drawVerticalLine: false,
-                    horizontalInterval: 1,
-                    getDrawingHorizontalLine: (_) => const FlLine(
-                      color: AppColors.outlineVariant,
-                      strokeWidth: 1,
-                    ),
-                  ),
-                  titlesData: FlTitlesData(
-                    leftTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
-                    topTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 28,
-                        getTitlesWidget: (v, _) {
-                          final i = v.toInt();
-                          if (i < 0 || i >= points.length) {
-                            return const SizedBox.shrink();
-                          }
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 6),
-                            child: Text(
-                              points[i].name,
-                              style: TextStyle(
-                                  fontSize: 10, color: cs.onSurfaceVariant),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  borderData: FlBorderData(show: false),
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: points
-                          .asMap()
-                          .entries
-                          .map((e) =>
-                              FlSpot(e.key.toDouble(), e.value.value.toDouble()))
-                          .toList(),
-                      isCurved: true,
-                      color: AppColors.primary,
-                      barWidth: 2.5,
-                      dotData: FlDotData(
-                        show: true,
-                        getDotPainter: (spot, _, __, ___) =>
-                            FlDotCirclePainter(
-                          radius: 3.5,
-                          color: AppColors.primary,
-                          strokeWidth: 2,
-                          strokeColor: AppColors.surfaceContainerLowest,
-                        ),
-                      ),
-                      belowBarData: BarAreaData(
-                        show: true,
-                        color: AppColors.primary.withValues(alpha: 0.08),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: Theme.of(context)
+                  .textTheme
+                  .labelSmall
+                  ?.copyWith(color: cs.onSurfaceVariant),
             ),
+            const SizedBox(height: 16),
+            child,
           ],
         ),
       ),
     );
+  }
+}
+
+// ── Secondary charts: category columns + city horizontal bars ────────────────
+
+class _SecondaryChartsRow extends StatelessWidget {
+  final List<ChartPoint> categoryPoints;
+  final List<ChartPoint> cityPoints;
+
+  const _SecondaryChartsRow({
+    required this.categoryPoints,
+    required this.cityPoints,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      final wide = constraints.maxWidth >= 760;
+
+      final categoryCard = categoryPoints.isNotEmpty
+          ? _ChartCard(
+              title: 'Kategoriye Göre Ürünler',
+              subtitle: 'Aktif ürünlerin kategorilere dağılımı',
+              child: EChart(
+                option: productsByCategoryOption(categoryPoints),
+                height: 220,
+              ),
+            )
+          : null;
+
+      final chartH =
+          (cityPoints.length * 26.0).clamp(180.0, 320.0);
+      final cityCard = cityPoints.isNotEmpty
+          ? _ChartCard(
+              title: 'Şehre Göre Üreticiler',
+              subtitle: 'Aktif üreticilerin şehirlere göre dağılımı',
+              child: EChart(
+                option: producersByCityOption(cityPoints),
+                height: chartH,
+              ),
+            )
+          : null;
+
+      if (categoryCard == null && cityCard == null) {
+        return const SizedBox.shrink();
+      }
+      if (categoryCard == null) return cityCard!;
+      if (cityCard == null) return categoryCard;
+
+      if (wide) {
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: categoryCard),
+            const SizedBox(width: 14),
+            Expanded(child: cityCard),
+          ],
+        );
+      }
+      return Column(children: [
+        categoryCard,
+        const SizedBox(height: 14),
+        cityCard,
+      ]);
+    });
   }
 }

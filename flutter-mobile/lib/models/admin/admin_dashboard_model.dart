@@ -1,18 +1,22 @@
 class DashboardStats {
-  final int pendingApplications;
+  final int totalFarmers;
   final int activeFarmers;
+  final int suspendedFarmers;
+  final int pendingApplications;
+  final int todayApplications;
   final int pendingProducts;
   final int activeProducts;
-  final int suspendedFarmers;
-  final int todayApplications;
+  final int totalProducts;
 
   const DashboardStats({
-    required this.pendingApplications,
+    required this.totalFarmers,
     required this.activeFarmers,
+    required this.suspendedFarmers,
+    required this.pendingApplications,
+    required this.todayApplications,
     required this.pendingProducts,
     required this.activeProducts,
-    required this.suspendedFarmers,
-    required this.todayApplications,
+    required this.totalProducts,
   });
 }
 

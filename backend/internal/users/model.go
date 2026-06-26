@@ -24,6 +24,7 @@ type FarmerProfile struct {
 	City             string    `db:"city" json:"city"`
 	District         string    `db:"district" json:"district"`
 	Village          string    `db:"village" json:"village"`
+	Address          *string   `db:"address" json:"address"`
 	Bio              string    `db:"bio" json:"bio"`
 	ProfileImageURL  *string   `db:"profile_image_url" json:"profile_image_url"`
 	PublicPhone      string    `db:"public_phone" json:"public_phone"`

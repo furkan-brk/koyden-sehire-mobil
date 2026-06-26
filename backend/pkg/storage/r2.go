@@ -201,3 +201,44 @@ func isPublicKey(key string) bool {
 	return strings.HasPrefix(key, "product-images/") || strings.HasPrefix(key, "profile-images/") || strings.HasPrefix(key, "products/images/")
 }
 
+// EnsureBucketExists checks if the bucket exists and creates it with a public read policy if it doesn't.
+// This is primarily used for local development with MinIO.
+func (r *R2Provider) EnsureBucketExists(ctx context.Context) error {
+	_, err := r.client.HeadBucket(ctx, &s3.HeadBucketInput{
+		Bucket: aws.String(r.bucket),
+	})
+	if err == nil {
+		return nil
+	}
+
+	// Try to create the bucket
+	_, err = r.client.CreateBucket(ctx, &s3.CreateBucketInput{
+		Bucket: aws.String(r.bucket),
+	})
+	if err != nil {
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			code := apiErr.ErrorCode()
+			if code == "BucketAlreadyExists" || code == "BucketAlreadyOwnedByYou" {
+				// Already exists, we can proceed
+			} else {
+				return fmt.Errorf("creating bucket: %w", err)
+			}
+		} else {
+			return fmt.Errorf("creating bucket: %w", err)
+		}
+	}
+
+	// Set public read policy
+	policy := `{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":["*"]},"Action":["s3:GetObject"],"Resource":["arn:aws:s3:::` + r.bucket + `/*"]}]}`
+	_, err = r.client.PutBucketPolicy(ctx, &s3.PutBucketPolicyInput{
+		Bucket: aws.String(r.bucket),
+		Policy: aws.String(policy),
+	})
+	if err != nil {
+		return fmt.Errorf("setting bucket policy: %w", err)
+	}
+
+	return nil
+}
+

@@ -22,7 +22,7 @@ func NewRepository(db *sqlx.DB, publicURL string) *Repository {
 func (r *Repository) ListPublic(f *ProductFilter) ([]PublicProduct, int, error) {
 	args := []interface{}{}
 	argIdx := 1
-	conditions := []string{"p.status IN ('active', 'successful')"}
+	conditions := []string{"p.status = 'active'"}
 
 	if f.Search != "" {
 		conditions = append(conditions, fmt.Sprintf("p.title ILIKE $%d", argIdx))
@@ -197,7 +197,7 @@ func (r *Repository) GetPublicByID(id string) (*PublicProduct, error) {
 		JOIN categories c ON c.id = p.category_id
 		LEFT JOIN categories pc ON pc.id = c.parent_id
 		LEFT JOIN product_images pi ON pi.product_id = p.id
-		WHERE p.id = $1 AND p.status IN ('active', 'successful')
+		WHERE p.id = $1 AND p.status = 'active'
 		GROUP BY
 			p.id, fp.display_name, fp.is_verified,
 			fp.is_founding_farmer, fp.profile_image_url,
@@ -315,7 +315,7 @@ func (r *Repository) ListByFarmerPublic(farmerID string) ([]PublicProduct, error
 		JOIN categories c ON c.id = p.category_id
 		LEFT JOIN categories pc ON pc.id = c.parent_id
 		LEFT JOIN product_images pi ON pi.product_id = p.id
-		WHERE p.farmer_id = $1 AND p.status IN ('active', 'successful')
+		WHERE p.farmer_id = $1 AND p.status = 'active'
 		GROUP BY
 			p.id, fp.display_name, fp.is_verified,
 			fp.is_founding_farmer, fp.profile_image_url,
@@ -476,7 +476,7 @@ func (r *Repository) Complete(id, farmerID string, req *CompleteProductRequest) 
 	err = tx.Get(&p, `
 		UPDATE products
 		SET category_id = $1, title = $2, description = $3, price = $4,
-		    unit = $5, city = $6, district = $7, village = $8, status = 'successful', updated_at = NOW()
+		    unit = $5, city = $6, district = $7, village = $8, status = 'pending', updated_at = NOW()
 		WHERE id = $9 AND farmer_id = $10
 		RETURNING *
 	`, req.CategoryID, req.Title, req.Description, req.Price, req.Unit,

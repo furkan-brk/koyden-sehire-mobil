@@ -158,7 +158,7 @@ class FarmerProductRepository {
     return UploadResult(url: publicUrl, key: key);
   }
 
-  /// Completes a product draft and updates its status to 'successful'
+  /// Completes a product draft and updates its status to 'pending'
   Future<void> complete(
     String id,
     ProductFormData data,

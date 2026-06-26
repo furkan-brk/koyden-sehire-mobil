@@ -6,10 +6,25 @@ class AppConstants {
   /// override BASE_URL via --dart-define** — otherwise the production app
   /// would attempt cleartext HTTP to a non-routable address and silently
   /// fail. Use `assertReleaseBaseUrl()` at app startup to enforce this.
-  static const String baseUrl = String.fromEnvironment(
-    'BASE_URL',
-    defaultValue: 'http://10.0.2.2:8080/api/v1',
-  );
+  static String get baseUrl {
+    String url = const String.fromEnvironment(
+      'BASE_URL',
+      defaultValue: 'http://10.0.2.2:8080/api/v1',
+    );
+    
+    // Protokol eksikse (örn: Sadece localhost veya 192.168.1.5 yazılmışsa) http:// ekle
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'http://$url';
+    }
+
+    if (url.endsWith('/api/v1') || url.endsWith('/api/v1/')) {
+      return url;
+    }
+    if (url.endsWith('/api') || url.endsWith('/api/')) {
+      return url.endsWith('/') ? '${url}v1' : '$url/v1';
+    }
+    return url.endsWith('/') ? '${url}api/v1' : '$url/api/v1';
+  }
 
   /// Returns true when the baseUrl is still the development default.
   /// Call this in `main()` and abort the release build if true.

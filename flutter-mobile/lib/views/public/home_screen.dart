@@ -118,9 +118,14 @@ class HomeScreen extends StatelessWidget {
                   return const _CategoryShimmer();
                 }
                 if (catCtrl.error.value != null) {
-                  return const SizedBox(
+                  return SizedBox(
                     height: 48,
-                    child: AppEmptyWidget(message: 'Kategoriler yüklenemedi'),
+                    child: Center(
+                      child: Text(
+                        'Kategoriler yüklenemedi',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
                   );
                 }
                 return _CategoryRow(categories: catCtrl.categories);
@@ -146,14 +151,14 @@ class HomeScreen extends StatelessWidget {
                 }
                 if (homeCtrl.error.value != null) {
                   return const SizedBox(
-                    height: 120,
+                    height: 160,
                     child: AppEmptyWidget(message: 'Ürünler yüklenemedi'),
                   );
                 }
                 final items = homeCtrl.newProducts;
                 if (items.isEmpty) {
                   return const SizedBox(
-                    height: 120,
+                    height: 160,
                     child: AppEmptyWidget(message: 'Henüz ürün bulunmuyor.'),
                   );
                 }

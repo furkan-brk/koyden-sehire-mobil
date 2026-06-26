@@ -73,6 +73,7 @@ func (s *Service) ApproveApplication(appID, adminID string, req *ApproveApplicat
 		City         string  `db:"city"`
 		District     string  `db:"district"`
 		Village      string  `db:"village"`
+		Address      *string `db:"address"`
 		Bio          string  `db:"bio"`
 		Status       string  `db:"status"`
 		InviteCodeID *string `db:"invite_code_id"`
@@ -82,7 +83,7 @@ func (s *Service) ApproveApplication(appID, adminID string, req *ApproveApplicat
 	// to fail when the destination struct is missing any returned column.
 	lookupErr := s.db.Get(&app, `
 		SELECT id, full_name, phone, email, password_hash,
-		       business_name, producer_type, city, district, village,
+		       business_name, producer_type, city, district, village, address,
 		       bio, status, invite_code_id
 		FROM farmer_applications
 		WHERE id = $1
@@ -137,11 +138,11 @@ func (s *Service) ApproveApplication(appID, adminID string, req *ApproveApplicat
 
 	_, err = tx.Exec(`
 		INSERT INTO farmer_profiles (
-			user_id, display_name, producer_type, city, district, village, bio,
+			user_id, display_name, producer_type, city, district, village, address, bio,
 			public_phone, is_founding_farmer, invite_quota
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 	`, userID, app.BusinessName, app.ProducerType, app.City, app.District,
-		app.Village, app.Bio, app.Phone, isFounding, quota)
+		app.Village, app.Address, app.Bio, app.Phone, isFounding, quota)
 	if err != nil {
 		if s.appEnv == "development" {
 			fmt.Printf("[DEBUG] ApproveApplication: INSERT farmer_profiles err=%v\n", err)

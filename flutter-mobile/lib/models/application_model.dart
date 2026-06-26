@@ -37,6 +37,7 @@ class ApplicationFormData {
   final String city;
   final String district;
   final String village;
+  final String? address;
   final String bio;
 
   // Step 3
@@ -65,6 +66,7 @@ class ApplicationFormData {
     this.city = '',
     this.district = '',
     this.village = '',
+    this.address,
     this.bio = '',
     this.productCategorySlugs = const [],
     this.productExamples = '',
@@ -88,6 +90,7 @@ class ApplicationFormData {
     String? city,
     String? district,
     String? village,
+    String? address,
     String? bio,
     List<String>? productCategorySlugs,
     String? productExamples,
@@ -111,6 +114,7 @@ class ApplicationFormData {
         city: city ?? this.city,
         district: district ?? this.district,
         village: village ?? this.village,
+        address: address ?? this.address,
         bio: bio ?? this.bio,
         productCategorySlugs:
             productCategorySlugs ?? this.productCategorySlugs,
@@ -145,6 +149,7 @@ class ApplicationFormData {
         'city': city,
         'district': district,
         'village': village,
+        'address': address,
         'bio': bio,
         'product_category_slugs': productCategorySlugs,
         'product_examples': productExamples,
@@ -170,6 +175,7 @@ class ApplicationFormData {
       city: json['city']?.toString() ?? '',
       district: json['district']?.toString() ?? '',
       village: json['village']?.toString() ?? '',
+      address: json['address']?.toString(),
       bio: json['bio']?.toString() ?? '',
       productCategorySlugs: slugs is List
           ? slugs.map((e) => e.toString()).toList()
@@ -197,6 +203,7 @@ class ApplicationFormData {
         'city': city,
         'district': district,
         'village': village,
+        if (address != null && address!.isNotEmpty) 'address': address,
         'bio': bio,
         'product_categories': productCategorySlugs,
         'product_examples': productExamples,

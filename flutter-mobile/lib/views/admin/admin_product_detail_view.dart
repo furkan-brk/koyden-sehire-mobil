@@ -211,8 +211,7 @@ class _AdminProductDetailViewState
                     ),
                   ),
                 ],
-              ] else if (product.status == 'active' ||
-                  product.status == 'successful') ...[
+              ] else if (product.status == 'active') ...[
                 const SizedBox(width: 12),
                 if (_ctrl.isSubmitting.value)
                   const SizedBox(
@@ -338,8 +337,7 @@ class _AdminProductDetailViewState
                   ),
                 ],
               ]
-            : (product.status == 'active' ||
-                    product.status == 'successful')
+            : (product.status == 'active')
                 ? [
                     if (_ctrl.isSubmitting.value)
                       const Padding(

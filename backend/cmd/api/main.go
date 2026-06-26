@@ -100,6 +100,14 @@ func main() {
 			} else {
 				log.Fatalf("storage provider init failed (production requires real storage config): %v", err)
 			}
+		} else if cfg.App.Env == "development" {
+			if r2, ok := storageProvider.(*pkgstorage.R2Provider); ok {
+				if err := r2.EnsureBucketExists(context.Background()); err != nil {
+					log.Printf("warning: could not ensure local minio bucket: %v", err)
+				} else {
+					log.Println("local minio bucket ensured")
+				}
+			}
 		}
 	} else if cfg.App.Env == "development" {
 		log.Printf("warning: storage credentials not configured — using dev placeholder storage")

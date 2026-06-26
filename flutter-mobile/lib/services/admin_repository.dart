@@ -36,12 +36,14 @@ class AdminRepository {
 
         return AdminDashboardData(
           stats: DashboardStats(
-            pendingApplications: asInt(stats['pending_applications']),
+            totalFarmers: asInt(stats['total_farmers']),
             activeFarmers: asInt(stats['active_farmers']),
+            suspendedFarmers: asInt(stats['suspended_farmers']),
+            pendingApplications: asInt(stats['pending_applications']),
+            todayApplications: asInt(stats['today_applications']),
             pendingProducts: asInt(stats['pending_products']),
             activeProducts: asInt(stats['active_products']),
-            suspendedFarmers: asInt(stats['suspended_farmers']),
-            todayApplications: asInt(stats['today_applications']),
+            totalProducts: asInt(stats['total_products']),
           ),
           applicationsByDay: parsePoints(data['applications_by_day']),
           productsByCategory: parsePoints(data['products_by_category']),

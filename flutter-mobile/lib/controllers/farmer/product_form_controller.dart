@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'dart:math';
 import 'package:get/get.dart';
 
@@ -73,8 +75,7 @@ class ProductFormController extends GetxController {
         bytes,
         contentType: contentType,
       );
-      data.value =
-          data.value.copyWith(imageUrls: [...data.value.imageUrls, result.url]);
+      data.value = data.value.copyWith(imageUrls: [...data.value.imageUrls, result.url]);
       imageKeys.add(result.key);
       return true;
     } on AppException catch (e) {
@@ -151,4 +152,3 @@ class ProductFormController extends GetxController {
     }
   }
 }
-
