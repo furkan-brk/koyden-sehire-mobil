@@ -1,3 +1,5 @@
+import 'package:koyden_sehire/app/constants.dart';
+
 class CustomerProfileModel {
   final String id;
   final String fullName;
@@ -21,7 +23,9 @@ class CustomerProfileModel {
         fullName: json['full_name'] as String,
         phone: json['phone'] as String,
         email: json['email'] as String?,
-        profileImageUrl: json['profile_image_url'] as String?,
+        profileImageUrl: json['profile_image_url'] != null
+            ? AppConstants.formatDevUrl(json['profile_image_url'] as String)
+            : null,
         createdAt: DateTime.parse(json['created_at'] as String),
       );
 

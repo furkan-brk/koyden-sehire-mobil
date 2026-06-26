@@ -266,6 +266,54 @@ class _ProfileBody extends StatelessWidget {
           const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
         ],
 
+        // ── Adres ─────────────────────────────────────────────────
+        if (profile.address != null && profile.address!.isNotEmpty) ...[
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              child: _SectionTitle(
+                icon: Icons.location_on_outlined,
+                title: 'Çiftlik Adresi',
+              ),
+            ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.sm)),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  border: Border.all(color: cs.outlineVariant),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.location_on, color: cs.primary),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        [
+                          profile.address!,
+                          if (profile.village != null && profile.village!.isNotEmpty) profile.village!,
+                          '${profile.district} / ${profile.city}'
+                        ].join('\n'),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: cs.onSurface,
+                              height: 1.4,
+                            ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
+        ],
+
         // ── İletişim ─────────────────────────────────────────────────
         if (profile.showPhone && (profile.publicPhone?.isNotEmpty ?? false)) ...[
           SliverToBoxAdapter(

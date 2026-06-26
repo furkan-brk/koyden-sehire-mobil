@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:video_compress/video_compress.dart';
@@ -814,7 +815,7 @@ class _StepProductionVideoState extends State<_StepProductionVideo> {
 
   Future<void> _pickVideo(ImageSource source) async {
     try {
-      if (source == ImageSource.camera) {
+      if (!kIsWeb && source == ImageSource.camera) {
         final cameraStatus = await Permission.camera.request();
         final micStatus = await Permission.microphone.request();
         if (cameraStatus.isPermanentlyDenied || micStatus.isPermanentlyDenied) {

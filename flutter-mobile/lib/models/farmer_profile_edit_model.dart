@@ -1,3 +1,5 @@
+import 'package:koyden_sehire/app/constants.dart';
+
 class FarmerProfileEdit {
   final String displayName;
   final String? producerType;
@@ -34,7 +36,9 @@ class FarmerProfileEdit {
         bio: json['bio']?.toString() ?? '',
         publicPhone: json['public_phone']?.toString() ?? '',
         showPhone: json['show_phone'] != false,
-        profileImageUrl: json['profile_image_url']?.toString(),
+        profileImageUrl: json['profile_image_url'] != null
+            ? AppConstants.formatDevUrl(json['profile_image_url'].toString())
+            : null,
       );
 
   FarmerProfileEdit copyWith({
