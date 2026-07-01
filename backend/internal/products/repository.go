@@ -102,7 +102,9 @@ func (r *Repository) ListPublic(f *ProductFilter) ([]PublicProduct, int, error) 
 		return nil, 0, err
 	}
 
-	orderBy := "p.created_at DESC"
+	// Default order: most recently published first. published_at is set on
+	// admin approval; created_at is a stable tiebreaker for equal/NULL values.
+	orderBy := "p.published_at DESC NULLS LAST, p.created_at DESC"
 	switch f.Sort {
 	case "price_asc":
 		orderBy = "p.price ASC"
@@ -117,7 +119,7 @@ func (r *Repository) ListPublic(f *ProductFilter) ([]PublicProduct, int, error) 
 		SELECT
 			p.id, p.farmer_id, p.category_id, p.title, p.description,
 			p.price, p.unit, p.city, p.district, p.village,
-			p.status, p.stock_status, p.created_at, p.updated_at,
+			p.status, p.stock_status, p.created_at, p.updated_at, p.published_at,
 			fp.display_name, fp.is_verified, fp.is_founding_farmer,
 			fp.profile_image_url,
 			fp.city AS farmer_city, fp.district AS farmer_district,
@@ -436,7 +438,9 @@ func (r *Repository) UpdateStatus(id, farmerID, status string) error {
 
 func (r *Repository) AdminApprove(id string) error {
 	_, err := r.db.Exec(`
-		UPDATE products SET status = 'active', updated_at = NOW() WHERE id = $1
+		UPDATE products
+		SET status = 'active', published_at = NOW(), updated_at = NOW()
+		WHERE id = $1
 	`, id)
 	return err
 }
@@ -809,6 +813,7 @@ func mapRowToPublicProduct(row PublicProductRow, publicURL string) PublicProduct
 		Status:      row.Status,
 		StockStatus: row.StockStatus,
 		CreatedAt:   row.CreatedAt,
+		PublishedAt: row.PublishedAt,
 		Images:      images,
 		Category:    cat,
 		Farmer: FarmerInfo{
