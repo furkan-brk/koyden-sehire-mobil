@@ -1,21 +1,22 @@
 // ignore_for_file: avoid_web_libraries_in_flutter, deprecated_member_use
 import 'dart:async';
-import 'dart:html' as html;
 import 'dart:js' as js;
-import 'dart:js_util' as js_util;
-import 'dart:ui_web' as ui_web;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 // ── EChart widget ──────────────────────────────────────────────────────────
 
-int _viewTypeCounter = 0;
-
-/// Renders an Apache ECharts chart on Flutter Web via [HtmlElementView].
+/// Renders an Apache ECharts chart on Flutter Web.
 ///
-/// Init is deferred and polled until both the ECharts global is available
-/// *and* the container div has a non-zero size — this handles the race
-/// between Flutter's platform-view rendering and the page being ready.
+/// Uses ECharts' headless **SSR / SVG** mode (`echarts.init(null, null,
+/// {renderer: 'svg', ssr: true, width, height})` + `renderToSVGString()`): the
+/// chart is rendered fully and synchronously to an SVG string with no DOM
+/// element, then painted by Flutter's own [SvgPicture]. This deliberately
+/// avoids [HtmlElementView] platform views, which the CanvasKit renderer failed
+/// to composite (the DOM node was laid out correctly but never shown), and also
+/// avoids the canvas renderer's deferred first-frame paint. Charts are static
+/// (no tooltips/hover), which is fine for dashboard KPIs.
 class EChart extends StatefulWidget {
   const EChart({
     super.key,
@@ -31,95 +32,83 @@ class EChart extends StatefulWidget {
 }
 
 class _EChartState extends State<EChart> {
-  // Each instance needs a unique platform-view type.
-  final String _viewType = 'echart-view-${_viewTypeCounter++}';
+  String? _svg;
 
-  js.JsObject? _chart;
-  Timer? _initTimer;
-  StreamSubscription<html.Event>? _resizeSub;
+  /// Width the current [_svg] was rendered at, so we only re-render when the
+  /// available width actually changes.
+  double? _renderedWidth;
+  Timer? _pollTimer;
 
   @override
-  void initState() {
-    super.initState();
-    ui_web.platformViewRegistry.registerViewFactory(
-      _viewType,
-      (int viewId) {
-        final div = html.DivElement()
-          ..style.width = '100%'
-          ..style.height = '100%';
-        _scheduleInit(div);
-        return div;
-      },
-    );
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
   }
 
-  /// Polls at 100 ms intervals until:
-  /// 1. `window.echarts` is available (JS fully loaded).
-  /// 2. The div has been laid out with non-zero dimensions.
-  ///
-  /// Gives up after ~5 s (50 ticks) to avoid infinite loops.
-  void _scheduleInit(html.DivElement div) {
+  /// Renders the chart to an SVG string at [width] × [widget.height]. Retries
+  /// until the `echarts` global has finished loading.
+  void _render(double width) {
+    if (width <= 0) return;
+    _renderedWidth = width;
+    _pollTimer?.cancel();
+
     int ticks = 0;
-    _initTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+    _pollTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
       if (!mounted || ticks++ > 50) {
         timer.cancel();
         return;
       }
-
-      final echartsGlobal = js.context['echarts'];
-      if (echartsGlobal == null) return; // wait for JS
-
-      final w = div.clientWidth;
-      final h = div.clientHeight;
-      if (w <= 0 || h <= 0) return; // wait for layout
+      final echarts = js.context['echarts'];
+      if (echarts == null) return; // wait for echarts.min.js to load
 
       timer.cancel();
-      _initTimer = null;
-
-      try {
-        final chart = (echartsGlobal as js.JsObject).callMethod('init', [div]) as js.JsObject;
-        chart.callMethod('setOption', [js_util.jsify(widget.option)]);
-        _chart = chart;
-
-        // Re-size on browser window resize.
-        _resizeSub = html.window.onResize.listen((_) => _resize());
-      } catch (_) {
-        // Layout edge cases — will not retry; chart stays blank rather than crash.
+      final svg = _renderToSvg(echarts as js.JsObject, width);
+      if (svg != null && mounted) {
+        setState(() => _svg = svg);
       }
     });
   }
 
-  void _applyOption() {
-    _chart?.callMethod('setOption', [js_util.jsify(widget.option)]);
-  }
+  /// Renders headlessly and returns the SVG markup. Null on any failure.
+  String? _renderToSvg(js.JsObject echarts, double width) {
+    js.JsObject? chart;
+    try {
+      final opts = js.JsObject.jsify({
+        'renderer': 'svg',
+        'ssr': true,
+        'width': width.round(),
+        'height': widget.height.round(),
+      });
+      chart = echarts.callMethod('init', [null, null, opts]) as js.JsObject;
 
-  void _resize() {
-    _chart?.callMethod('resize', []);
-  }
+      final option = Map<String, dynamic>.from(widget.option)..['animation'] = false;
+      chart.callMethod('setOption', [js.JsObject.jsify(option)]);
 
-  @override
-  void didUpdateWidget(covariant EChart oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.option != widget.option) _applyOption();
-  }
-
-  @override
-  void dispose() {
-    _initTimer?.cancel();
-    _resizeSub?.cancel();
-    _chart?.callMethod('dispose', []);
-    super.dispose();
+      return chart.callMethod('renderToSVGString', const []) as String;
+    } catch (_) {
+      return null;
+    } finally {
+      chart?.callMethod('dispose', const []);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: widget.height,
+      width: double.infinity,
       child: LayoutBuilder(
-        builder: (context, _) {
-          // Notify ECharts whenever Flutter re-lays-out this widget.
-          WidgetsBinding.instance.addPostFrameCallback((_) => _resize());
-          return HtmlElementView(viewType: _viewType);
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          if (_renderedWidth != width) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted && _renderedWidth != width) _render(width);
+            });
+          }
+          if (_svg == null) {
+            return const SizedBox.shrink();
+          }
+          return SvgPicture.string(_svg!, fit: BoxFit.contain);
         },
       ),
     );

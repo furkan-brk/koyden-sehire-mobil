@@ -252,13 +252,11 @@ class _AdminApplicationDetailViewState
                   child: Column(
                     children: [
                       _PersonalCard(app: app),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
                       _BusinessCard(app: app),
-                      const SizedBox(height: 16),
-                      _LocationCard(app: app),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
                       _ProductionCard(app: app),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
                       _MediaCard(app: app),
                     ],
                   ),
@@ -269,14 +267,16 @@ class _AdminApplicationDetailViewState
                   child: Column(
                     children: [
                       _SummaryCard(app: app),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
+                      _LocationCard(app: app),
+                      const SizedBox(height: 14),
                       _DeclarationsCard(app: app),
                       if (app.adminNote != null) ...[
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 14),
                         _AdminNoteCard(note: app.adminNote!),
                       ],
                       if (app.rejectionReason != null) ...[
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 14),
                         _RejectionCard(reason: app.rejectionReason!),
                       ],
                     ],
@@ -393,9 +393,11 @@ class _PersonalCard extends StatelessWidget {
       title: 'Kişisel ve İletişim Bilgileri',
       icon: Icons.person_outline,
       children: [
-        _Field('Ad Soyad', app.fullName),
-        _Field('Telefon', app.phone),
-        _Field('E-posta', app.email ?? 'Belirtilmemiş'),
+        _FieldWrap([
+          _Field('Ad Soyad', app.fullName),
+          _Field('Telefon', app.phone),
+          _Field('E-posta', app.email ?? 'Belirtilmemiş'),
+        ]),
       ],
     );
   }
@@ -411,10 +413,12 @@ class _BusinessCard extends StatelessWidget {
       title: 'İşletme ve Üretici Bilgileri',
       icon: Icons.store_outlined,
       children: [
-        _Field('İşletme / Çiftlik Adı',
-            app.businessName.isEmpty ? 'Belirtilmemiş' : app.businessName),
-        _Field('Üretici Tipi',
-            _producerTypeLabels[app.producerType] ?? app.producerType),
+        _FieldWrap([
+          _Field('İşletme / Çiftlik Adı',
+              app.businessName.isEmpty ? 'Belirtilmemiş' : app.businessName),
+          _Field('Üretici Tipi',
+              _producerTypeLabels[app.producerType] ?? app.producerType),
+        ]),
         _Field('Biyografi / Hakkında',
             (app.bio == null || app.bio!.isEmpty) ? 'Belirtilmemiş' : app.bio!),
       ],
@@ -466,17 +470,19 @@ class _ProductionCard extends StatelessWidget {
           )
         else
           const _Field('Ürün Kategorileri', 'Belirtilmemiş'),
-        _Field('Ürün Örnekleri',
-            (app.productExamples == null || app.productExamples!.isEmpty)
+        _FieldWrap([
+          _Field(
+            'Üretim Yeri',
+            app.productionPlaceType == null
                 ? 'Belirtilmemiş'
-                : app.productExamples!),
-        _Field(
-          'Üretim Yeri',
-          app.productionPlaceType == null
-              ? 'Belirtilmemiş'
-              : (_productionPlaceLabels[app.productionPlaceType!] ??
-                  app.productionPlaceType!),
-        ),
+                : (_productionPlaceLabels[app.productionPlaceType!] ??
+                    app.productionPlaceType!),
+          ),
+          _Field('Ürün Örnekleri',
+              (app.productExamples == null || app.productExamples!.isEmpty)
+                  ? 'Belirtilmemiş'
+                  : app.productExamples!),
+        ]),
         _Field('Başvuru Notu',
             (app.applicationNote == null || app.applicationNote!.isEmpty)
                 ? 'Belirtilmemiş'
@@ -608,7 +614,7 @@ class _SectionCard extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -635,6 +641,32 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
+/// Lays out its [children] two-per-row (each half width) on wide enough space,
+/// falling back to a single stacked column when a half column would be too
+/// narrow (protects the mobile view).
+class _FieldWrap extends StatelessWidget {
+  final List<Widget> children;
+  const _FieldWrap(this.children);
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const gap = 16.0;
+        final half = (constraints.maxWidth - gap) / 2;
+        final itemWidth = half < 140 ? constraints.maxWidth : half;
+        return Wrap(
+          spacing: gap,
+          runSpacing: 0,
+          children: children
+              .map((c) => SizedBox(width: itemWidth, child: c))
+              .toList(),
+        );
+      },
+    );
+  }
+}
+
 class _Field extends StatelessWidget {
   final String label;
   final String value;
@@ -652,7 +684,7 @@ class _Field extends StatelessWidget {
               style: TextStyle(
                   fontSize: 11,
                   color: cs.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w500,
                   letterSpacing: 0.3)),
           const SizedBox(height: 3),
           Text(value,
@@ -681,7 +713,7 @@ class _FieldRow extends StatelessWidget {
               style: TextStyle(
                   fontSize: 11,
                   color: cs.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w500,
                   letterSpacing: 0.3)),
           const SizedBox(height: 6),
           child,
@@ -701,7 +733,7 @@ class _Label extends StatelessWidget {
         style: TextStyle(
             fontSize: 11,
             color: Theme.of(context).colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w500,
             letterSpacing: 0.3));
   }
 }

@@ -422,13 +422,21 @@ class _AdminProductDetailViewState
 
 // ── Shared widgets ────────────────────────────────────────────────────────────
 
-class _ImageGallery extends StatelessWidget {
+class _ImageGallery extends StatefulWidget {
   final List<dynamic> imageUrls;
   const _ImageGallery({required this.imageUrls});
 
   @override
+  State<_ImageGallery> createState() => _ImageGalleryState();
+}
+
+class _ImageGalleryState extends State<_ImageGallery> {
+  int _selectedIndex = 0;
+
+  @override
   Widget build(BuildContext context) {
-    if (imageUrls.isEmpty) {
+    final images = widget.imageUrls;
+    if (images.isEmpty) {
       return Card(
         child: Container(
           height: 200,
@@ -446,29 +454,81 @@ class _ImageGallery extends StatelessWidget {
         ),
       );
     }
+
+    // Guard against a stale index if the image list shrank.
+    final selected = _selectedIndex.clamp(0, images.length - 1);
+
     return Column(
-      children: imageUrls.asMap().entries.map((e) {
-        return Padding(
-          padding: EdgeInsets.only(
-              bottom: e.key < imageUrls.length - 1 ? 8 : 0),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            child: CachedNetworkImage(
-              imageUrl: e.value as String,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              placeholder: (_, __) => Container(
-                  height: 200, color: AppColors.outlineVariant),
-              errorWidget: (_, __, ___) => Container(
-                height: 200,
-                color: AppColors.outlineVariant,
-                child: const Icon(Icons.broken_image_outlined,
-                    color: AppColors.onSurfaceVariant),
-              ),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Large selected image ─────────────────────────────────
+        ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          child: CachedNetworkImage(
+            imageUrl: images[selected] as String,
+            width: double.infinity,
+            height: 360,
+            fit: BoxFit.cover,
+            placeholder: (_, __) =>
+                Container(height: 360, color: AppColors.outlineVariant),
+            errorWidget: (_, __, ___) => Container(
+              height: 360,
+              color: AppColors.outlineVariant,
+              child: const Icon(Icons.broken_image_outlined,
+                  color: AppColors.onSurfaceVariant),
             ),
           ),
-        );
-      }).toList(),
+        ),
+        // ── Horizontal thumbnails ────────────────────────────────
+        if (images.length > 1) ...[
+          const SizedBox(height: 12),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: images.asMap().entries.map((e) {
+                final isSelected = e.key == selected;
+                return Padding(
+                  padding: EdgeInsets.only(
+                      right: e.key < images.length - 1 ? 8 : 0),
+                  child: GestureDetector(
+                    onTap: () => setState(() => _selectedIndex = e.key),
+                    child: Container(
+                      width: 70,
+                      height: 70,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isSelected
+                              ? AppColors.primary
+                              : AppColors.outlineVariant,
+                          width: isSelected ? 2.5 : 1,
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: CachedNetworkImage(
+                          imageUrl: e.value as String,
+                          width: 70,
+                          height: 70,
+                          fit: BoxFit.cover,
+                          placeholder: (_, __) =>
+                              Container(color: AppColors.outlineVariant),
+                          errorWidget: (_, __, ___) => Container(
+                            color: AppColors.outlineVariant,
+                            child: const Icon(Icons.broken_image_outlined,
+                                size: 18,
+                                color: AppColors.onSurfaceVariant),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

@@ -46,29 +46,29 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
 
       final s = data.stats;
 
-      // ── Fixed top section (KPIs — no scroll) ─────────────────────
-      // ── Scrollable bottom section (charts) ────────────────────────
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _DashboardHeader(onRefresh: _ctrl.load),
-                const SizedBox(height: 16),
-                _StatsGrid(stats: s),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          // ── Charts section — scrollable ──────────────────────────
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: _ctrl.load,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
+      // Entire dashboard scrolls as one — otherwise a fixed (non-scrolling) KPI
+      // header would, at narrow widths, grow tall enough to squeeze the charts'
+      // Expanded to zero height and overflow the Column.
+      return RefreshIndicator(
+        onRefresh: _ctrl.load,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _DashboardHeader(onRefresh: _ctrl.load),
+                    const SizedBox(height: 16),
+                    _StatsGrid(stats: s),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Padding(
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,9 +110,9 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                   ],
                 ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       );
     });
   }
