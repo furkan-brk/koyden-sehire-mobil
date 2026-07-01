@@ -10,6 +10,7 @@ import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/views/admin/widgets/admin_status_badge.dart';
 import 'package:koyden_sehire/controllers/admin/admin_farmers_controller.dart';
 import 'package:koyden_sehire/shared/widgets/search_field.dart';
+import 'package:koyden_sehire/views/admin/widgets/admin_filter_bar.dart';
 
 class AdminFarmersView extends StatefulWidget {
   const AdminFarmersView({super.key});
@@ -153,6 +154,16 @@ class _AdminFarmersViewState extends State<AdminFarmersView> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 12),
+                  Obx(() => AdminChoiceChips(
+                        selected: _ctrl.selectedStatus.value,
+                        onSelected: (v) => _ctrl.selectedStatus.value = v,
+                        options: const [
+                          AdminFilterOption('all', 'Tümü'),
+                          AdminFilterOption('active', 'Aktif Üreticiler'),
+                          AdminFilterOption('suspended', 'Askıya Alınanlar'),
+                        ],
+                      )),
                   SizedBox(height: isDesktop ? 16 : 8),
                 ],
               ),

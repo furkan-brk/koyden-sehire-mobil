@@ -12,13 +12,43 @@ class AdminProductsController extends GetxController {
   final error = ''.obs;
   final search = ''.obs;
 
+  // Filters
+  final selectedStatus = 'all'.obs; // all | pending | active | rejected | hidden
+  final selectedCategoryId = ''.obs; // empty = all
+  final selectedCity = ''.obs; // empty = all
+
+  /// Unique categories present in the loaded products (MapEntry: id → name).
+  List<MapEntry<String, String>> get categoryOptions {
+    final map = <String, String>{};
+    for (final p in items) {
+      final c = p.category;
+      if (c != null && c.id.isNotEmpty) map[c.id] = c.name;
+    }
+    final list = map.entries.toList()
+      ..sort((a, b) => a.value.compareTo(b.value));
+    return list;
+  }
+
+  /// Unique cities present in the loaded products.
+  List<String> get cityOptions {
+    final set = items.map((p) => p.city).where((c) => c.isNotEmpty).toSet();
+    return set.toList()..sort();
+  }
+
   List<AdminProduct> get filteredItems {
     final q = search.value.toLowerCase();
-    if (q.isEmpty) return items;
     return items.where((p) {
-      return p.title.toLowerCase().contains(q) ||
+      final matchesSearch = q.isEmpty ||
+          p.title.toLowerCase().contains(q) ||
           (p.farmer?.displayName ?? '').toLowerCase().contains(q) ||
           (p.category?.name ?? '').toLowerCase().contains(q);
+      final matchesStatus =
+          selectedStatus.value == 'all' || p.status == selectedStatus.value;
+      final matchesCategory = selectedCategoryId.value.isEmpty ||
+          p.category?.id == selectedCategoryId.value;
+      final matchesCity = selectedCity.value.isEmpty ||
+          p.city.toLowerCase() == selectedCity.value.toLowerCase();
+      return matchesSearch && matchesStatus && matchesCategory && matchesCity;
     }).toList();
   }
 

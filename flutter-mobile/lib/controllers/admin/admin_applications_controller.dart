@@ -12,13 +12,28 @@ class AdminApplicationsController extends GetxController {
   final error = ''.obs;
   final search = ''.obs;
 
+  // Filters — review-priority "pending" is shown first by default.
+  final selectedStatus = 'pending'.obs; // all | pending | approved | rejected
+  final selectedCity = ''.obs; // empty = all
+
+  /// Unique cities present in the loaded applications.
+  List<String> get cityOptions {
+    final set = items.map((a) => a.city).where((c) => c.isNotEmpty).toSet();
+    return set.toList()..sort();
+  }
+
   List<AdminApplication> get filteredItems {
     final q = search.value.toLowerCase();
-    if (q.isEmpty) return items;
     return items.where((a) {
-      return a.fullName.toLowerCase().contains(q) ||
+      final matchesSearch = q.isEmpty ||
+          a.fullName.toLowerCase().contains(q) ||
           a.city.toLowerCase().contains(q) ||
           (a.inviteCode ?? '').toLowerCase().contains(q);
+      final matchesStatus =
+          selectedStatus.value == 'all' || a.status == selectedStatus.value;
+      final matchesCity = selectedCity.value.isEmpty ||
+          a.city.toLowerCase() == selectedCity.value.toLowerCase();
+      return matchesSearch && matchesStatus && matchesCity;
     }).toList();
   }
 
