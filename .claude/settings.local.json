@@ -90,7 +90,14 @@
       "Bash(grep -v \"^$\")",
       "Read(//c/tmp/**)",
       "Bash(python3 -c ' *)",
-      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d\\)\")"
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d\\)\")",
+      "Bash(grep -vE \"^#|^$\" backend/.env)",
+      "Bash(grep -vE \"^#|^$\" .env)",
+      "Bash(xargs kill -9)",
+      "Bash(pkill -f \"flutter run.*web-port 3000\")",
+      "Bash(set -e)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }
