@@ -19,9 +19,10 @@ type Product struct {
 	Status         string    `db:"status" json:"status"`
 	PreviousStatus *string   `db:"previous_status" json:"previous_status,omitempty"`
 	StockStatus    string    `db:"stock_status" json:"stock_status"`
-	AdminNote      *string   `db:"admin_note" json:"admin_note,omitempty"`
-	CreatedAt      time.Time `db:"created_at" json:"created_at"`
-	UpdatedAt      time.Time `db:"updated_at" json:"updated_at"`
+	AdminNote      *string    `db:"admin_note" json:"admin_note,omitempty"`
+	CreatedAt      time.Time  `db:"created_at" json:"created_at"`
+	UpdatedAt      time.Time  `db:"updated_at" json:"updated_at"`
+	PublishedAt    *time.Time `db:"published_at" json:"published_at,omitempty"`
 }
 
 type ProductImage struct {
@@ -48,6 +49,7 @@ type PublicProductRow struct {
 	StockStatus           string          `db:"stock_status"`
 	CreatedAt             time.Time       `db:"created_at"`
 	UpdatedAt             time.Time       `db:"updated_at"`
+	PublishedAt           *time.Time      `db:"published_at"`
 	ImagesJSON            json.RawMessage `db:"images"`
 	DisplayName           string          `db:"display_name"`
 	IsVerified            bool            `db:"is_verified"`
@@ -75,6 +77,7 @@ type PublicProduct struct {
 	Status      string       `json:"status"`
 	StockStatus string       `json:"stock_status"`
 	CreatedAt   time.Time    `json:"created_at"`
+	PublishedAt *time.Time   `json:"published_at,omitempty"`
 	Images      []ImageItem  `json:"images"`
 	Category    CategoryInfo `json:"category"`
 	Farmer      FarmerInfo   `json:"farmer"`

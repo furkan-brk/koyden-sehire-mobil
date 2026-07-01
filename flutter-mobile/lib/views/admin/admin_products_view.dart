@@ -11,6 +11,7 @@ import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/views/admin/widgets/admin_status_badge.dart';
 import 'package:koyden_sehire/controllers/admin/admin_products_controller.dart';
 import 'package:koyden_sehire/shared/widgets/search_field.dart';
+import 'package:koyden_sehire/views/admin/widgets/admin_filter_bar.dart';
 
 class AdminProductsView extends StatefulWidget {
   const AdminProductsView({super.key});
@@ -99,6 +100,53 @@ class _AdminProductsViewState extends State<AdminProductsView> {
                     onChanged: (v) => _ctrl.search.value = v,
                     onClear: () => _ctrl.search.value = '',
                   ),
+                  const SizedBox(height: 12),
+                  Obx(() => AdminChoiceChips(
+                        selected: _ctrl.selectedStatus.value,
+                        onSelected: (v) => _ctrl.selectedStatus.value = v,
+                        options: const [
+                          AdminFilterOption('all', 'Tümü'),
+                          AdminFilterOption('pending', 'Onay Bekleyenler'),
+                          AdminFilterOption('active', 'Yayındakiler'),
+                          AdminFilterOption('rejected', 'Reddedilenler'),
+                          AdminFilterOption('hidden', 'Yayından Kaldırılanlar'),
+                        ],
+                      )),
+                  const SizedBox(height: 10),
+                  Obx(() => Row(
+                        children: [
+                          Expanded(
+                            child: AdminFilterDropdown(
+                              icon: Icons.category_outlined,
+                              hint: 'Tüm Kategoriler',
+                              value: _ctrl.selectedCategoryId.value.isEmpty
+                                  ? null
+                                  : _ctrl.selectedCategoryId.value,
+                              options: _ctrl.categoryOptions
+                                  .map((e) =>
+                                      AdminFilterOption(e.key, e.value))
+                                  .toList(),
+                              onChanged: (v) =>
+                                  _ctrl.selectedCategoryId.value = v ?? '',
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: AdminFilterDropdown(
+                              icon: Icons.location_on_outlined,
+                              hint: 'Tüm Şehirler',
+                              value: _ctrl.selectedCity.value.isEmpty
+                                  ? null
+                                  : _ctrl.selectedCity.value,
+                              options: _ctrl.cityOptions
+                                  .map((c) => AdminFilterOption(c, c))
+                                  .toList(),
+                              onChanged: (v) =>
+                                  _ctrl.selectedCity.value = v ?? '',
+                            ),
+                          ),
+                        ],
+                      )),
                   SizedBox(height: isDesktop ? 16 : 8),
                 ],
               ),

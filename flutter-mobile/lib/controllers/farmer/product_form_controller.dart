@@ -99,6 +99,25 @@ class ProductFormController extends GetxController {
     }
   }
 
+  /// Reorders the uploaded images. Keeps [imageKeys] in lockstep with
+  /// [ProductFormData.imageUrls] since the keys (in order, first = cover) are
+  /// what gets submitted for a new product.
+  void reorderImages(int oldIndex, int newIndex) {
+    final urls = [...data.value.imageUrls];
+    if (oldIndex < 0 || oldIndex >= urls.length) return;
+    // ReorderableListView reports newIndex assuming the item is still present.
+    if (oldIndex < newIndex) newIndex -= 1;
+
+    final url = urls.removeAt(oldIndex);
+    urls.insert(newIndex, url);
+    data.value = data.value.copyWith(imageUrls: urls);
+
+    if (oldIndex < imageKeys.length) {
+      final key = imageKeys.removeAt(oldIndex);
+      imageKeys.insert(newIndex.clamp(0, imageKeys.length), key);
+    }
+  }
+
   Future<bool> submit({String? editingId}) async {
     isSubmitting.value = true;
     errorMessage.value = null;

@@ -11,6 +11,7 @@ import 'package:koyden_sehire/views/admin/widgets/admin_risk_badge.dart';
 import 'package:koyden_sehire/views/admin/widgets/admin_status_badge.dart';
 import 'package:koyden_sehire/controllers/admin/admin_applications_controller.dart';
 import 'package:koyden_sehire/shared/widgets/search_field.dart';
+import 'package:koyden_sehire/views/admin/widgets/admin_filter_bar.dart';
 import 'package:koyden_sehire/core/utils/date_formatter.dart' show AppFormatters;
 
 class AdminApplicationsView extends StatefulWidget {
@@ -100,6 +101,29 @@ class _AdminApplicationsViewState extends State<AdminApplicationsView> {
                     onChanged: (v) => _ctrl.search.value = v,
                     onClear: () => _ctrl.search.value = '',
                   ),
+                  const SizedBox(height: 12),
+                  Obx(() => AdminChoiceChips(
+                        selected: _ctrl.selectedStatus.value,
+                        onSelected: (v) => _ctrl.selectedStatus.value = v,
+                        options: const [
+                          AdminFilterOption('pending', 'Onay Bekleyenler'),
+                          AdminFilterOption('approved', 'Onaylananlar'),
+                          AdminFilterOption('rejected', 'Reddedilenler'),
+                          AdminFilterOption('all', 'Tümü'),
+                        ],
+                      )),
+                  const SizedBox(height: 10),
+                  Obx(() => AdminFilterDropdown(
+                        icon: Icons.location_on_outlined,
+                        hint: 'Tüm Şehirler',
+                        value: _ctrl.selectedCity.value.isEmpty
+                            ? null
+                            : _ctrl.selectedCity.value,
+                        options: _ctrl.cityOptions
+                            .map((c) => AdminFilterOption(c, c))
+                            .toList(),
+                        onChanged: (v) => _ctrl.selectedCity.value = v ?? '',
+                      )),
                   SizedBox(height: isDesktop ? 16 : 8),
                 ],
               ),

@@ -103,7 +103,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
 
   Future<void> _pickImage(ImageSource source) async {
     final data = _formCtrl.data.value;
-    if (data.imageUrls.length >= AppConstants.maxProductImages) {
+    final remaining = AppConstants.maxProductImages - data.imageUrls.length;
+    if (remaining <= 0) {
       context.snack(
         'En fazla ${AppConstants.maxProductImages} fotoğraf ekleyebilirsiniz',
         isError: true,
@@ -125,20 +126,54 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     }
 
     final picker = ImagePicker();
-    final picked = await picker.pickImage(
-      source: source,
-      maxWidth: 1920,
-      imageQuality: 85,
-    );
-    if (picked == null) return;
 
+    // Camera — single capture as before.
+    if (source == ImageSource.camera) {
+      final picked = await picker.pickImage(
+        source: source,
+        maxWidth: 1920,
+        imageQuality: 85,
+      );
+      if (picked == null) return;
+      await _uploadPicked(picked);
+      return;
+    }
+
+    // Gallery — multi-select.
+    final pickedList =
+        await picker.pickMultiImage(imageQuality: 85, maxWidth: 1920);
+    if (pickedList.isEmpty) return;
+
+    var toUpload = pickedList;
+    if (pickedList.length > remaining) {
+      toUpload = pickedList.take(remaining).toList();
+      if (mounted) {
+        context.snack(
+          'En fazla ${AppConstants.maxProductImages} fotoğraf ekleyebilirsiniz. '
+          'Seçtiğiniz ilk ${toUpload.length} fotoğraf yükleniyor.',
+        );
+      }
+    }
+
+    for (final picked in toUpload) {
+      if (!mounted) return;
+      final ok = await _uploadPicked(picked);
+      if (!ok) break; // stop on first failure (error already surfaced)
+    }
+  }
+
+  /// Reads and uploads a single picked image. Returns true on success and
+  /// shows an error snackbar on failure.
+  Future<bool> _uploadPicked(XFile picked) async {
     final List<int> bytes;
     try {
       bytes = await picked.readAsBytes();
     } catch (_) {
-      if (!mounted) return;
-      context.snack('Fotoğraf okunamadı. Lütfen tekrar deneyin.', isError: true);
-      return;
+      if (mounted) {
+        context.snack('Fotoğraf okunamadı. Lütfen tekrar deneyin.',
+            isError: true);
+      }
+      return false;
     }
 
     final ext = picked.name.split('.').last.toLowerCase();
@@ -154,14 +189,14 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       filename: filename,
       contentType: contentType,
     );
-    if (!mounted) return;
-    if (!ok) {
+    if (!ok && mounted) {
       final err = _formCtrl.errorMessage.value;
       context.snack(
         err ?? 'Fotoğraf yüklenemedi. Lütfen tekrar deneyin.',
         isError: true,
       );
     }
+    return ok;
   }
 
   void _showImageSourceSheet() {
@@ -351,6 +386,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                       isUploading: state.isUploadingImage.value,
                       onAdd: _showImageSourceSheet,
                       onRemove: (i) => state.removeImage(i),
+                      onReorder: state.reorderImages,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm + 4),
@@ -609,11 +645,88 @@ class _ImagePickerSection extends StatelessWidget {
   final bool isUploading;
   final VoidCallback onAdd;
   final ValueChanged<int> onRemove;
+  final void Function(int oldIndex, int newIndex) onReorder;
 
   const _ImagePickerSection({
     required this.imageUrls,
     required this.isUploading,
     required this.onAdd,
+    required this.onRemove,
+    required this.onReorder,
+  });
+
+  static const double _tile = 104;
+  static const double _gap = AppSpacing.sm;
+
+  @override
+  Widget build(BuildContext context) {
+    final canAddMore = imageUrls.length < AppConstants.maxProductImages;
+
+    return SizedBox(
+      height: _tile,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Size the reorderable strip to its content, but cap it so the fixed
+          // "add" button always stays visible; the strip scrolls when full.
+          final contentWidth = imageUrls.length * (_tile + _gap);
+          final addWidth = canAddMore ? _tile + _gap : 0.0;
+          final maxListWidth =
+              (constraints.maxWidth - addWidth).clamp(0.0, double.infinity);
+          final listWidth =
+              contentWidth < maxListWidth ? contentWidth : maxListWidth;
+
+          return Row(
+            children: [
+              SizedBox(
+                width: listWidth,
+                child: ReorderableListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  buildDefaultDragHandles: false,
+                  itemCount: imageUrls.length,
+                  onReorder: onReorder,
+                  proxyDecorator: (child, index, animation) => Material(
+                    color: Colors.transparent,
+                    elevation: 6,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    child: child,
+                  ),
+                  itemBuilder: (context, i) {
+                    return ReorderableDragStartListener(
+                      key: ValueKey(imageUrls[i]),
+                      index: i,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: _gap),
+                        child: _ImageTile(
+                          imageUrl: imageUrls[i],
+                          isCover: i == 0,
+                          onRemove: () => onRemove(i),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              if (canAddMore)
+                _AddImageTile(
+                  onTap: isUploading ? null : onAdd,
+                  isUploading: isUploading,
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _ImageTile extends StatelessWidget {
+  final String imageUrl;
+  final bool isCover;
+  final VoidCallback onRemove;
+
+  const _ImageTile({
+    required this.imageUrl,
+    required this.isCover,
     required this.onRemove,
   });
 
@@ -621,61 +734,67 @@ class _ImagePickerSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return SizedBox(
+      width: 104,
       height: 104,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: imageUrls.length + 1,
-        separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
-        itemBuilder: (_, i) {
-          if (i == imageUrls.length) {
-            return _AddImageTile(
-              onTap: isUploading ? null : onAdd,
-              isUploading: isUploading,
-            );
-          }
-          return Stack(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(AppRadius.md),
-                child: SizedBox(
-                  width: 104,
-                  height: 104,
-                  child: CachedNetworkImage(
-                    imageUrl: imageUrls[i],
-                    fit: BoxFit.cover,
-                    placeholder: (_, __) => Shimmer.fromColors(
-                      baseColor: cs.surfaceContainer,
-                      highlightColor: cs.surfaceContainerLow,
-                      child: Container(
-                        color: Colors.white,
-                      ),
-                    ),
-                    errorWidget: (_, __, ___) => Container(
-                      color: AppColors.surfaceContainerLow,
-                      alignment: Alignment.center,
-                      child: const Icon(Icons.broken_image_outlined),
-                    ),
-                  ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: CachedNetworkImage(
+                imageUrl: imageUrl,
+                fit: BoxFit.cover,
+                placeholder: (_, __) => Shimmer.fromColors(
+                  baseColor: cs.surfaceContainer,
+                  highlightColor: cs.surfaceContainerLow,
+                  child: Container(color: Colors.white),
+                ),
+                errorWidget: (_, __, ___) => Container(
+                  color: AppColors.surfaceContainerLow,
+                  alignment: Alignment.center,
+                  child: const Icon(Icons.broken_image_outlined),
                 ),
               ),
+            ),
+            if (isCover)
               Positioned(
-                top: 4,
-                right: 4,
-                child: GestureDetector(
-                  onTap: () => onRemove(i),
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Colors.black54,
-                      shape: BoxShape.circle,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 3, horizontal: 4),
+                  color: AppColors.primary.withValues(alpha: 0.88),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    'Kapak Fotoğrafı',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      fontFamily: 'PlusJakartaSans',
                     ),
-                    child: const Icon(Icons.close, size: 14, color: Colors.white),
                   ),
                 ),
               ),
-            ],
-          );
-        },
+            Positioned(
+              top: 4,
+              right: 4,
+              child: GestureDetector(
+                onTap: onRemove,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: Colors.black54,
+                    shape: BoxShape.circle,
+                  ),
+                  child:
+                      const Icon(Icons.close, size: 14, color: Colors.white),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -13,14 +13,19 @@ class AdminFarmersController extends GetxController {
   final search = ''.obs;
   final cityFilter = ''.obs;
   final cities = <String>[].obs;
+  final selectedStatus = 'all'.obs; // all | active | suspended
 
   List<AdminFarmer> get filteredItems {
     final q = search.value.toLowerCase().trim();
-    if (q.isEmpty) return _items;
     return _items.where((f) {
-      return f.fullName.toLowerCase().contains(q) ||
+      final matchesSearch = q.isEmpty ||
+          f.fullName.toLowerCase().contains(q) ||
           f.city.toLowerCase().contains(q) ||
           (f.inviteCode?.toLowerCase().contains(q) ?? false);
+      final matchesStatus = selectedStatus.value == 'all' ||
+          (selectedStatus.value == 'active' && f.isActive) ||
+          (selectedStatus.value == 'suspended' && f.isSuspended);
+      return matchesSearch && matchesStatus;
     }).toList();
   }
 

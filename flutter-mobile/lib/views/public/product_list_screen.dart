@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/shared/widgets/location_filter_sheet.dart';
+import 'package:koyden_sehire/shared/widgets/category_filter_sheet.dart';
 import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/category_chip.dart';
@@ -144,6 +145,30 @@ class _ProductListScreenState extends State<ProductListScreen> {
     );
   }
 
+  Future<void> _showCategoryFilterSheet() async {
+    final result = await showCategoryFilterSheet(
+      context,
+      initialCategoryId: _ctrl.filter.value.categoryId,
+    );
+    if (result == null) return;
+    _selectCategory(result == kCategoryFilterClear ? null : result);
+  }
+
+  /// Display name of the currently selected category (root or child).
+  String? _selectedCategoryName(String? id) {
+    if (id == null) return null;
+    return findCategoryById(_catCtrl.flat, id)?.name;
+  }
+
+  /// Resolves the *root* category id that owns the given category id, so the
+  /// top horizontal bar stays highlighted even when a subcategory is selected.
+  String? _selectedRootId(String? id) {
+    if (id == null) return null;
+    final match = findCategoryById(_catCtrl.flat, id);
+    if (match == null) return null;
+    return match.parentId ?? match.id;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -173,7 +198,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
             if (cats.isEmpty) return const SizedBox.shrink();
             return _CategoryFilterBar(
               categories: cats,
-              selectedId: _ctrl.filter.value.categoryId,
+              selectedId: _selectedRootId(_ctrl.filter.value.categoryId),
               onSelect: _selectCategory,
             );
           }),
@@ -181,15 +206,28 @@ class _ProductListScreenState extends State<ProductListScreen> {
             final filter = _ctrl.filter.value;
             final hasLocation = filter.city?.isNotEmpty == true;
             final hasSort = filter.sort != null;
+            final hasCategory = filter.categoryId != null;
             final sortLabel = switch (filter.sort) {
               'price_asc' => 'Ucuzdan Pahalıya',
               'price_desc' => 'Pahalıdan Ucuza',
               _ => 'Sırala',
             };
-            return Padding(
+            final categoryLabel =
+                _selectedCategoryName(filter.categoryId) ?? 'Kategori';
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.fromLTRB(AppSpacing.md, 4, AppSpacing.md, 4),
               child: Row(
                 children: [
+                  _CategoryFilterChip(
+                    label: categoryLabel,
+                    isActive: hasCategory,
+                    onTap: _showCategoryFilterSheet,
+                    onClear: hasCategory
+                        ? () => _ctrl.applyFilter(filter.copyWith(clearCategory: true))
+                        : null,
+                  ),
+                  const SizedBox(width: 8),
                   _LocationFilterChip(
                     city: filter.city,
                     district: filter.district,
@@ -418,6 +456,65 @@ class _LocationFilterChip extends StatelessWidget {
               ),
             ),
             if (_isActive && onClear != null) ...[
+              const SizedBox(width: 4),
+              GestureDetector(
+                onTap: onClear,
+                child: const Icon(Icons.close, size: 14, color: AppColors.primary),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryFilterChip extends StatelessWidget {
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+  final VoidCallback? onClear;
+
+  const _CategoryFilterChip({
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+    this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: isActive ? AppColors.primaryFixed : AppColors.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          border: Border.all(
+            color: isActive ? AppColors.primaryContainer : AppColors.outlineVariant,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.category_outlined,
+              size: 15,
+              color: isActive ? AppColors.primary : AppColors.onSurfaceVariant,
+            ),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'PlusJakartaSans',
+                fontSize: 13,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                color: isActive ? AppColors.primary : AppColors.onSurfaceVariant,
+              ),
+            ),
+            if (isActive && onClear != null) ...[
               const SizedBox(width: 4),
               GestureDetector(
                 onTap: onClear,
