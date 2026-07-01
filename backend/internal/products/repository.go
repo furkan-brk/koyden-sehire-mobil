@@ -25,7 +25,10 @@ func (r *Repository) ListPublic(f *ProductFilter) ([]PublicProduct, int, error) 
 	conditions := []string{"p.status = 'active'"}
 
 	if f.Search != "" {
-		conditions = append(conditions, fmt.Sprintf("p.title ILIKE $%d", argIdx))
+		conditions = append(conditions, fmt.Sprintf(
+			"(p.title ILIKE $%d OR fp.display_name ILIKE $%d OR c.name ILIKE $%d OR pc.name ILIKE $%d)",
+			argIdx, argIdx, argIdx, argIdx,
+		))
 		args = append(args, "%"+f.Search+"%")
 		argIdx++
 	}
@@ -90,6 +93,7 @@ func (r *Repository) ListPublic(f *ProductFilter) ([]PublicProduct, int, error) 
 		FROM products p
 		JOIN farmer_profiles fp ON fp.user_id = p.farmer_id
 		JOIN categories c ON c.id = p.category_id
+		LEFT JOIN categories pc ON pc.id = c.parent_id
 		WHERE %s
 	`, where)
 
