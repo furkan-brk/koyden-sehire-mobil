@@ -51,52 +51,53 @@ class AdminStatCard extends StatelessWidget {
               // ── Card body ─────────────────────────────────────────
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                title,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                      color: cs.onSurfaceVariant,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                              ),
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: cs.onSurfaceVariant,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                             ),
-                            const SizedBox(width: 8),
-                            // ── Icon badge ───────────────────────────
-                            Container(
-                              width: 38,
-                              height: 38,
-                              decoration: BoxDecoration(
-                                color: c.withValues(alpha: 0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(icon, size: 18, color: c),
+                          ),
+                          const SizedBox(width: 8),
+                          // ── Icon badge ───────────────────────────
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: c.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        // ── Big number ───────────────────────────────
-                        Text(
-                          value.toString(),
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -0.5,
-                              ),
-                        ),
+                            child: Icon(icon, size: 16, color: c),
+                          ),
+                        ],
+                      ),
+                      // ── Big number ───────────────────────────────
+                      Text(
+                        value.toString(),
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineSmall
+                            ?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.5,
+                            ),
+                      ),
                         // ── Trend badge (optional) ───────────────────
                         if (trend != null) ...[
                           const SizedBox(height: 6),
@@ -128,8 +129,7 @@ class AdminStatCard extends StatelessWidget {
                             ],
                           ),
                         ],
-                      ],
-                    ),
+                    ],
                   ),
                 ),
               ),

@@ -229,18 +229,21 @@ class _StatsGrid extends StatelessWidget {
         final w = constraints.maxWidth;
         final int cols;
         final double aspect;
-        if (w >= 1200) {
-          cols = 6; // all 6 in one row — no vertical scroll needed
-          aspect = 2.6;
+        if (w >= 1400) {
+          cols = 6;
+          aspect = 1.9;
+        } else if (w >= 1100) {
+          cols = 6;
+          aspect = 1.6;
         } else if (w >= 900) {
           cols = 3;
-          aspect = 2.2;
+          aspect = 1.9;
         } else if (w >= 560) {
           cols = 2;
-          aspect = 2.0;
+          aspect = 1.8;
         } else {
           cols = 1;
-          aspect = 3.0;
+          aspect = 2.6;
         }
         return GridView.count(
           crossAxisCount: cols,

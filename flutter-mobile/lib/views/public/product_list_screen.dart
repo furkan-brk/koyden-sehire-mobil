@@ -324,7 +324,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
           crossAxisCount: 2,
           mainAxisSpacing: 12,
           crossAxisSpacing: 12,
-          childAspectRatio: 0.62,
+          childAspectRatio: 0.55,
         ),
         itemCount: ctrl.items.length + (ctrl.isLoadingMore.value ? 2 : 0),
         itemBuilder: (_, i) {

@@ -97,7 +97,26 @@
       "Bash(pkill -f \"flutter run.*web-port 3000\")",
       "Bash(set -e)",
       "Bash(git commit *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(echo \"PID: $!\")",
+      "Bash(open *)",
+      "Bash(pkill -f \"flutter run\")",
+      "Bash(pkill -f \"dartvm\")",
+      "Bash(echo \"Flutter başlatıldı, PID: $!\")",
+      "Bash(pkill -f \"chrome.*localhost:3000\")",
+      "Bash(gofmt -l ./internal/farmers/model.go ./internal/farmers/repository.go)",
+      "Bash(gofmt -w ./internal/farmers/repository.go)",
+      "Bash(xcrun simctl *)",
+      "Bash(xargs cat)",
+      "Bash(echo \"Web PID: $!\")",
+      "Bash(gofmt *)",
+      "Bash(pkill -f \"flutter_tools\")",
+      "Read(//private/tmp/**)",
+      "Bash(lsof -ti:3000)",
+      "Bash(git check-ignore *)",
+      "Bash(grep -E \"^\\\\.env$\")",
+      "Bash(git log *)",
+      "Bash(git pull *)"
     ]
   }
 }

@@ -52,11 +52,19 @@ func (r *Repository) GetApplicationsByDay() ([]ChartPoint, error) {
 
 func (r *Repository) GetProductsByCategory() ([]ChartPoint, error) {
 	rows, err := r.db.Queryx(`
-		SELECT c.name AS name, COUNT(p.id)::float8 AS value
-		FROM categories c
-		LEFT JOIN products p ON p.category_id = c.id AND p.status = 'active'
-		WHERE c.parent_id IS NULL
-		GROUP BY c.id, c.name
+		WITH RECURSIVE cat_tree AS (
+			SELECT id, id AS root_id, name AS root_name
+			FROM categories
+			WHERE parent_id IS NULL
+			UNION ALL
+			SELECT c.id, t.root_id, t.root_name
+			FROM categories c
+			JOIN cat_tree t ON c.parent_id = t.id
+		)
+		SELECT t.root_name AS name, COUNT(p.id)::float8 AS value
+		FROM cat_tree t
+		LEFT JOIN products p ON p.category_id = t.id AND p.status = 'active'
+		GROUP BY t.root_id, t.root_name
 		ORDER BY value DESC
 		LIMIT 10
 	`)
