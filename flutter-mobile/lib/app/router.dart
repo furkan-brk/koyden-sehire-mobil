@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import 'package:koyden_sehire/core/services/auth_service.dart';
 import 'package:koyden_sehire/views/admin/admin_application_detail_view.dart';
 import 'package:koyden_sehire/views/admin/admin_applications_view.dart';
-import 'package:koyden_sehire/views/admin/admin_audit_log_view.dart';
 import 'package:koyden_sehire/views/admin/admin_categories_view.dart';
 import 'package:koyden_sehire/views/admin/admin_dashboard_view.dart';
 import 'package:koyden_sehire/views/admin/admin_farmer_detail_view.dart';
@@ -277,10 +276,6 @@ class AppRouter {
             GoRoute(
               path: '/admin/invite-network',
               redirect: (_, __) => '/admin/farmers',
-            ),
-            GoRoute(
-              path: '/admin/audit-logs',
-              pageBuilder: (_, __) => const NoTransitionPage(child: AdminAuditLogView()),
             ),
           ],
         ),

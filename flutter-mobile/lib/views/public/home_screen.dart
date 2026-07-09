@@ -87,7 +87,13 @@ class HomeScreen extends StatelessWidget {
               );
             }
           }),
-          const FarmerModeChip(),
+          Obx(() {
+            if (auth.status.value == AuthStatus.farmerActive &&
+                auth.isBrowsingAsCustomer.value) {
+              return const SizedBox.shrink();
+            }
+            return const FarmerModeChip();
+          }),
           const SizedBox(width: AppSpacing.sm),
         ],
       ),

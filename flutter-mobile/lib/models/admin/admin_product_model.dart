@@ -76,6 +76,7 @@ class AdminProduct {
   final String? stockStatus;
   final String? rejectionReason;
   final DateTime? createdAt;
+  final DateTime? publishedAt;
   final List<String> imageUrls;
   final AdminProductFarmer? farmer;
   final AdminProductCategory? category;
@@ -93,6 +94,7 @@ class AdminProduct {
     this.stockStatus,
     this.rejectionReason,
     this.createdAt,
+    this.publishedAt,
     this.imageUrls = const [],
     this.farmer,
     this.category,
@@ -128,6 +130,7 @@ class AdminProduct {
       stockStatus: json['stock_status']?.toString(),
       rejectionReason: json['admin_note']?.toString(),
       createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
+      publishedAt: DateTime.tryParse(json['published_at']?.toString() ?? ''),
       imageUrls: images,
       farmer: farmerJson != null
           ? AdminProductFarmer.fromJson(farmerJson.cast<String, dynamic>())

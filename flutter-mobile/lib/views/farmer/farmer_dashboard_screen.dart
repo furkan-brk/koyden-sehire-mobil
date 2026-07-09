@@ -52,27 +52,15 @@ class FarmerDashboardScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
-                Text(
-                  AppConstants.appName,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: cs.onSurface,
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryContainer,
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
-                  child: const Text(
-                    'Çiftçi',
-                    style: TextStyle(
-                      color: AppColors.onPrimaryContainer,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
+                Flexible(
+                  child: Text(
+                    AppConstants.appName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: cs.onSurface,
+                          fontWeight: FontWeight.w700,
+                        ),
                   ),
                 ),
               ],

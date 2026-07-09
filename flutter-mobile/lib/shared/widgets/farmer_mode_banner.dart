@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:go_router/go_router.dart';
 
+import 'package:koyden_sehire/app/router.dart';
 import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/core/services/auth_service.dart';
 import 'package:koyden_sehire/models/auth/auth_state.dart';
@@ -23,48 +23,40 @@ class FarmerModeBanner extends StatelessWidget {
         return const SizedBox.shrink();
       }
       return Material(
-        color: const Color(0xFFFFB300), // amber 600
+        color: AppColors.primary,
         child: SafeArea(
           bottom: false,
+          left: false,
+          right: false,
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: 6,
-            ),
+            padding: const EdgeInsets.fromLTRB(12, 6, 6, 6),
             child: Row(
               children: [
                 const Icon(
-                  Icons.storefront_outlined,
-                  size: 16,
-                  color: Colors.black87,
+                  Icons.visibility_outlined,
+                  size: 15,
+                  color: Colors.white,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 const Expanded(
                   child: Text(
-                    'Müşteri modunda geziyorsunuz',
+                    'Müşteri modundasınız',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: Colors.black87,
-                      fontSize: 12,
+                      color: Colors.white,
+                      fontSize: 12.5,
                       fontWeight: FontWeight.w600,
+                      letterSpacing: 0.1,
                     ),
                   ),
                 ),
-                TextButton(
+                const SizedBox(width: 8),
+                _ReturnButton(
                   onPressed: () {
                     auth.exitCustomerMode();
-                    context.go('/farmer/dashboard');
+                    AppRouter.router.go('/farmer/dashboard');
                   },
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.black87,
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    minimumSize: const Size(0, 30),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    textStyle: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  child: const Text('Çiftçi Paneline Dön'),
                 ),
               ],
             ),
@@ -72,5 +64,45 @@ class FarmerModeBanner extends StatelessWidget {
         ),
       );
     });
+  }
+}
+
+class _ReturnButton extends StatelessWidget {
+  final VoidCallback onPressed;
+  const _ReturnButton({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(AppRadius.pill),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.arrow_back_rounded,
+                size: 14,
+                color: AppColors.primary,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                'Panele Dön',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

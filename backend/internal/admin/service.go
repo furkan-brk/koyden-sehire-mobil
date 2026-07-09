@@ -235,8 +235,9 @@ func (s *Service) GetApplicationWithVideoURL(appID string) (map[string]any, erro
 		Status                   string    `db:"status"`
 		RejectionReason          *string   `db:"rejection_reason"`
 		AdminNote                *string   `db:"admin_note"`
-		CreatedAt                time.Time `db:"created_at"`
-		InviteCode               *string   `db:"invite_code"`
+		CreatedAt                time.Time  `db:"created_at"`
+		ReviewedAt               *time.Time `db:"reviewed_at"`
+		InviteCode               *string    `db:"invite_code"`
 	}
 	if err := s.db.Get(&app, `
 		SELECT
@@ -250,7 +251,7 @@ func (s *Service) GetApplicationWithVideoURL(appID string) (map[string]any, erro
 			fa.declares_own_production, fa.declares_accurate_location,
 			fa.declares_not_intermediary,
 			fa.status, fa.rejection_reason, fa.admin_note,
-			fa.created_at,
+			fa.created_at, fa.reviewed_at,
 			ic.code AS invite_code
 		FROM farmer_applications fa
 		LEFT JOIN invite_codes ic ON ic.id = fa.invite_code_id
@@ -300,6 +301,7 @@ func (s *Service) GetApplicationWithVideoURL(appID string) (map[string]any, erro
 		"rejection_reason":           app.RejectionReason,
 		"admin_note":                 app.AdminNote,
 		"created_at":                 app.CreatedAt,
+		"reviewed_at":                app.ReviewedAt,
 		"invite_code":                app.InviteCode,
 	}
 

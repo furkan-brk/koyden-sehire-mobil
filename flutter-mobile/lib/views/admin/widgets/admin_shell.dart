@@ -215,12 +215,6 @@ class _AdminSidebar extends StatelessWidget {
                       route: '/admin/farmers',
                       currentLocation: currentLocation,
                     ),
-                    _SidebarItem(
-                      icon: Icons.history_outlined,
-                      label: 'Denetim Günlüğü',
-                      route: '/admin/audit-logs',
-                      currentLocation: currentLocation,
-                    ),
                   ],
                 ),
               ),
@@ -371,7 +365,6 @@ class _AdminDrawer extends StatelessWidget {
                 _NavItem(icon: Icons.inventory_2_outlined, label: 'Ürün Moderasyonu', route: '/admin/products', currentLocation: currentLocation),
                 _NavItem(icon: Icons.category_outlined, label: 'Kategoriler', route: '/admin/categories', currentLocation: currentLocation),
                 _NavItem(icon: Icons.people_outline, label: 'Üreticiler', route: '/admin/farmers', currentLocation: currentLocation),
-                _NavItem(icon: Icons.history_outlined, label: 'Denetim Günlüğü', route: '/admin/audit-logs', currentLocation: currentLocation),
               ],
             ),
           ),
@@ -427,7 +420,6 @@ String _routeTitle(String location) {
   if (location.startsWith('/admin/farmers')) return 'Üreticiler';
   if (location.startsWith('/admin/map')) return 'Şehir Yoğunluğu';
   if (location.startsWith('/admin/invite-network')) return 'Davet Ağı';
-  if (location.startsWith('/admin/audit-logs')) return 'Denetim Günlüğü';
   if (location.startsWith('/admin/dashboard')) return 'Dashboard';
   return 'Yönetim Paneli';
 }

@@ -374,7 +374,14 @@ class _SummaryCard extends StatelessWidget {
         _FieldRow('Durum', child: AdminStatusBadge(status: app.status)),
         if (app.riskLevel != null)
           _FieldRow('Risk', child: AdminRiskBadge(level: app.riskLevel!)),
-        _Field('Başvuru Tarihi', AppFormatters.date(app.createdAt)),
+        _Field('Başvuru Tarihi', AppFormatters.dateTime(app.createdAt)),
+        if (app.reviewedAt != null)
+          _Field(
+            app.status == 'rejected'
+                ? 'Reddedilme Tarihi'
+                : 'Onaylanma Tarihi',
+            AppFormatters.dateTime(app.reviewedAt!),
+          ),
         if (app.inviteCode != null)
           _Field('Davet Kodu',
               '${app.inviteCode}${app.inviteTrust != null ? ' (${app.inviteTrust})' : ''}'),
