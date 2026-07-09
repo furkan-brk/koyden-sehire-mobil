@@ -196,7 +196,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                   ),
                   const SizedBox(height: 10),
                   SizedBox(
-                    height: 88,
+                    height: 96,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       itemCount: recentSvc.items.length,

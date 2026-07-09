@@ -213,8 +213,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
               'price_desc' => 'Pahalıdan Ucuza',
               _ => 'Sırala',
             };
-            final categoryLabel =
-                _selectedCategoryName(filter.categoryId) ?? 'Kategori';
+            final categoryLabel = _selectedCategoryName(filter.categoryId) ?? 'Kategori';
             return SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.fromLTRB(AppSpacing.md, 4, AppSpacing.md, 4),
@@ -224,9 +223,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     label: categoryLabel,
                     isActive: hasCategory,
                     onTap: _showCategoryFilterSheet,
-                    onClear: hasCategory
-                        ? () => _ctrl.applyFilter(filter.copyWith(clearCategory: true))
-                        : null,
+                    onClear: hasCategory ? () => _ctrl.applyFilter(filter.copyWith(clearCategory: true)) : null,
                   ),
                   const SizedBox(width: 8),
                   _LocationFilterChip(
@@ -244,9 +241,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     label: sortLabel,
                     isActive: hasSort,
                     onTap: _showSortSheet,
-                    onClear: hasSort
-                        ? () => _ctrl.applyFilter(filter.copyWith(clearSort: true))
-                        : null,
+                    onClear: hasSort ? () => _ctrl.applyFilter(filter.copyWith(clearSort: true)) : null,
                   ),
                 ],
               ),
@@ -266,10 +261,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                   ? const SizedBox.shrink()
                   : RichText(
                       text: TextSpan(
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.copyWith(color: cs.onSurfaceVariant),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
                         children: [
                           TextSpan(
                             text: '${ctrl.total.value}',
@@ -321,15 +313,16 @@ class _ProductListScreenState extends State<ProductListScreen> {
       child: GridView.builder(
         controller: _scrollController,
         padding: const EdgeInsets.all(16),
-        gridDelegate: productGridDelegate(context, context.screenWidth - 32),
-        // Footer cells only exist while more pages remain; their content is
-        // reactive per-cell so an isLoadingMore flip doesn't rebuild the grid.
-        itemCount: ctrl.items.length + (ctrl.hasMore.value ? 2 : 0),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 0.62,
+        ),
+        itemCount: ctrl.items.length + (ctrl.isLoadingMore.value ? 2 : 0),
         itemBuilder: (_, i) {
           if (i >= ctrl.items.length) {
-            return Obx(() => ctrl.isLoadingMore.value
-                ? const ShimmerProductCard()
-                : const SizedBox.shrink());
+            return Obx(() => ctrl.isLoadingMore.value ? const ShimmerProductCard() : const SizedBox.shrink());
           }
           return ProductCard(product: ctrl.items[i]);
         },
