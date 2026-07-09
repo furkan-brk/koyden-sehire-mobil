@@ -6,13 +6,16 @@ import 'package:koyden_sehire/app/theme.dart';
 
 class ImageCarousel extends StatefulWidget {
   final List<String> imageUrls;
-  final double height;
+
+  /// Sabit yükseklik; null bırakılırsa carousel genişliğe göre
+  /// AspectRatio(4/3) ile boyutlanır (dar ekranlarda taşmayı önler).
+  final double? height;
   final void Function(int index)? onImageTap;
 
   const ImageCarousel({
     super.key,
     required this.imageUrls,
-    this.height = 280,
+    this.height,
     this.onImageTap,
   });
 
@@ -30,25 +33,33 @@ class _ImageCarouselState extends State<ImageCarousel> {
     super.dispose();
   }
 
+  Widget _sized(Widget child) {
+    final height = widget.height;
+    if (height != null) {
+      return SizedBox(height: height, child: child);
+    }
+    return AspectRatio(aspectRatio: 4 / 3, child: child);
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     if (widget.imageUrls.isEmpty) {
-      return Container(
-        height: widget.height,
-        color: AppColors.outlineVariant,
-        alignment: Alignment.center,
-        child: const Icon(
-          Icons.image_outlined,
-          size: 48,
-          color: AppColors.onSurfaceVariant,
+      return _sized(
+        Container(
+          color: AppColors.outlineVariant,
+          alignment: Alignment.center,
+          child: const Icon(
+            Icons.image_outlined,
+            size: 48,
+            color: AppColors.onSurfaceVariant,
+          ),
         ),
       );
     }
 
-    return SizedBox(
-      height: widget.height,
-      child: Stack(
+    return _sized(
+      Stack(
         children: [
           PageView.builder(
             controller: _controller,

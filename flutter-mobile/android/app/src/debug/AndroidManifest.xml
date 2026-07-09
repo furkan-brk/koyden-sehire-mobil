@@ -4,4 +4,7 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Dev backend'i http (cleartext) çalışır; ExoPlayer gibi platform
+         network stack'i kullanan eklentiler için debug'da izin ver. -->
+    <application android:usesCleartextTraffic="true"/>
 </manifest>

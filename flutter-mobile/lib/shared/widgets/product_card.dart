@@ -31,10 +31,12 @@ class ProductCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadius.lg),
           onTap: () => context.push('/products/${product.id}'),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _ProductImage(product: product),
-              Padding(
+              Flexible(
+                child: Padding(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.sm,
                   AppSpacing.sm,
@@ -42,6 +44,7 @@ class ProductCard extends StatelessWidget {
                   AppSpacing.sm,
                 ),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
@@ -122,6 +125,7 @@ class ProductCard extends StatelessWidget {
                     ],
                   ],
                 ),
+                ),
               ),
             ],
           ),
@@ -138,6 +142,11 @@ class _ProductImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final favs = Get.find<FavoritesService>();
+    // Cards render at roughly half the screen width in the 2-column grid;
+    // cap the decoded bitmap size accordingly to avoid full-res decodes.
+    final memCacheWidth =
+        (300 * MediaQuery.of(context).devicePixelRatio).round();
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(
         top: Radius.circular(AppRadius.lg),
@@ -161,6 +170,7 @@ class _ProductImage extends StatelessWidget {
               CachedNetworkImage(
                 imageUrl: product.firstImage!,
                 fit: BoxFit.cover,
+                memCacheWidth: memCacheWidth,
                 placeholder: (_, __) => Shimmer.fromColors(
                   baseColor: cs.surfaceContainer,
                   highlightColor: cs.surfaceContainerLow,
@@ -193,7 +203,6 @@ class _ProductImage extends StatelessWidget {
               top: 6,
               right: 6,
               child: Obx(() {
-                final favs = Get.find<FavoritesService>();
                 final isFav = favs.isFavorite(product.id);
                 return GestureDetector(
                   behavior: HitTestBehavior.opaque,

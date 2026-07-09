@@ -16,6 +16,7 @@ import 'package:koyden_sehire/core/errors/app_exception.dart';
 import 'package:koyden_sehire/core/utils/phone_formatter.dart';
 import 'package:koyden_sehire/core/utils/validators.dart';
 import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
+import 'package:koyden_sehire/shared/utils/app_permissions.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_text_field.dart';
 import 'package:koyden_sehire/shared/widgets/category_chip.dart';
@@ -564,6 +565,13 @@ class _StepPersonalFarmState extends State<_StepPersonalFarm> {
       context.snack('Lütfen çiftlik konumunu haritadan seçin', isError: true);
       return;
     }
+    if (_selectedLocation!.city.isEmpty || _selectedLocation!.district.isEmpty) {
+      context.snack(
+        'Konumun il/ilçe bilgisi çözümlenemedi. Lütfen çiftlik konumunu yeniden seçin.',
+        isError: true,
+      );
+      return;
+    }
     _save();
     _formCtrl().next();
   }
@@ -816,18 +824,13 @@ class _StepProductionVideoState extends State<_StepProductionVideo> {
   Future<void> _pickVideo(ImageSource source) async {
     try {
       if (!kIsWeb && source == ImageSource.camera) {
-        final cameraStatus = await Permission.camera.request();
-        final micStatus = await Permission.microphone.request();
-        if (cameraStatus.isPermanentlyDenied || micStatus.isPermanentlyDenied) {
-          if (mounted) {
-            context.snack(
+        final granted = await ensurePermissions(
+          context,
+          [Permission.camera, Permission.microphone],
+          deniedMessage:
               'Video çekebilmek için lütfen ayarlardan kamera ve mikrofon izinlerini verin.',
-              isError: true,
-            );
-          }
-          return;
-        }
-        if (!cameraStatus.isGranted || !micStatus.isGranted) return;
+        );
+        if (!granted) return;
       }
 
       final picker = ImagePicker();

@@ -11,6 +11,7 @@ import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/core/utils/validators.dart';
 import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
+import 'package:koyden_sehire/shared/utils/app_permissions.dart';
 import 'package:koyden_sehire/shared/utils/confirm_dialog.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
@@ -88,13 +89,25 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         if (mounted) setState(() => _loadingExisting = false);
       }
     } else {
-      final profile =
-          Get.isRegistered<FarmerProfileController>() ? Get.find<FarmerProfileController>().profile.value : null;
+      // The profile controller is lazily created and loads asynchronously —
+      // wait for the in-flight load (or trigger one) so the form's location
+      // is populated instead of staying empty when the profile isn't ready.
+      final profileCtrl = Get.find<FarmerProfileController>();
+      var profile = profileCtrl.profile.value;
+      if (profile == null) {
+        if (profileCtrl.isLoading.value) {
+          await profileCtrl.isLoading.stream.firstWhere((v) => !v);
+        } else {
+          await profileCtrl.load();
+        }
+        profile = profileCtrl.profile.value;
+      }
       if (profile != null) {
+        final p = profile;
         _formCtrl.patch((d) => d.copyWith(
-              city: profile.city,
-              district: profile.district,
-              village: profile.village,
+              city: p.city,
+              district: p.district,
+              village: p.village,
             ));
       }
     }
@@ -112,17 +125,13 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       return;
     }
     if (!kIsWeb && source == ImageSource.camera) {
-      final status = await Permission.camera.request();
-      if (status.isPermanentlyDenied) {
-        if (mounted) {
-          context.snack(
+      final granted = await ensurePermissions(
+        context,
+        [Permission.camera],
+        deniedMessage:
             'Kamerayı açmak için lütfen ayarlardan kamera iznini verin.',
-            isError: true,
-          );
-        }
-        return;
-      }
-      if (!status.isGranted) return;
+      );
+      if (!granted) return;
     }
 
     final picker = ImagePicker();
@@ -918,12 +927,13 @@ class _LocationInfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Obx(() {
-      final profile =
-          Get.isRegistered<FarmerProfileController>() ? Get.find<FarmerProfileController>().profile.value : null;
+      // Show the location the form will actually submit, not the (possibly
+      // still-loading) profile value.
+      final d = Get.find<ProductFormController>().data.value;
       final parts = <String>[
-        if ((profile?.city ?? '').isNotEmpty) profile!.city,
-        if ((profile?.district ?? '').isNotEmpty) profile!.district,
-        if ((profile?.village ?? '').isNotEmpty) profile!.village,
+        if (d.city.isNotEmpty) d.city,
+        if (d.district.isNotEmpty) d.district,
+        if (d.village.isNotEmpty) d.village,
       ];
       final locationLine = parts.isEmpty ? '—' : parts.join(' / ');
 

@@ -38,8 +38,30 @@ func (s *Service) Validate(code string) (*ValidateResponse, error) {
 	}, nil
 }
 
-func (s *Service) GetFarmerInvites(farmerID string) ([]InviteCode, error) {
-	return s.repo.FindByOwner(farmerID)
+func (s *Service) GetFarmerInvites(farmerID string) ([]FarmerInviteItem, error) {
+	codes, err := s.repo.FindByOwner(farmerID)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := s.repo.FindInvitationsByOwner(farmerID)
+	if err != nil {
+		return nil, err
+	}
+
+	byCode := make(map[string][]InvitedRow, len(codes))
+	for _, r := range rows {
+		byCode[r.InviteCodeID] = append(byCode[r.InviteCodeID], r)
+	}
+
+	items := make([]FarmerInviteItem, 0, len(codes))
+	for _, c := range codes {
+		inv := byCode[c.ID]
+		if inv == nil {
+			inv = []InvitedRow{}
+		}
+		items = append(items, FarmerInviteItem{InviteCode: c, Invitations: inv})
+	}
+	return items, nil
 }
 
 func isValidCodeFormat(code string) bool {

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/core/services/auth_service.dart';
+import 'package:koyden_sehire/shared/utils/responsive.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
 import 'package:koyden_sehire/shared/widgets/category_chip.dart';
@@ -144,9 +145,9 @@ class HomeScreen extends StatelessWidget {
             SliverToBoxAdapter(
               child: Obx(() {
                 if (homeCtrl.isLoading.value) {
-                  return const SizedBox(
-                    height: 280,
-                    child: _HorizontalShimmer(),
+                  return SizedBox(
+                    height: productCardExtent(context, 168, compact: true),
+                    child: const _HorizontalShimmer(),
                   );
                 }
                 if (homeCtrl.error.value != null) {
@@ -163,7 +164,7 @@ class HomeScreen extends StatelessWidget {
                   );
                 }
                 return SizedBox(
-                  height: 280,
+                  height: productCardExtent(context, 168, compact: true),
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     physics: const ClampingScrollPhysics(),
@@ -191,14 +192,15 @@ class HomeScreen extends StatelessWidget {
                     const _SectionHeader(title: 'Öne Çıkan Üreticiler'),
                     const SizedBox(height: AppSpacing.sm),
                     SizedBox(
-                      height: 208,
+                      height: farmerCardExtent(context),
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         physics: const ClampingScrollPhysics(),
                         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                         itemCount: farmers.length,
                         separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm + 4),
-                        itemBuilder: (_, i) => FarmerCard(farmer: farmers[i]),
+                        itemBuilder: (_, i) =>
+                            FarmerCard(farmer: farmers[i], width: 172),
                       ),
                     ),
                   ],

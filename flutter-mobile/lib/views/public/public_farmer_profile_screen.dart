@@ -14,6 +14,7 @@ import 'package:koyden_sehire/core/utils/phone_formatter.dart';
 import 'package:koyden_sehire/core/utils/whatsapp_helper.dart';
 import 'package:koyden_sehire/models/auth/auth_state.dart';
 import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
+import 'package:koyden_sehire/shared/utils/responsive.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_mode_chip.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
@@ -379,11 +380,9 @@ class _ProfileBody extends StatelessWidget {
           return SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
             sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 0.62,
+              gridDelegate: productGridDelegate(
+                context,
+                context.screenWidth - AppSpacing.md * 2,
               ),
               delegate: SliverChildBuilderDelegate(
                 (_, i) => ProductCard(product: ctrl.products[i]),

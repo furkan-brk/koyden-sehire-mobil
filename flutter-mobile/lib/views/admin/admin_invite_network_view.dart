@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:koyden_sehire/shared/utils/responsive.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 
@@ -44,7 +45,7 @@ class _AdminInviteNetworkViewState
     final cs = Theme.of(context).colorScheme;
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isDesktop = constraints.maxWidth >= 900;
+        final isDesktop = constraints.maxWidth >= AppBreakpoints.desktop;
         final hp = isDesktop ? 24.0 : 16.0;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,

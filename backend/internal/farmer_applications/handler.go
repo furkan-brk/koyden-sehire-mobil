@@ -3,6 +3,7 @@ package farmer_applications
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -35,7 +36,7 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 		return response.BadRequest(c, "Geçersiz istek gövdesi")
 	}
 	if err := validator.Validate(&req); err != nil {
-		return response.BadRequest(c, "Zorunlu alanlar eksik")
+		return response.BadRequest(c, validator.InvalidFieldsMessage(err, "Zorunlu alanlar eksik"))
 	}
 
 	if !req.KvkkAccepted || !req.PlatformTermsAccepted ||
@@ -153,6 +154,16 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 		return response.Error(c, apperrors.ErrInternal)
 	}
 
+	// Record the invitation so the inviter's "Davet Ettikleriniz" list is
+	// populated and admin approve/reject status updates have a row to hit.
+	// Non-fatal: the application itself has already been created.
+	if _, invErr := h.db.Exec(`
+		INSERT INTO invitations (invite_code_id, inviter_user_id, application_id, status)
+		VALUES ($1, $2, $3, 'submitted')
+	`, ic.ID, ic.OwnerUserID, app.ID); invErr != nil {
+		log.Printf("farmer-applications: invitation kaydı eklenemedi (app=%s): %v", app.ID, invErr)
+	}
+
 	h.rdb.Del(ctx, verifiedKey)
 
 	go fireNewApplicationWebhook(app)
@@ -166,7 +177,7 @@ func (h *Handler) VideoPresign(c *fiber.Ctx) error {
 		return response.BadRequest(c, "Geçersiz istek gövdesi")
 	}
 	if err := validator.Validate(&req); err != nil {
-		return response.BadRequest(c, "Zorunlu alanlar eksik")
+		return response.BadRequest(c, validator.InvalidFieldsMessage(err, "Zorunlu alanlar eksik"))
 	}
 
 	if !validPhone(req.Phone) {

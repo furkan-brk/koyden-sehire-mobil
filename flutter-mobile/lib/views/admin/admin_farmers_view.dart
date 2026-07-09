@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:koyden_sehire/shared/utils/responsive.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 
@@ -48,7 +49,7 @@ class _AdminFarmersViewState extends State<AdminFarmersView> {
     final cs = Theme.of(context).colorScheme;
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isDesktop = constraints.maxWidth >= 900;
+        final isDesktop = constraints.maxWidth >= AppBreakpoints.desktop;
         final hp = isDesktop ? 24.0 : 16.0;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -398,10 +399,15 @@ class _AdminFarmersViewState extends State<AdminFarmersView> {
                                   Icon(Icons.location_on_outlined,
                                       size: 12, color: cs.onSurfaceVariant),
                                   const SizedBox(width: 2),
-                                  Text('${farmer.city}, ${farmer.district}',
-                                      style: TextStyle(
-                                          fontSize: 12,
-                                          color: cs.onSurfaceVariant)),
+                                  Flexible(
+                                    child: Text(
+                                        '${farmer.city}, ${farmer.district}',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                            fontSize: 12,
+                                            color: cs.onSurfaceVariant)),
+                                  ),
                                   const SizedBox(width: 12),
                                   Icon(Icons.inventory_2_outlined,
                                       size: 12, color: cs.onSurfaceVariant),

@@ -17,11 +17,10 @@ import (
 )
 
 type R2Provider struct {
-	client          *s3.Client
-	presigner       *s3.PresignClient
-	putPresigner    *s3.PresignClient // uses presignEndpoint — client-accessible URL for PUT uploads
-	bucket          string
-	publicURL       string
+	client    *s3.Client
+	presigner *s3.PresignClient // uses presignEndpoint — client-accessible URLs for presigned PUT/GET
+	bucket    string
+	publicURL string
 }
 
 // NewR2Provider creates an S3-compatible storage provider.
@@ -56,8 +55,10 @@ func NewR2Provider(endpoint, presignEndpoint, accessKey, secretKey, bucket, publ
 	})
 
 	// If a separate presign endpoint is configured, build a dedicated client for it.
-	// This client is only used to generate presigned PUT URLs — it never dials the endpoint itself.
-	var putPresigner *s3.PresignClient
+	// This client is only used to sign presigned PUT/GET URLs — it never dials the
+	// endpoint itself. SigV4 binds the signature to the Host header, so URLs must be
+	// signed against the host clients will actually reach (not the internal endpoint).
+	var presigner *s3.PresignClient
 	if presignEndpoint != "" && presignEndpoint != endpoint {
 		presignCfg, err := config.LoadDefaultConfig(context.Background(),
 			config.WithEndpointResolverWithOptions(resolverFor(presignEndpoint)),
@@ -70,17 +71,16 @@ func NewR2Provider(endpoint, presignEndpoint, accessKey, secretKey, bucket, publ
 		presignClient := s3.NewFromConfig(presignCfg, func(o *s3.Options) {
 			o.UsePathStyle = true
 		})
-		putPresigner = s3.NewPresignClient(presignClient)
+		presigner = s3.NewPresignClient(presignClient)
 	} else {
-		putPresigner = s3.NewPresignClient(client)
+		presigner = s3.NewPresignClient(client)
 	}
 
 	return &R2Provider{
-		client:       client,
-		presigner:    s3.NewPresignClient(client),
-		putPresigner: putPresigner,
-		bucket:       bucket,
-		publicURL:    strings.TrimRight(publicURL, "/"),
+		client:    client,
+		presigner: presigner,
+		bucket:    bucket,
+		publicURL: strings.TrimRight(publicURL, "/"),
 	}, nil
 }
 
@@ -111,7 +111,7 @@ func (r *R2Provider) GeneratePresignedPutURL(ctx context.Context, key string, co
 	if len(metadata) > 0 {
 		input.Metadata = metadata
 	}
-	req, err := r.putPresigner.PresignPutObject(ctx, input, s3.WithPresignExpires(ttl))
+	req, err := r.presigner.PresignPutObject(ctx, input, s3.WithPresignExpires(ttl))
 	if err != nil {
 		return "", fmt.Errorf("generating presigned put URL: %w", err)
 	}

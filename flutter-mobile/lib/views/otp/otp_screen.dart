@@ -86,7 +86,8 @@ class _OtpScreenState extends State<OtpScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Telefon Doğrulama')),
       body: SafeArea(
-        child: Padding(
+        // Kısa ekranlarda klavye açıldığında taşmayı scroll absorbe eder.
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,

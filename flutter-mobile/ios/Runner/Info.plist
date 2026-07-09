@@ -4,8 +4,6 @@
 <dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Çiftlik konumunuzu doğrulamak için konumunuza erişim gerekiyor.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Çiftlik konumunuzu doğrulamak için konumunuza erişim gerekiyor.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Profil ve ürün fotoğraflarınızı çekmek için kameranıza erişim gerekiyor.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
@@ -34,6 +32,21 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>FlutterDeepLinkingEnabled</key>
+	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.koydensehire.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>koydensehire</string>
+			</array>
+		</dict>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

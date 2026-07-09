@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
+import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/core/utils/date_formatter.dart';
 import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
@@ -69,10 +70,11 @@ class _InviteCard extends StatelessWidget {
   final InviteCodeItem item;
   const _InviteCard({required this.item});
 
-  String get _shareLink => 'https://koydensehre.com/apply?invite=${item.code}';
+  String get _shareLink => AppConstants.inviteLink(item.code);
   String get _shareMessage =>
       "Merhaba, seni Köyden Şehre üretici ağına davet ediyorum. "
-      "Başvuru için: $_shareLink";
+      "Başvuru için: $_shareLink\n"
+      "Davet kodun: ${item.code}";
 
   @override
   Widget build(BuildContext context) {

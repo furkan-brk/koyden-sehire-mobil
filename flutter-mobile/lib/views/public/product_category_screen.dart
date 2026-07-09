@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/controllers/public/category_controller.dart';
 import 'package:koyden_sehire/models/category_model.dart';
+import 'package:koyden_sehire/shared/utils/responsive.dart';
 import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/shared/widgets/customer_bottom_nav.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_mode_chip.dart';
@@ -108,11 +109,11 @@ class ProductCategoryScreen extends StatelessWidget {
                   child: roots.isEmpty
                       ? const SizedBox.shrink()
                       : GridView.builder(
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
+                          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                            maxCrossAxisExtent: AppGridTokens.categoryTileMax,
                             crossAxisSpacing: 10,
                             mainAxisSpacing: 10,
-                            mainAxisExtent: 104,
+                            mainAxisExtent: 104 * textScaleOf(context),
                           ),
                           itemCount: roots.length,
                           itemBuilder: (_, i) => _CategoryCard(

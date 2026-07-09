@@ -31,6 +31,7 @@ type ApplicationListItem struct {
 	Village         string    `db:"village"           json:"village"`
 	ProductExamples string    `db:"product_examples"  json:"product_examples"`
 	Status          string    `db:"status"            json:"status"`
+	InviteCode      *string   `db:"invite_code"       json:"invite_code"`
 	CreatedAt       time.Time `db:"created_at"        json:"created_at"`
 }
 
@@ -99,11 +100,13 @@ func (h *Handler) ListApplications(c *fiber.Ctx) error {
 	)
 	if status != "" {
 		rows, queryErr = h.db.Queryx(`
-			SELECT id, full_name, phone, business_name, producer_type,
-			       city, district, village, product_examples, status, created_at
-			FROM farmer_applications
-			WHERE status = $1
-			ORDER BY created_at DESC
+			SELECT fa.id, fa.full_name, fa.phone, fa.business_name, fa.producer_type,
+			       fa.city, fa.district, fa.village, fa.product_examples, fa.status,
+			       ic.code AS invite_code, fa.created_at
+			FROM farmer_applications fa
+			LEFT JOIN invite_codes ic ON ic.id = fa.invite_code_id
+			WHERE fa.status = $1
+			ORDER BY fa.created_at DESC
 			LIMIT $2 OFFSET $3
 		`, status, limit, (page-1)*limit)
 		if err := h.db.Get(&total, "SELECT COUNT(*) FROM farmer_applications WHERE status = $1", status); err != nil {
@@ -111,10 +114,12 @@ func (h *Handler) ListApplications(c *fiber.Ctx) error {
 		}
 	} else {
 		rows, queryErr = h.db.Queryx(`
-			SELECT id, full_name, phone, business_name, producer_type,
-			       city, district, village, product_examples, status, created_at
-			FROM farmer_applications
-			ORDER BY created_at DESC
+			SELECT fa.id, fa.full_name, fa.phone, fa.business_name, fa.producer_type,
+			       fa.city, fa.district, fa.village, fa.product_examples, fa.status,
+			       ic.code AS invite_code, fa.created_at
+			FROM farmer_applications fa
+			LEFT JOIN invite_codes ic ON ic.id = fa.invite_code_id
+			ORDER BY fa.created_at DESC
 			LIMIT $1 OFFSET $2
 		`, limit, (page-1)*limit)
 		if err := h.db.Get(&total, "SELECT COUNT(*) FROM farmer_applications"); err != nil {

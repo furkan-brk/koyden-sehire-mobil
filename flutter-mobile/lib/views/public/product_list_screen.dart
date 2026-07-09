@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
+import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
+import 'package:koyden_sehire/shared/utils/responsive.dart';
 import 'package:koyden_sehire/shared/widgets/location_filter_sheet.dart';
 import 'package:koyden_sehire/shared/widgets/category_filter_sheet.dart';
 import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
@@ -42,7 +44,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
   void initState() {
     super.initState();
     _searchController.text = widget.initialSearch ?? '';
-    _searchController.addListener(() => setState(() {}));
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _ctrl.applyFilter(
@@ -320,16 +321,15 @@ class _ProductListScreenState extends State<ProductListScreen> {
       child: GridView.builder(
         controller: _scrollController,
         padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 0.62,
-        ),
-        itemCount: ctrl.items.length + (ctrl.isLoadingMore.value ? 2 : 0),
+        gridDelegate: productGridDelegate(context, context.screenWidth - 32),
+        // Footer cells only exist while more pages remain; their content is
+        // reactive per-cell so an isLoadingMore flip doesn't rebuild the grid.
+        itemCount: ctrl.items.length + (ctrl.hasMore.value ? 2 : 0),
         itemBuilder: (_, i) {
           if (i >= ctrl.items.length) {
-            return const ShimmerProductCard();
+            return Obx(() => ctrl.isLoadingMore.value
+                ? const ShimmerProductCard()
+                : const SizedBox.shrink());
           }
           return ProductCard(product: ctrl.items[i]);
         },

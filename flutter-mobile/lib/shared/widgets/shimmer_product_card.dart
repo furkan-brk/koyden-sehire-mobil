@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
+import 'package:koyden_sehire/shared/utils/responsive.dart';
 
 class ShimmerProductCard extends StatelessWidget {
   final double? width;
@@ -87,17 +88,17 @@ class ShimmerProductCard extends StatelessWidget {
 
 class ShimmerList extends StatelessWidget {
   final int count;
-  const ShimmerList({super.key, this.count = 6});
+  final bool compact;
+  const ShimmerList({super.key, this.count = 6, this.compact = false});
 
   @override
   Widget build(BuildContext context) {
     return GridView.builder(
       padding: const EdgeInsets.all(AppSpacing.md),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 0.62,
+      gridDelegate: productGridDelegate(
+        context,
+        MediaQuery.sizeOf(context).width - AppSpacing.md * 2,
+        compact: compact,
       ),
       itemCount: count,
       itemBuilder: (_, __) => const ShimmerProductCard(),

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
+import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
+import 'package:koyden_sehire/shared/utils/responsive.dart';
 import 'package:koyden_sehire/shared/widgets/location_filter_sheet.dart';
 import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
@@ -126,12 +128,9 @@ class _ProducersListScreenState extends State<ProducersListScreen> {
                 child: GridView.builder(
                   controller: _scrollController,
                   padding: const EdgeInsets.all(AppSpacing.md),
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: AppSpacing.sm + 4,
-                    mainAxisSpacing: AppSpacing.sm + 4,
-                    childAspectRatio: 172 / 220,
+                  gridDelegate: farmerGridDelegate(
+                    context,
+                    context.screenWidth - AppSpacing.md * 2,
                   ),
                   itemCount: _ctrl.items.length +
                       (_ctrl.isLoadingMore.value ? 2 : 0),

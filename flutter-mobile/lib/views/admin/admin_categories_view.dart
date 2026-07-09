@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:koyden_sehire/shared/utils/responsive.dart';
 import 'package:get/get.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
@@ -91,7 +92,7 @@ class _AdminCategoriesViewState extends State<AdminCategoriesView> {
     final cs = Theme.of(context).colorScheme;
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isDesktop = constraints.maxWidth >= 900;
+        final isDesktop = constraints.maxWidth >= AppBreakpoints.desktop;
         final hp = isDesktop ? 24.0 : 16.0;
         return Obx(() {
           if (_ctrl.isLoading.value) return const AppLoading();

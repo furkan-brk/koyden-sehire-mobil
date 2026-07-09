@@ -44,6 +44,19 @@ class AppConstants {
     defaultValue: '',
   );
 
+  /// Public web app URL — used for shareable links (invite links, QR codes).
+  /// The same host must be listed in the Android App Links intent-filter
+  /// (AndroidManifest.xml) so tapping a link opens the installed app.
+  /// Override at build time: --dart-define=WEB_BASE_URL=https://koydensehire.com
+  static const String webBaseUrl = String.fromEnvironment(
+    'WEB_BASE_URL',
+    defaultValue: 'https://koydensehire.com',
+  );
+
+  /// Shareable invite link — opens the /apply page (web) or the installed
+  /// app via App Links, prefilled with the invite code.
+  static String inviteLink(String code) => '$webBaseUrl/apply?invite=$code';
+
   static const String appName = 'Köyden Şehre';
   static const String appTagline = 'Yerel üreticilerden taze ürünler';
   static const String appVersion = '1.0.0';
@@ -82,17 +95,16 @@ class AppConstants {
     'Kırıkkale', 'Batman', 'Şırnak', 'Bartın', 'Ardahan',
     'Iğdır', 'Yalova', 'Karabük', 'Kilis', 'Osmaniye', 'Düzce',
   ];
+  /// Rewrites dev-only hosts (localhost, 127.0.0.1, minio) in URLs returned
+  /// by the API so they point at the same host the app talks to (BASE_URL).
+  /// Ör: BASE_URL=http://192.168.1.5:8080 ise görseller de 192.168.1.5'e gider.
   static String formatDevUrl(String url) {
     if (url.isEmpty) return url;
-    String formatted = url;
-    if (isDevDefaultBaseUrl) {
-      formatted = formatted
-          .replaceAll('//localhost:', '//10.0.2.2:')
-          .replaceAll('//127.0.0.1:', '//10.0.2.2:')
-          .replaceAll('//minio:', '//10.0.2.2:');
-    } else {
-      formatted = formatted.replaceAll('//minio:', '//localhost:');
-    }
-    return formatted;
+    final host = Uri.tryParse(baseUrl)?.host ?? '';
+    if (host.isEmpty) return url;
+    return url
+        .replaceAll('//localhost:', '//$host:')
+        .replaceAll('//127.0.0.1:', '//$host:')
+        .replaceAll('//minio:', '//$host:');
   }
 }

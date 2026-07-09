@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -164,7 +166,8 @@ class _CategoryFilterSheetState extends State<CategoryFilterSheet> {
   Widget _buildRootColumn() {
     final roots = _roots;
     return Container(
-      width: 148,
+      // Dar ekranlarda sidebar, sheet genişliğinin %40'ını geçmez.
+      width: math.min(148.0, MediaQuery.sizeOf(context).width * 0.4),
       color: AppColors.surfaceContainerLow,
       child: ListView.builder(
         padding: EdgeInsets.zero,

@@ -6,6 +6,8 @@ import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/core/services/auth_service.dart';
 import 'package:koyden_sehire/core/services/favorites_service.dart';
 import 'package:koyden_sehire/models/auth/auth_state.dart';
+import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
+import 'package:koyden_sehire/shared/utils/responsive.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
@@ -61,11 +63,9 @@ class FavoritesScreen extends StatelessWidget {
           onRefresh: favs.refresh,
           child: GridView.builder(
             padding: const EdgeInsets.all(AppSpacing.md),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 0.62,
+            gridDelegate: productGridDelegate(
+              context,
+              context.screenWidth - AppSpacing.md * 2,
             ),
             itemCount: favs.items.length,
             itemBuilder: (_, i) => ProductCard(product: favs.items[i]),

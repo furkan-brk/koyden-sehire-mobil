@@ -30,19 +30,22 @@ class KoydenSehireApp extends StatelessWidget {
       builder: (context, child) {
         return Obx(() {
           final offline = !Get.find<ConnectivityService>().isOnline.value;
-          return Stack(
-            children: [
-              child ?? const SizedBox.shrink(),
-              // FarmerModeBanner shows itself only while the farmer is in
-              // customer-browse mode; it otherwise returns SizedBox.shrink.
-              const Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: FarmerModeBanner(),
-              ),
-              if (offline) const _OfflineBanner(),
-            ],
+          return MediaQuery.withClampedTextScaling(
+            maxScaleFactor: 1.6,
+            child: Stack(
+              children: [
+                child ?? const SizedBox.shrink(),
+                // FarmerModeBanner shows itself only while the farmer is in
+                // customer-browse mode; it otherwise returns SizedBox.shrink.
+                const Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: FarmerModeBanner(),
+                ),
+                if (offline) const _OfflineBanner(),
+              ],
+            ),
           );
         });
       },

@@ -41,6 +41,27 @@ func (r *Repository) FindByOwner(ownerUserID string) ([]InviteCode, error) {
 	return codes, nil
 }
 
+// FindInvitationsByOwner returns every invitation made with the owner's codes,
+// joined with the applicant's name for display in the farmer's invite list.
+func (r *Repository) FindInvitationsByOwner(ownerUserID string) ([]InvitedRow, error) {
+	var rows []InvitedRow
+	err := r.db.Select(&rows, `
+		SELECT i.invite_code_id, fa.full_name, i.status, i.created_at
+		FROM invitations i
+		JOIN invite_codes ic ON ic.id = i.invite_code_id
+		LEFT JOIN farmer_applications fa ON fa.id = i.application_id
+		WHERE ic.owner_user_id = $1
+		ORDER BY i.created_at DESC
+	`, ownerUserID)
+	if err != nil {
+		return nil, err
+	}
+	if rows == nil {
+		rows = []InvitedRow{}
+	}
+	return rows, nil
+}
+
 func (r *Repository) IncrementUsed(id string) error {
 	_, err := r.db.Exec(`
 		UPDATE invite_codes SET used_count = used_count + 1, updated_at = NOW()

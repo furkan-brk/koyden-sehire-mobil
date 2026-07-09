@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/core/services/auth_service.dart';
+import 'package:koyden_sehire/shared/utils/responsive.dart';
 
-const double _kDesktopBreak = 1100;
 const double _kSidebarWidth = 232;
 
 class AdminShell extends StatelessWidget {
@@ -22,7 +22,7 @@ class AdminShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth >= _kDesktopBreak) {
+        if (constraints.maxWidth >= AppBreakpoints.shell) {
           return _DesktopLayout(currentLocation: currentLocation, child: child);
         }
         return _MobileLayout(currentLocation: currentLocation, child: child);

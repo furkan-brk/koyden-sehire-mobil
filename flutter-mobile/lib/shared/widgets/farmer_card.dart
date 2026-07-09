@@ -10,13 +10,17 @@ import 'package:koyden_sehire/shared/widgets/verified_badge.dart';
 class FarmerCard extends StatelessWidget {
   final FarmerSummary farmer;
 
-  const FarmerCard({super.key, required this.farmer});
+  /// Yatay listelerde sabit genişlik için; null ise (grid tile içinde)
+  /// genişliği parent belirler.
+  final double? width;
+
+  const FarmerCard({super.key, required this.farmer, this.width});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return SizedBox(
-      width: 172,
+      width: width,
       child: Container(
         decoration: BoxDecoration(
           color: cs.surfaceContainerLowest,

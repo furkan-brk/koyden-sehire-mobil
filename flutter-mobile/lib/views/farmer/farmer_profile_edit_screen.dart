@@ -11,6 +11,7 @@ import 'package:koyden_sehire/core/utils/validators.dart';
 import 'package:koyden_sehire/models/farmer_model.dart';
 import 'package:koyden_sehire/models/farmer_profile_edit_model.dart';
 import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
+import 'package:koyden_sehire/shared/utils/app_permissions.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_loading.dart';
@@ -32,17 +33,13 @@ class _FarmerProfileEditScreenState extends State<FarmerProfileEditScreen> {
 
   Future<void> _pickProfileImage(ImageSource source) async {
     if (!kIsWeb && source == ImageSource.camera) {
-      final status = await Permission.camera.request();
-      if (status.isPermanentlyDenied) {
-        if (mounted) {
-          context.snack(
+      final granted = await ensurePermissions(
+        context,
+        [Permission.camera],
+        deniedMessage:
             'Kamerayı açmak için lütfen ayarlardan kamera iznini verin.',
-            isError: true,
-          );
-        }
-        return;
-      }
-      if (!status.isGranted) return;
+      );
+      if (!granted) return;
     }
 
     final picker = ImagePicker();

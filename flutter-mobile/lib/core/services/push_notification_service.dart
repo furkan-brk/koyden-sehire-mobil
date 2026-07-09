@@ -25,6 +25,8 @@ class PushNotificationService extends GetxService {
 
   final _localNotifications = FlutterLocalNotificationsPlugin();
   String? _currentToken;
+  bool _permissionRequested = false;
+  Worker? _authWorker;
 
   static const _androidChannel = AndroidNotificationChannel(
     'koyden_sehire_high',
@@ -40,13 +42,44 @@ class PushNotificationService extends GetxService {
       if (!kIsWeb) {
         await _initLocalNotifications();
       }
-      await _requestPermission();
       _listenForeground();
       _listenTokenRefresh();
+      // The OS notification prompt is deferred until the user is actually
+      // logged in — guests never receive pushes, so asking at boot only
+      // burns the one-shot prompt without context.
+      _watchAuthStatus();
     } catch (e) {
       // Firebase not configured — push notifications disabled.
       debugPrint('[PushNotificationService] init skipped: $e');
     }
+  }
+
+  void _watchAuthStatus() {
+    final auth = Get.find<AuthService>();
+    _authWorker = ever<AuthStatus>(auth.status, _maybeRequestPermission);
+    // Session may already be restored from secure storage before this
+    // service is created — check the current value too.
+    _maybeRequestPermission(auth.status.value);
+  }
+
+  Future<void> _maybeRequestPermission(AuthStatus status) async {
+    if (_permissionRequested) return;
+    if (status != AuthStatus.farmerActive &&
+        status != AuthStatus.customerActive) {
+      return;
+    }
+    _permissionRequested = true;
+    try {
+      await _requestPermission();
+    } catch (e) {
+      debugPrint('[Push] izin isteği başarısız: $e');
+    }
+  }
+
+  @override
+  void onClose() {
+    _authWorker?.dispose();
+    super.onClose();
   }
 
   Future<void> _initLocalNotifications() async {

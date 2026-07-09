@@ -163,39 +163,52 @@ class _OtpInputState extends State<OtpInput>
               child: child,
             );
           },
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List.generate(widget.length, (i) {
-              return SizedBox(
-                width: 44,
-                child: KeyboardListener(
-                  focusNode: FocusNode(skipTraversal: true),
-                  onKeyEvent: (event) {
-                    if (event is KeyDownEvent &&
-                        event.logicalKey == LogicalKeyboardKey.backspace) {
-                      _handleBackspace(i);
-                    }
-                  },
-                  child: TextField(
-                    controller: _controllers[i],
-                    focusNode: _focusNodes[i],
-                    enabled: widget.enabled,
-                    textAlign: TextAlign.center,
-                    keyboardType: TextInputType.number,
-                    maxLength: 1,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    decoration: const InputDecoration(
-                      counterText: '',
-                    ),
-                    onChanged: (v) => _handleChanged(i, v),
-                  ),
-                ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Dar ekranlarda hücreler kullanılabilir genişliğe sığacak
+              // şekilde küçülür (hücre başına min 8px boşluk bırakılır).
+              final cellWidth = math.min(
+                44.0,
+                (constraints.maxWidth - (widget.length - 1) * 8) /
+                    widget.length,
               );
-            }),
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: List.generate(widget.length, (i) {
+                  return SizedBox(
+                    width: cellWidth,
+                    child: KeyboardListener(
+                      focusNode: FocusNode(skipTraversal: true),
+                      onKeyEvent: (event) {
+                        if (event is KeyDownEvent &&
+                            event.logicalKey == LogicalKeyboardKey.backspace) {
+                          _handleBackspace(i);
+                        }
+                      },
+                      child: TextField(
+                        controller: _controllers[i],
+                        focusNode: _focusNodes[i],
+                        enabled: widget.enabled,
+                        textAlign: TextAlign.center,
+                        keyboardType: TextInputType.number,
+                        maxLength: 1,
+                        style: TextStyle(
+                          fontSize: cellWidth < 40 ? 18 : 22,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        decoration: const InputDecoration(
+                          counterText: '',
+                        ),
+                        onChanged: (v) => _handleChanged(i, v),
+                      ),
+                    ),
+                  );
+                }),
+              );
+            },
           ),
         ),
         if (widget.errorText != null) ...[

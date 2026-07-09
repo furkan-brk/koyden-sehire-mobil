@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:koyden_sehire/shared/utils/responsive.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 
@@ -114,7 +115,7 @@ class _AdminProductDetailViewState
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isDesktop = constraints.maxWidth >= 900;
+        final isDesktop = constraints.maxWidth >= AppBreakpoints.desktop;
         return Obx(() {
           if (_ctrl.isLoading.value) return const AppLoading();
           if (_ctrl.error.value.isNotEmpty) {

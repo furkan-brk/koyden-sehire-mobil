@@ -140,16 +140,36 @@ class _SelectLocationScreenState extends State<SelectLocationScreen>
   Future<void> _goToCurrentLocation() async {
     setState(() => _isLocating = true);
     try {
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        if (mounted) {
+          context.snack(
+            'Konum servisleri kapalı. Lütfen cihazınızın konumunu açın.',
+            isError: true,
+            actionLabel: 'Ayarlar',
+            onAction: () {
+              Geolocator.openLocationSettings();
+            },
+          );
+        }
+        return;
+      }
       LocationPermission perm = await Geolocator.checkPermission();
       if (perm == LocationPermission.denied) {
         perm = await Geolocator.requestPermission();
       }
       if (perm == LocationPermission.denied ||
           perm == LocationPermission.deniedForever) {
+        final permanentlyDenied = perm == LocationPermission.deniedForever;
         if (mounted) {
           context.snack(
             'Konum izni verilmedi. Ayarlardan izin verebilirsiniz.',
             isError: true,
+            actionLabel: permanentlyDenied ? 'Ayarlar' : null,
+            onAction: permanentlyDenied
+                ? () {
+                    Geolocator.openAppSettings();
+                  }
+                : null,
           );
         }
         return;
@@ -170,6 +190,14 @@ class _SelectLocationScreenState extends State<SelectLocationScreen>
   }
 
   void _confirm() {
+    if (_city.isEmpty || _district.isEmpty) {
+      context.snack(
+        'Konumun il/ilçe bilgisi alınamadı. Lütfen haritayı biraz oynatıp '
+        'adresin çözümlenmesini bekleyin.',
+        isError: true,
+      );
+      return;
+    }
     Navigator.pop(
       context,
       SelectedLocation(

@@ -18,6 +18,13 @@ subprojects {
 subprojects {
     project.evaluationDependsOn(":app")
 }
+// Eski Java 8 hedefli eklentilerin "source/target value 8 is obsolete"
+// uyarılarını bastırır; kendi modüllerimiz Java 17 kullanıyor.
+subprojects {
+    tasks.withType<JavaCompile>().configureEach {
+        options.compilerArgs.add("-Xlint:-options")
+    }
+}
 
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)

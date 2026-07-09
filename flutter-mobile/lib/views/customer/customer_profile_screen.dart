@@ -14,6 +14,7 @@ import 'package:koyden_sehire/core/services/recent_views_service.dart';
 import 'package:koyden_sehire/core/utils/date_formatter.dart';
 import 'package:koyden_sehire/models/customer_profile_model.dart';
 import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
+import 'package:koyden_sehire/shared/utils/app_permissions.dart';
 import 'package:koyden_sehire/shared/utils/confirm_dialog.dart';
 import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
@@ -33,17 +34,13 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
 
   Future<void> _pickProfileImage(ImageSource source) async {
     if (!kIsWeb && source == ImageSource.camera) {
-      final status = await Permission.camera.request();
-      if (status.isPermanentlyDenied) {
-        if (mounted) {
-          context.snack(
+      final granted = await ensurePermissions(
+        context,
+        [Permission.camera],
+        deniedMessage:
             'Kamerayı açmak için lütfen ayarlardan kamera iznini verin.',
-            isError: true,
-          );
-        }
-        return;
-      }
-      if (!status.isGranted) return;
+      );
+      if (!granted) return;
     }
 
     final picker = ImagePicker();

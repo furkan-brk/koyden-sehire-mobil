@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:koyden_sehire/shared/utils/responsive.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 
@@ -44,7 +45,7 @@ class _AdminApplicationsViewState extends State<AdminApplicationsView> {
     final cs = Theme.of(context).colorScheme;
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isDesktop = constraints.maxWidth >= 900;
+        final isDesktop = constraints.maxWidth >= AppBreakpoints.desktop;
         final hp = isDesktop ? 24.0 : 16.0;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,10 +107,11 @@ class _AdminApplicationsViewState extends State<AdminApplicationsView> {
                         selected: _ctrl.selectedStatus.value,
                         onSelected: (v) => _ctrl.selectedStatus.value = v,
                         options: const [
+                          AdminFilterOption('all', 'Tümü'),
                           AdminFilterOption('pending', 'Onay Bekleyenler'),
+                          AdminFilterOption('needs_video', 'Video Bekleyenler'),
                           AdminFilterOption('approved', 'Onaylananlar'),
                           AdminFilterOption('rejected', 'Reddedilenler'),
-                          AdminFilterOption('all', 'Tümü'),
                         ],
                       )),
                   const SizedBox(height: 10),
@@ -299,10 +301,14 @@ class _AdminApplicationsViewState extends State<AdminApplicationsView> {
                                       size: 12,
                                       color: cs.onSurfaceVariant),
                                   const SizedBox(width: 2),
-                                  Text('${app.city}, ${app.district}',
-                                      style: TextStyle(
-                                          fontSize: 12,
-                                          color: cs.onSurfaceVariant)),
+                                  Flexible(
+                                    child: Text('${app.city}, ${app.district}',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                            fontSize: 12,
+                                            color: cs.onSurfaceVariant)),
+                                  ),
                                   const SizedBox(width: 12),
                                   Icon(Icons.calendar_today_outlined,
                                       size: 12,

@@ -12,8 +12,9 @@ class AdminApplicationsController extends GetxController {
   final error = ''.obs;
   final search = ''.obs;
 
-  // Filters — review-priority "pending" is shown first by default.
-  final selectedStatus = 'pending'.obs; // all | pending | approved | rejected
+  // Filters — "all" by default so needs_video/approved/rejected rows are visible.
+  final selectedStatus =
+      'all'.obs; // all | pending | needs_video | approved | rejected
   final selectedCity = ''.obs; // empty = all
 
   /// Unique cities present in the loaded applications.

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:koyden_sehire/shared/utils/responsive.dart';
 import 'package:get/get.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
@@ -229,13 +230,13 @@ class _StatsGrid extends StatelessWidget {
         final w = constraints.maxWidth;
         final int cols;
         final double aspect;
-        if (w >= 1200) {
+        if (w >= AppBreakpoints.wide) {
           cols = 6; // all 6 in one row — no vertical scroll needed
           aspect = 2.6;
-        } else if (w >= 900) {
+        } else if (w >= AppBreakpoints.desktop) {
           cols = 3;
           aspect = 2.2;
-        } else if (w >= 560) {
+        } else if (w >= AppBreakpoints.medium) {
           cols = 2;
           aspect = 2.0;
         } else {
