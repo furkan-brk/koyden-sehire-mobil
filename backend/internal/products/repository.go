@@ -565,7 +565,7 @@ func (r *Repository) GetAdminProductByID(id string) (*AdminProductDetail, error)
 		SELECT
 			p.id, p.farmer_id, p.title, p.description,
 			p.price, p.unit, p.city, p.district, p.village,
-			p.status, p.stock_status, p.admin_note, p.created_at,
+			p.status, p.stock_status, p.admin_note, p.created_at, p.published_at,
 			u.full_name AS farmer_full_name,
 			u.phone    AS farmer_phone,
 			u.status   AS farmer_status,
@@ -598,7 +598,7 @@ func (r *Repository) GetAdminProductByID(id string) (*AdminProductDetail, error)
 		GROUP BY
 			p.id, p.farmer_id, p.title, p.description,
 			p.price, p.unit, p.city, p.district, p.village,
-			p.status, p.stock_status, p.admin_note, p.created_at,
+			p.status, p.stock_status, p.admin_note, p.created_at, p.published_at,
 			u.full_name, u.phone, u.status,
 			fp.display_name, fp.city, fp.district,
 			fp.is_verified, fp.is_founding_farmer, fp.profile_image_url,
@@ -624,7 +624,7 @@ func (r *Repository) ListAdminProducts(page, limit int) ([]AdminProductDetail, i
 		SELECT
 			p.id, p.farmer_id, p.title, p.description,
 			p.price, p.unit, p.city, p.district, p.village,
-			p.status, p.stock_status, p.admin_note, p.created_at,
+			p.status, p.stock_status, p.admin_note, p.created_at, p.published_at,
 			u.full_name AS farmer_full_name,
 			u.phone    AS farmer_phone,
 			u.status   AS farmer_status,
@@ -657,7 +657,7 @@ func (r *Repository) ListAdminProducts(page, limit int) ([]AdminProductDetail, i
 		GROUP BY
 			p.id, p.farmer_id, p.title, p.description,
 			p.price, p.unit, p.city, p.district, p.village,
-			p.status, p.stock_status, p.admin_note, p.created_at,
+			p.status, p.stock_status, p.admin_note, p.created_at, p.published_at,
 			u.full_name, u.phone, u.status,
 			fp.display_name, fp.city, fp.district,
 			fp.is_verified, fp.is_founding_farmer, fp.profile_image_url,
@@ -746,6 +746,7 @@ func mapAdminRowToDetail(row AdminProductRow, publicURL string) AdminProductDeta
 		StockStatus: row.StockStatus,
 		AdminNote:   row.AdminNote,
 		CreatedAt:   row.CreatedAt,
+		PublishedAt: row.PublishedAt,
 		Images:      images,
 		Category:    cat,
 		Farmer:      farmer,

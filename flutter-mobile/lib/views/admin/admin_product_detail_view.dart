@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:koyden_sehire/shared/utils/responsive.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/services/admin_repository.dart';
@@ -578,6 +579,12 @@ class _ProductInfoCard extends StatelessWidget {
                   cs),
             if (product.stockStatus != null && product.stockStatus!.isNotEmpty)
               _Row('Stok Durumu', _stockLabel(product.stockStatus!), cs),
+            if (product.publishedAt != null && product.status == 'active')
+              _Row(
+                  'Onaylandığı Tarih',
+                  DateFormat('d MMMM y, HH:mm', 'tr_TR')
+                      .format(product.publishedAt!.toLocal()),
+                  cs),
             if (product.rejectionReason != null &&
                 product.rejectionReason!.isNotEmpty) ...[
               const SizedBox(height: 8),

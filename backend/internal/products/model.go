@@ -141,6 +141,7 @@ type AdminProductRow struct {
 	StockStatus string          `db:"stock_status"`
 	AdminNote   *string         `db:"admin_note"`
 	CreatedAt   time.Time       `db:"created_at"`
+	PublishedAt *time.Time      `db:"published_at"`
 	ImagesJSON  json.RawMessage `db:"images"`
 	// Farmer (LEFT JOIN — all nullable)
 	FarmerFullName         *string `db:"farmer_full_name"`
@@ -176,6 +177,7 @@ type AdminProductDetail struct {
 	StockStatus string                  `json:"stock_status"`
 	AdminNote   *string                 `json:"admin_note,omitempty"`
 	CreatedAt   time.Time               `json:"created_at"`
+	PublishedAt *time.Time              `json:"published_at,omitempty"`
 	Images      []ImageItem             `json:"images"`
 	Category    *CategoryInfo           `json:"category,omitempty"`
 	Farmer      *AdminProductFarmerInfo `json:"farmer,omitempty"`

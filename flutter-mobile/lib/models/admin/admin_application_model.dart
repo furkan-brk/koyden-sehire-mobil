@@ -24,6 +24,7 @@ class AdminApplication {
   final String? rejectionReason;
   final String? adminNote;
   final DateTime createdAt;
+  final DateTime? reviewedAt;
   final String? inviteCode;
   // Legacy / risk fields kept for list view compatibility
   final String? inviteTrust;
@@ -55,6 +56,7 @@ class AdminApplication {
     this.rejectionReason,
     this.adminNote,
     required this.createdAt,
+    this.reviewedAt,
     this.inviteCode,
     this.inviteTrust,
     this.riskLevel,
@@ -95,6 +97,7 @@ class AdminApplication {
       createdAt:
           DateTime.tryParse(json['created_at']?.toString() ?? '') ??
               DateTime.now(),
+      reviewedAt: DateTime.tryParse(json['reviewed_at']?.toString() ?? ''),
       inviteCode: json['invite_code']?.toString(),
       inviteTrust: json['invite_trust']?.toString(),
       riskLevel: json['risk_level']?.toString(),
