@@ -296,9 +296,16 @@ func main() {
 	customerGroup.Get("/notifications", append(cm, notifHandler.List)...)
 	customerGroup.Patch("/notifications/read-all", append(cm, notifHandler.MarkAllRead)...)
 	customerGroup.Patch("/notifications/:id/read", append(cm, notifHandler.MarkRead)...)
-	customerGroup.Get("/favorites", append(cm, favHandler.List)...)
-	customerGroup.Post("/favorites/:productId", append(cm, favHandler.Add)...)
-	customerGroup.Delete("/favorites/:productId", append(cm, favHandler.Remove)...)
+	// Favorites: accessible by customers and farmers (farmers can favourite
+	// products while browsing the marketplace in customer mode).
+	favMiddleware := []fiber.Handler{
+		requireAuth,
+		middleware.RequireAnyRole("customer", "farmer"),
+		requireActive,
+	}
+	customerGroup.Get("/favorites", append(favMiddleware, favHandler.List)...)
+	customerGroup.Post("/favorites/:productId", append(favMiddleware, favHandler.Add)...)
+	customerGroup.Delete("/favorites/:productId", append(favMiddleware, favHandler.Remove)...)
 	customerGroup.Delete("/account", append(cm, userHandler.DeleteCustomerAccount)...)
 
 	adminGroup := api.Group("/admin", requireAuth, requireAdmin)

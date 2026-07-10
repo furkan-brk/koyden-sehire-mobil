@@ -46,7 +46,10 @@ class FavoritesService extends GetxService {
 
   Future<void> toggle(BuildContext context, String productId) async {
     final auth = Get.find<AuthService>();
-    if (auth.status.value != AuthStatus.customerActive) {
+    final isCustomer = auth.status.value == AuthStatus.customerActive;
+    final isFarmerBrowsing = auth.status.value == AuthStatus.farmerActive &&
+        auth.isBrowsingAsCustomer.value;
+    if (!isCustomer && !isFarmerBrowsing) {
       Get.snackbar(
         'Giriş Gerekli',
         'Favori eklemek için giriş yapmanız gerekiyor',

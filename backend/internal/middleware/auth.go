@@ -220,6 +220,24 @@ func RequireRole(role string) fiber.Handler {
 	}
 }
 
+// RequireAnyRole allows access when the authenticated user has any of the
+// listed roles. Used e.g. for endpoints (favorites) that both customers
+// and farmers may hit while a farmer is browsing the marketplace.
+func RequireAnyRole(roles ...string) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		userRole, ok := c.Locals(UserRoleKey).(string)
+		if !ok {
+			return response.Forbidden(c, "Bu işlem için yetkiniz yok")
+		}
+		for _, r := range roles {
+			if userRole == r {
+				return c.Next()
+			}
+		}
+		return response.Forbidden(c, "Bu işlem için yetkiniz yok")
+	}
+}
+
 func RequireActiveUser() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		status, ok := c.Locals(UserStatusKey).(string)
