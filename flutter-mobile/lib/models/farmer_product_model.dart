@@ -37,7 +37,7 @@ class FarmerProductModel {
 
   factory FarmerProductModel.fromJson(Map<String, dynamic> json) {
     final imagesRaw = (json['images'] ?? json['image_urls']) as List?;
-    final images = (imagesRaw ?? const [])
+    var images = (imagesRaw ?? const [])
         .map((e) {
           if (e is String) return AppConstants.formatDevUrl(e);
           if (e is Map) return AppConstants.formatDevUrl((e['image_url'] ?? e['url'])?.toString() ?? '');
@@ -46,6 +46,14 @@ class FarmerProductModel {
         .where((s) => s.isNotEmpty)
         .toList()
         .cast<String>();
+    // Fallback for endpoints that return a single `image_url` string (e.g.
+    // farmer dashboard's recent products).
+    if (images.isEmpty) {
+      final single = json['image_url']?.toString();
+      if (single != null && single.isNotEmpty) {
+        images = [AppConstants.formatDevUrl(single)];
+      }
+    }
     final cat = json['category'] as Map?;
     return FarmerProductModel(
       id: json['id']?.toString() ?? '',

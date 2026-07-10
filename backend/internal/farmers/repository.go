@@ -358,13 +358,17 @@ func (r *Repository) GetRecentProductsByFarmerID(farmerID uuid.UUID, limit int) 
 	type row struct {
 		ID        uuid.UUID `db:"id"`
 		Title     string    `db:"title"`
+		Price     float64   `db:"price"`
+		Unit      string    `db:"unit"`
 		Status    string    `db:"status"`
 		CreatedAt time.Time `db:"created_at"`
 		ImageKey  *string   `db:"image_key"`
 	}
 	var rows []row
 	err := r.db.Select(&rows, `
-		SELECT p.id, COALESCE(p.title, '') AS title, COALESCE(p.status, '') AS status, p.created_at,
+		SELECT p.id, COALESCE(p.title, '') AS title,
+		       COALESCE(p.price, 0) AS price, COALESCE(p.unit, '') AS unit,
+		       COALESCE(p.status, '') AS status, p.created_at,
 		       (SELECT pi.image_key FROM product_images pi
 		        WHERE pi.product_id = p.id
 		        ORDER BY pi.sort_order ASC
@@ -383,6 +387,9 @@ func (r *Repository) GetRecentProductsByFarmerID(farmerID uuid.UUID, limit int) 
 		items[i] = RecentProductItem{
 			ID:        row.ID,
 			Name:      row.Title,
+			Title:     row.Title,
+			Price:     row.Price,
+			Unit:      row.Unit,
 			Status:    row.Status,
 			CreatedAt: row.CreatedAt,
 		}

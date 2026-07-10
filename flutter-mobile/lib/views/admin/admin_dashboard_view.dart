@@ -230,21 +230,12 @@ class _StatsGrid extends StatelessWidget {
         final w = constraints.maxWidth;
         final int cols;
         final double aspect;
-        if (w >= 1400) {
+        if (w >= AppBreakpoints.wide) {
           cols = 6;
           aspect = 1.9;
-        } else if (w >= 1100) {
-          cols = 6;
-          aspect = 1.6;
-        } else if (w >= 900) {
-        if (w >= AppBreakpoints.wide) {
-          cols = 6; // all 6 in one row — no vertical scroll needed
-          aspect = 2.6;
         } else if (w >= AppBreakpoints.desktop) {
           cols = 3;
           aspect = 1.9;
-        } else if (w >= 560) {
-          aspect = 2.2;
         } else if (w >= AppBreakpoints.medium) {
           cols = 2;
           aspect = 1.8;

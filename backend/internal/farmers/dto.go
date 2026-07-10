@@ -30,6 +30,9 @@ type DashboardInviteStats struct {
 type RecentProductItem struct {
 	ID        uuid.UUID `json:"id"`
 	Name      string    `json:"name"`
+	Title     string    `json:"title"`
+	Price     float64   `json:"price"`
+	Unit      string    `json:"unit"`
 	Status    string    `json:"status"`
 	CreatedAt time.Time `json:"created_at"`
 	ImageURL  string    `json:"image_url"`

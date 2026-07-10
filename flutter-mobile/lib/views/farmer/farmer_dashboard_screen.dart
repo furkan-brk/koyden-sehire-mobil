@@ -140,10 +140,6 @@ class _Body extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         _QuickActions(),
-        if (data.weeklyViews.isNotEmpty) ...[
-          const SizedBox(height: 24),
-          _WeeklyViewsChart(points: data.weeklyViews),
-        ],
         const SizedBox(height: 24),
         SectionHeader(
           title: 'Son Ürünlerim',
