@@ -303,6 +303,7 @@ func main() {
 		middleware.RequireAnyRole("customer", "farmer"),
 		requireActive,
 	}
+	customerGroup.Post("/uploads/profile-image", append(cm, uploadHandler.UploadProfileImage)...)
 	customerGroup.Get("/favorites", append(favMiddleware, favHandler.List)...)
 	customerGroup.Post("/favorites/:productId", append(favMiddleware, favHandler.Add)...)
 	customerGroup.Delete("/favorites/:productId", append(favMiddleware, favHandler.Remove)...)

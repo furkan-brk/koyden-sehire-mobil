@@ -15,7 +15,7 @@ func NewRepository(db *sqlx.DB) *Repository {
 
 func (r *Repository) GetByID(id string) (*User, error) {
 	var u User
-	err := r.db.Get(&u, "SELECT id, full_name, phone, email, role, status, phone_verified, phone_verified_at, created_at, updated_at FROM users WHERE id = $1", id)
+	err := r.db.Get(&u, "SELECT id, full_name, phone, email, role, status, phone_verified, phone_verified_at, profile_image_url, created_at, updated_at FROM users WHERE id = $1", id)
 	if err != nil {
 		return nil, apperrors.ErrNotFound
 	}
@@ -47,9 +47,11 @@ func (r *Repository) UpdateFarmerProfile(userID string, req *UpdateProfileReques
 func (r *Repository) UpdateCustomerProfile(userID string, req *UpdateCustomerProfileRequest) error {
 	_, err := r.db.Exec(`
 		UPDATE users
-		SET full_name = $1, email = $2, updated_at = NOW()
-		WHERE id = $3
-	`, req.FullName, req.Email, userID)
+		SET full_name = $1, email = $2,
+		    profile_image_url = COALESCE($3, profile_image_url),
+		    updated_at = NOW()
+		WHERE id = $4
+	`, req.FullName, req.Email, req.ProfileImageURL, userID)
 	return err
 }
 

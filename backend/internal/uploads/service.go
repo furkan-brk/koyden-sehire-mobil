@@ -89,11 +89,20 @@ func (s *Service) UploadProfileImage(farmerID string, file io.Reader, filename s
 		return nil, apperrors.New("INVALID_FILE_TYPE", "Sadece JPEG, PNG veya WebP yükleyebilirsiniz", 400)
 	}
 
-	combined := io.MultiReader(bytes.NewReader(buf), file)
+	// AWS S3/R2 SDK requires a seekable body for SigV4 payload hashing.
+	// io.MultiReader is not seekable, so buffer the full file into memory
+	// (already capped at 2 MiB) and hand a bytes.Reader to the uploader.
+	rest, err := io.ReadAll(file)
+	if err != nil {
+		log.Printf("[upload] profile-image read body FAILED farmerID=%s err=%v", farmerID, err)
+		return nil, apperrors.ErrInternal
+	}
+	full := append(buf, rest...)
 	key := fmt.Sprintf("profile-images/%s/%d_%s", farmerID, time.Now().Unix(), sanitizeFilename(filename))
 
-	url, err := s.storage.Upload(context.Background(), key, combined, contentType, size)
+	url, err := s.storage.Upload(context.Background(), key, bytes.NewReader(full), contentType, int64(len(full)))
 	if err != nil {
+		log.Printf("[upload] profile-image storage.Upload FAILED farmerID=%s key=%s err=%v", farmerID, key, err)
 		return nil, apperrors.ErrInternal
 	}
 

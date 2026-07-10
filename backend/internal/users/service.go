@@ -56,11 +56,12 @@ func (s *Service) GetCustomerProfile(userID string) (*CustomerProfileResponse, e
 		return nil, err
 	}
 	return &CustomerProfileResponse{
-		ID:        user.ID,
-		FullName:  user.FullName,
-		Phone:     user.Phone,
-		Email:     user.Email,
-		CreatedAt: user.CreatedAt,
+		ID:              user.ID,
+		FullName:        user.FullName,
+		Phone:           user.Phone,
+		Email:           user.Email,
+		ProfileImageURL: user.ProfileImageURL,
+		CreatedAt:       user.CreatedAt,
 	}, nil
 }
 

@@ -11,6 +11,7 @@ type User struct {
 	Status          string     `db:"status" json:"status"`
 	PhoneVerified   bool       `db:"phone_verified" json:"phone_verified"`
 	PhoneVerifiedAt *time.Time `db:"phone_verified_at" json:"phone_verified_at"`
+	ProfileImageURL *string    `db:"profile_image_url" json:"profile_image_url"`
 	CreatedAt       time.Time  `db:"created_at" json:"created_at"`
 	UpdatedAt       time.Time  `db:"updated_at" json:"updated_at"`
 	DeletedAt       *time.Time `db:"deleted_at" json:"deleted_at,omitempty"`

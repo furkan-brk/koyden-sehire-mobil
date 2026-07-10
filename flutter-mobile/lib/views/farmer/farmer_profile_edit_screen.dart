@@ -260,11 +260,18 @@ class _ProfileFormCard extends StatelessWidget {
                 DropdownButtonFormField<String>(
                   // ignore: deprecated_member_use
                   value: profile.producerType,
+                  isExpanded: true,
                   decoration:
                       const InputDecoration(labelText: 'Üretici Tipi'),
                   items: producerTypeLabels.entries
                       .map((e) => DropdownMenuItem(
-                          value: e.key, child: Text(e.value)))
+                            value: e.key,
+                            child: Text(
+                              e.value,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ))
                       .toList(),
                   onChanged: (v) =>
                       ctrl.edit((e) => e.copyWith(producerType: v)),
