@@ -74,7 +74,12 @@ func (r *Repository) GetAdminDetail(id string) (*FarmerDetail, error) {
 		       fp.display_name, fp.producer_type, fp.city, fp.district, fp.village, fp.address, fp.bio,
 		       fp.profile_image_url, fp.public_phone, fp.show_phone,
 		       fp.is_verified, fp.is_founding_farmer, fp.invite_quota,
-		       ic.code AS invite_code, COALESCE(ic.used_count, 0) AS used_invites
+		       ic.code AS invite_code, COALESCE(ic.used_count, 0) AS used_invites,
+		       COALESCE((
+		         SELECT COUNT(*)
+		         FROM products p
+		         WHERE p.farmer_id = u.id AND p.status = 'active'
+		       ), 0) AS product_count
 		FROM users u
 		JOIN farmer_profiles fp ON fp.user_id = u.id
 		LEFT JOIN LATERAL (
@@ -89,6 +94,9 @@ func (r *Repository) GetAdminDetail(id string) (*FarmerDetail, error) {
 	if err != nil {
 		return nil, apperrors.ErrNotFound
 	}
+
+	// Ürünler — admin farmer detail için kısa liste
+	d.Products = r.getFarmerProductsBrief(id, 10)
 
 	// Referans eden kişi: bu farmerin başvurusundaki referred_by_user_id
 	var ref struct {
@@ -222,7 +230,12 @@ func (r *Repository) ListAdmin(page, limit int, city string) ([]FarmerDetail, in
 		       fp.display_name, fp.producer_type, fp.city, fp.district, fp.village, fp.address, fp.bio,
 		       fp.profile_image_url, fp.public_phone, fp.show_phone,
 		       fp.is_verified, fp.is_founding_farmer, fp.invite_quota,
-		       ic.code AS invite_code, COALESCE(ic.used_count, 0) AS used_invites
+		       ic.code AS invite_code, COALESCE(ic.used_count, 0) AS used_invites,
+		       COALESCE((
+		         SELECT COUNT(*)
+		         FROM products p
+		         WHERE p.farmer_id = u.id AND p.status = 'active'
+		       ), 0) AS product_count
 		FROM users u
 		JOIN farmer_profiles fp ON fp.user_id = u.id
 		LEFT JOIN LATERAL (
@@ -421,4 +434,56 @@ func (r *Repository) UpdateInviteQuota(id string, quota int) error {
 	}
 
 	return tx.Commit()
+}
+
+// getFarmerProductsBrief returns up to `limit` most recent products for
+// the given farmer, ordered by created_at DESC. Used to embed a short
+// product list in the admin farmer detail response.
+func (r *Repository) getFarmerProductsBrief(farmerID string, limit int) []ProductBriefItem {
+	type row struct {
+		ID           string  `db:"id"`
+		Title        string  `db:"title"`
+		Price        float64 `db:"price"`
+		Unit         string  `db:"unit"`
+		Status       string  `db:"status"`
+		CategoryName *string `db:"category_name"`
+		ImageKey     *string `db:"image_key"`
+	}
+	var rows []row
+	err := r.db.Select(&rows, `
+		SELECT p.id, COALESCE(p.title, '') AS title,
+		       COALESCE(p.price, 0) AS price, COALESCE(p.unit, '') AS unit,
+		       COALESCE(p.status, '') AS status,
+		       c.name AS category_name,
+		       (SELECT pi.image_key FROM product_images pi
+		        WHERE pi.product_id = p.id
+		        ORDER BY pi.sort_order ASC
+		        LIMIT 1) AS image_key
+		FROM products p
+		LEFT JOIN categories c ON c.id = p.category_id
+		WHERE p.farmer_id = $1
+		  AND p.status NOT IN ('on-going', 'successful', 'failed')
+		ORDER BY p.created_at DESC
+		LIMIT $2
+	`, farmerID, limit)
+	if err != nil {
+		return []ProductBriefItem{}
+	}
+	items := make([]ProductBriefItem, len(rows))
+	for i, row := range rows {
+		items[i] = ProductBriefItem{
+			ID:     row.ID,
+			Title:  row.Title,
+			Price:  row.Price,
+			Unit:   row.Unit,
+			Status: row.Status,
+		}
+		if row.CategoryName != nil {
+			items[i].CategoryName = *row.CategoryName
+		}
+		if row.ImageKey != nil {
+			items[i].ImageURL = products.FormatImageURL(*row.ImageKey, r.publicURL)
+		}
+	}
+	return items
 }

@@ -645,10 +645,17 @@ class _StepPersonalFarmState extends State<_StepPersonalFarm> {
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               value: _producerType,
+              isExpanded: true,
               decoration: const InputDecoration(labelText: 'Üretici Tipi'),
               items: producerTypeLabels.entries
-                  .map((e) =>
-                      DropdownMenuItem(value: e.key, child: Text(e.value)))
+                  .map((e) => DropdownMenuItem(
+                        value: e.key,
+                        child: Text(
+                          e.value,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ))
                   .toList(),
               onChanged: (v) => setState(() => _producerType = v),
             ),
@@ -981,11 +988,18 @@ class _StepProductionVideoState extends State<_StepProductionVideo> {
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 value: _placeType,
+                isExpanded: true,
                 decoration: const InputDecoration(
                     labelText: 'Üretim Yeri (isteğe bağlı)'),
                 items: productionPlaceLabels.entries
-                    .map((e) =>
-                        DropdownMenuItem(value: e.key, child: Text(e.value)))
+                    .map((e) => DropdownMenuItem(
+                          value: e.key,
+                          child: Text(
+                            e.value,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ))
                     .toList(),
                 onChanged: (v) => setState(() => _placeType = v),
               ),
@@ -1118,9 +1132,13 @@ class _VideoSection extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            const Text(
-                              'Tanıtım Videosu',
-                              style: TextStyle(fontWeight: FontWeight.w600),
+                            const Flexible(
+                              child: Text(
+                                'Tanıtım Videosu',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(fontWeight: FontWeight.w600),
+                              ),
                             ),
                             const SizedBox(width: 8),
                             Container(

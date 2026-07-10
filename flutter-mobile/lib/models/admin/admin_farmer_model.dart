@@ -108,6 +108,37 @@ class FarmerReferral {
       );
 }
 
+class AdminFarmerProductBrief {
+  final String id;
+  final String title;
+  final double price;
+  final String unit;
+  final String status;
+  final String categoryName;
+  final String imageUrl;
+
+  const AdminFarmerProductBrief({
+    required this.id,
+    required this.title,
+    required this.price,
+    required this.unit,
+    required this.status,
+    required this.categoryName,
+    required this.imageUrl,
+  });
+
+  factory AdminFarmerProductBrief.fromJson(Map<String, dynamic> json) =>
+      AdminFarmerProductBrief(
+        id: json['id']?.toString() ?? '',
+        title: json['title']?.toString() ?? '',
+        price: (json['price'] as num?)?.toDouble() ?? 0.0,
+        unit: json['unit']?.toString() ?? '',
+        status: json['status']?.toString() ?? '',
+        categoryName: json['category_name']?.toString() ?? '',
+        imageUrl: json['image_url']?.toString() ?? '',
+      );
+}
+
 class AdminFarmerDetail extends AdminFarmer {
   final double profileCompletion;
   final bool hasVideoVerification;
@@ -116,6 +147,7 @@ class AdminFarmerDetail extends AdminFarmer {
   final int inviteHistory;
   final FarmerReferredBy? referredBy;
   final List<FarmerReferral> referrals;
+  final List<AdminFarmerProductBrief> products;
 
   const AdminFarmerDetail({
     required super.id,
@@ -138,6 +170,7 @@ class AdminFarmerDetail extends AdminFarmer {
     required this.inviteHistory,
     this.referredBy,
     this.referrals = const [],
+    this.products = const [],
   });
 
   factory AdminFarmerDetail.fromJson(Map<String, dynamic> json) {
@@ -168,6 +201,11 @@ class AdminFarmerDetail extends AdminFarmer {
               (json['referred_by'] as Map).cast<String, dynamic>()),
       referrals: (json['referrals'] as List?)
               ?.map((e) => FarmerReferral.fromJson(
+                  (e as Map).cast<String, dynamic>()))
+              .toList() ??
+          const [],
+      products: (json['products'] as List?)
+              ?.map((e) => AdminFarmerProductBrief.fromJson(
                   (e as Map).cast<String, dynamic>()))
               .toList() ??
           const [],

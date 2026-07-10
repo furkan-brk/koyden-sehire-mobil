@@ -1,9 +1,11 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:koyden_sehire/shared/utils/responsive.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
+import 'package:koyden_sehire/core/utils/date_formatter.dart';
 import 'package:koyden_sehire/models/admin/admin_farmer_model.dart';
 import 'package:koyden_sehire/services/admin_repository.dart';
 import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
@@ -257,6 +259,10 @@ class _AdminFarmerDetailViewState extends State<AdminFarmerDetailView> {
                           farmer: farmer,
                           onNavigate: _navigateToFarmer,
                         ),
+                        if (farmer.products.isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          _ProductsCard(farmer: farmer),
+                        ],
                       ],
                     ),
                   ),
@@ -316,6 +322,10 @@ class _AdminFarmerDetailViewState extends State<AdminFarmerDetailView> {
               farmer: farmer,
               onNavigate: _navigateToFarmer,
             ),
+            if (farmer.products.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _ProductsCard(farmer: farmer),
+            ],
             const SizedBox(height: 16),
             Obx(() => AppButton(
                   label: farmer.isActive
@@ -434,7 +444,7 @@ class _TrustCard extends StatelessWidget {
                               farmer.hasVideoVerification ? 'Var' : 'Yok'),
                       _Metric(
                           label: 'Onaylı Ürünler',
-                          value: farmer.approvedProducts.toString()),
+                          value: farmer.productCount.toString()),
                       _Metric(
                           label: 'Şikayetler',
                           value: farmer.complaints.toString()),
@@ -742,6 +752,176 @@ class _Metric extends StatelessWidget {
               style: const TextStyle(
                   fontSize: 12, fontWeight: FontWeight.w600)),
         ],
+      ),
+    );
+  }
+}
+
+class _ProductsCard extends StatelessWidget {
+  final AdminFarmerDetail farmer;
+  const _ProductsCard({required this.farmer});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.inventory_2_outlined, size: 16, color: cs.primary),
+              const SizedBox(width: 8),
+              Text(
+                'Ürünler',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              const Spacer(),
+              Text(
+                '${farmer.products.length}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...farmer.products.map((p) => _FarmerProductTile(product: p)),
+        ],
+      ),
+    );
+  }
+}
+
+class _FarmerProductTile extends StatelessWidget {
+  final AdminFarmerProductBrief product;
+  const _FarmerProductTile({required this.product});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          onTap: () => context.push('/admin/products/${product.id}'),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: product.imageUrl.isEmpty
+                        ? Container(
+                            color: AppColors.surfaceContainerLow,
+                            child: Icon(Icons.image_outlined,
+                                size: 18, color: cs.onSurfaceVariant),
+                          )
+                        : CachedNetworkImage(
+                            imageUrl: product.imageUrl,
+                            fit: BoxFit.cover,
+                            errorWidget: (_, __, ___) => Container(
+                              color: AppColors.surfaceContainerLow,
+                              child: Icon(Icons.broken_image_outlined,
+                                  size: 18, color: cs.onSurfaceVariant),
+                            ),
+                          ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        product.title.isEmpty ? 'İsimsiz ürün' : product.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (product.categoryName.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          product.categoryName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  product.price > 0
+                      ? AppFormatters.price(product.price, product.unit)
+                      : '—',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: cs.primary,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                _ProductStatusPill(status: product.status),
+                Icon(Icons.chevron_right,
+                    size: 16, color: cs.onSurfaceVariant),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProductStatusPill extends StatelessWidget {
+  final String status;
+  const _ProductStatusPill({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, bg, fg) = switch (status) {
+      'active' => ('Onaylı', AppColors.secondaryContainer, AppColors.primary),
+      'pending' => ('Bekliyor', const Color(0xFFFCE8C6), const Color(0xFF7A5A18)),
+      'rejected' => ('Reddedildi', const Color(0xFFFFDAD6), AppColors.error),
+      'hidden' => ('Gizli', const Color(0xFFE5E7E6), AppColors.onSurfaceVariant),
+      _ => (status, const Color(0xFFE5E7E6), AppColors.onSurfaceVariant),
+    };
+    return Container(
+      margin: const EdgeInsets.only(right: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: fg,
+        ),
       ),
     );
   }

@@ -43,9 +43,23 @@ type FarmerDetail struct {
 	InviteQuota      int     `db:"invite_quota" json:"invite_quota"`
 	InviteCode       *string `db:"invite_code" json:"invite_code"`
 	UsedInvites      int     `db:"used_invites" json:"used_invites"`
+	ProductCount     int     `db:"product_count" json:"product_count"`
 
-	ReferredBy *ReferredByInfo `json:"referred_by,omitempty"`
-	Referrals  []ReferralItem  `json:"referrals,omitempty"`
+	ReferredBy *ReferredByInfo    `json:"referred_by,omitempty"`
+	Referrals  []ReferralItem     `json:"referrals,omitempty"`
+	Products   []ProductBriefItem `json:"products,omitempty"`
+}
+
+// ProductBriefItem is an embedded, lightweight product summary used on the
+// admin farmer detail view (recent products card).
+type ProductBriefItem struct {
+	ID           string  `json:"id"`
+	Title        string  `json:"title"`
+	Price        float64 `json:"price"`
+	Unit         string  `json:"unit"`
+	Status       string  `json:"status"`
+	CategoryName string  `json:"category_name"`
+	ImageURL     string  `json:"image_url"`
 }
 
 type PublicFarmerSummary struct {
