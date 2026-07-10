@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/models/admin/admin_farmer_model.dart';
 import 'package:koyden_sehire/services/admin_repository.dart';
+import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_loading.dart';
@@ -47,40 +48,50 @@ class _AdminFarmerDetailViewState extends State<AdminFarmerDetailView> {
     context.go('/admin/farmers/$id');
   }
 
-  void _showQuotaDialog(AdminFarmerDetail farmer) {
+  Future<void> _showQuotaDialog(AdminFarmerDetail farmer) async {
     final ctrl =
         TextEditingController(text: farmer.inviteQuota.toString());
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Davet Kotasını Düzenle'),
-        content: TextField(
-          controller: ctrl,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'Kota'),
+    try {
+      final result = await showDialog<int>(
+        context: context,
+        builder: (dialogCtx) => AlertDialog(
+          title: const Text('Davet Kotasını Düzenle'),
+          content: TextField(
+            controller: ctrl,
+            keyboardType: TextInputType.number,
+            autofocus: true,
+            decoration: const InputDecoration(labelText: 'Kota'),
+          ),
+          actions: [
+            AppButton(
+              label: 'İptal',
+              variant: AppButtonVariant.text,
+              fullWidth: false,
+              onPressed: () => Navigator.pop(dialogCtx),
+            ),
+            AppButton(
+              label: 'Kaydet',
+              variant: AppButtonVariant.primary,
+              fullWidth: false,
+              onPressed: () {
+                final q = int.tryParse(ctrl.text);
+                if (q != null && q >= 0) Navigator.pop(dialogCtx, q);
+              },
+            ),
+          ],
         ),
-        actions: [
-          AppButton(
-            label: 'İptal',
-            variant: AppButtonVariant.text,
-            fullWidth: false,
-            onPressed: () => Navigator.pop(context),
-          ),
-          AppButton(
-            label: 'Kaydet',
-            variant: AppButtonVariant.primary,
-            fullWidth: false,
-            onPressed: () {
-              final q = int.tryParse(ctrl.text);
-              if (q != null) {
-                _ctrl.updateQuota(q);
-                Navigator.pop(context);
-              }
-            },
-          ),
-        ],
-      ),
-    ).then((_) => ctrl.dispose());
+      );
+      if (result == null || !mounted) return;
+      await _ctrl.updateQuota(result);
+      if (!mounted) return;
+      if (_ctrl.error.value.isEmpty) {
+        context.snack('Davet kotası güncellendi.');
+      } else {
+        context.snack(_ctrl.error.value, isError: true);
+      }
+    } finally {
+      ctrl.dispose();
+    }
   }
 
   @override

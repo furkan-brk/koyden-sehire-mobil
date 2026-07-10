@@ -166,7 +166,7 @@ class AdminRepository {
 
   Future<void> updateFarmerQuota(String id, int quota) async {
     await _client.patch<void>(
-      ApiEndpoints.adminFarmer(id),
+      ApiEndpoints.adminFarmerInviteQuota(id),
       data: {'invite_quota': quota},
       parse: (_) {},
     );

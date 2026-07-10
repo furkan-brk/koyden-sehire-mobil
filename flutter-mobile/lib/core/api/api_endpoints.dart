@@ -58,6 +58,8 @@ class ApiEndpoints {
   static String adminFarmer(String id) => '/admin/farmers/$id';
   static String adminFarmerSuspend(String id) => '/admin/farmers/$id/suspend';
   static String adminFarmerActivate(String id) => '/admin/farmers/$id/reactivate';
+  static String adminFarmerInviteQuota(String id) =>
+      '/admin/farmers/$id/invite-quota';
 
   // Push tokens
   static const String farmerPushToken = '/farmer/push-token';
