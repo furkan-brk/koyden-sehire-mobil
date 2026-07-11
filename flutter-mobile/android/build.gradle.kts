@@ -25,6 +25,17 @@ subprojects {
         options.compilerArgs.add("-Xlint:-options")
     }
 }
+// Bazı eklentiler AGP'nin varsayılan NDK'sını (28.x) ister; makinede o sürümün
+// klasörü bozuk kalıntı olduğundan tüm alt projeleri app ile aynı, kurulu
+// NDK sürümüne sabitler.
+subprojects {
+    listOf("com.android.library", "com.android.application").forEach { pluginId ->
+        plugins.withId(pluginId) {
+            (extensions.getByName("android") as com.android.build.gradle.BaseExtension)
+                .ndkVersion = "29.0.14206865"
+        }
+    }
+}
 
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)

@@ -19,9 +19,6 @@ dependencies:
   # State management
   get: ^4.6.6
 
-  # Charts (admin dashboard)
-  fl_chart: ^0.69.0
-
   # HTTP
   dio: ^5.4.0
 

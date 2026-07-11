@@ -128,6 +128,23 @@ func (r *Repository) CreateCode(ownerUserID, ownerType, code string, maxUses int
 	return &ic, err
 }
 
+// FindOwnerDisplayName returns the invite owner's public name for the
+// "X sizi davet etti" card: farmer profile display name, falling back to
+// the user's full name.
+func (r *Repository) FindOwnerDisplayName(ownerUserID string) (*string, error) {
+	var name string
+	err := r.db.Get(&name, `
+		SELECT COALESCE(NULLIF(fp.display_name, ''), u.full_name)
+		FROM users u
+		LEFT JOIN farmer_profiles fp ON fp.user_id = u.id
+		WHERE u.id = $1
+	`, ownerUserID)
+	if err != nil {
+		return nil, err
+	}
+	return &name, nil
+}
+
 func (r *Repository) IsCodeValid(ic *InviteCode) bool {
 	if !ic.IsActive {
 		return false

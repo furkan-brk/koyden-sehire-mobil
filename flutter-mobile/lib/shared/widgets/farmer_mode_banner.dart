@@ -79,8 +79,8 @@ class _ReturnButton extends StatelessWidget {
       child: InkWell(
         onTap: onPressed,
         borderRadius: BorderRadius.circular(AppRadius.pill),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        child: const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -89,7 +89,7 @@ class _ReturnButton extends StatelessWidget {
                 size: 14,
                 color: AppColors.primary,
               ),
-              const SizedBox(width: 5),
+              SizedBox(width: 5),
               Text(
                 'Panele Dön',
                 style: TextStyle(

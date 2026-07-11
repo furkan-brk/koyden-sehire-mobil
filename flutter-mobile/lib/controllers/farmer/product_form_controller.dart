@@ -105,8 +105,7 @@ class ProductFormController extends GetxController {
   void reorderImages(int oldIndex, int newIndex) {
     final urls = [...data.value.imageUrls];
     if (oldIndex < 0 || oldIndex >= urls.length) return;
-    // ReorderableListView reports newIndex assuming the item is still present.
-    if (oldIndex < newIndex) newIndex -= 1;
+    // onReorderItem reports newIndex already adjusted for the removed item.
 
     final url = urls.removeAt(oldIndex);
     urls.insert(newIndex, url);

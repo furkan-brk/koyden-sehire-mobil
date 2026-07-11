@@ -29,12 +29,19 @@ func (s *Service) Validate(code string) (*ValidateResponse, error) {
 		return nil, apperrors.New("CODE_EXPIRED", "Davet kodu geçersiz veya dolmuş", 400)
 	}
 
+	// Admin sahipli kodlarda (örn. KYS-FOUNDER) isim gösterilmez.
+	var inviterName *string
+	if ic.OwnerType == "farmer" {
+		inviterName, _ = s.repo.FindOwnerDisplayName(ic.OwnerUserID)
+	}
+
 	return &ValidateResponse{
-		Valid:     true,
-		Code:      ic.Code,
-		MaxUses:   ic.MaxUses,
-		UsedCount: ic.UsedCount,
-		Remaining: ic.MaxUses - ic.UsedCount,
+		Valid:       true,
+		Code:        ic.Code,
+		InviterName: inviterName,
+		MaxUses:     ic.MaxUses,
+		UsedCount:   ic.UsedCount,
+		Remaining:   ic.MaxUses - ic.UsedCount,
 	}, nil
 }
 

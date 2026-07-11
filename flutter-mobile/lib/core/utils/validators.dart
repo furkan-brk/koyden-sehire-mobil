@@ -36,7 +36,10 @@ class Validators {
 
   static String? inviteCode(String? v) {
     if (v == null || v.trim().isEmpty) return 'Davet kodu girin';
-    final ok = RegExp(r'^KYS-[A-Z0-9]{4,12}$').hasMatch(v.trim().toUpperCase());
+    // Backend tam 6 karakterlik sonek (veya KYS-FOUNDER) kabul ediyor —
+    // invites/service.go isValidCodeFormat ile aynı kural.
+    final ok = RegExp(r'^KYS-([A-Z0-9]{6}|FOUNDER)$')
+        .hasMatch(v.trim().toUpperCase());
     return ok ? null : 'Davet kodu KYS-XXXXXX biçiminde olmalı';
   }
 

@@ -22,9 +22,10 @@ type FarmerInviteItem struct {
 }
 
 type ValidateResponse struct {
-	Valid     bool   `json:"valid"`
-	Code      string `json:"code"`
-	MaxUses   int    `json:"max_uses"`
-	UsedCount int    `json:"used_count"`
-	Remaining int    `json:"remaining"`
+	Valid       bool    `json:"valid"`
+	Code        string  `json:"code"`
+	InviterName *string `json:"inviter_name,omitempty"`
+	MaxUses     int     `json:"max_uses"`
+	UsedCount   int     `json:"used_count"`
+	Remaining   int     `json:"remaining"`
 }

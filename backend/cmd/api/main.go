@@ -35,6 +35,7 @@ import (
 	"github.com/koydensehire/backend/internal/reports"
 	"github.com/koydensehire/backend/internal/uploads"
 	"github.com/koydensehire/backend/internal/users"
+	"github.com/koydensehire/backend/internal/wellknown"
 	"github.com/koydensehire/backend/pkg/sms"
 	pkgstorage "github.com/koydensehire/backend/pkg/storage"
 )
@@ -203,6 +204,14 @@ func main() {
 	app.Use(recover.New())
 	app.Use(logger.New())
 	app.Use(middleware.CORS(cfg.App.CORSOrigins))
+
+	// App Links / Universal Links domain doğrulama dosyaları (/api/v1 dışında, auth yok).
+	// Deploy notu: koydensehire.com'u karşılayan reverse proxy /.well-known/* isteklerini
+	// redirect'siz olarak bu API'ye yönlendirmeli.
+	wkHandler := wellknown.NewHandler(cfg.DeepLink.AndroidPackage, cfg.DeepLink.AndroidSHA256Certs, cfg.DeepLink.AppleAppID)
+	app.Get("/.well-known/assetlinks.json", wkHandler.AssetLinks)
+	app.Get("/.well-known/apple-app-site-association", wkHandler.AppleAppSiteAssociation)
+	app.Get("/apple-app-site-association", wkHandler.AppleAppSiteAssociation)
 
 	requireAuth := middleware.RequireAuth(db, cfg.JWT.Secret)
 	requireFarmer := middleware.RequireRole("farmer")

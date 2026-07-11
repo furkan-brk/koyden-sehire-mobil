@@ -640,14 +640,20 @@ Future<void> _showReportDialog(BuildContext context, String productId) async {
                   style: TextStyle(fontSize: 13),
                 ),
                 const SizedBox(height: 8),
-                ...reasons.map(
-                  (r) => RadioListTile<String>(
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    value: r.key,
-                    groupValue: selectedKey,
-                    title: Text(r.label),
-                    onChanged: (v) => setState(() => selectedKey = v),
+                RadioGroup<String>(
+                  groupValue: selectedKey,
+                  onChanged: (v) => setState(() => selectedKey = v),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (final r in reasons)
+                        RadioListTile<String>(
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                          value: r.key,
+                          title: Text(r.label),
+                        ),
+                    ],
                   ),
                 ),
                 if (isOther) ...[

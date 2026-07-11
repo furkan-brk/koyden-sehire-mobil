@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
-import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
-import 'package:koyden_sehire/shared/utils/responsive.dart';
 import 'package:koyden_sehire/shared/widgets/location_filter_sheet.dart';
 import 'package:koyden_sehire/shared/widgets/category_filter_sheet.dart';
 import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
@@ -81,23 +79,17 @@ class _ProductListScreenState extends State<ProductListScreen> {
               padding: EdgeInsets.all(16),
               child: Text('Sıralama', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
             ),
-            _SortTile(
-              label: 'En Yeni',
-              value: null,
+            RadioGroup<String?>(
               groupValue: current,
-              onChanged: (v) => Navigator.pop(context, '__newest__'),
-            ),
-            _SortTile(
-              label: 'Fiyat: Düşükten Yükseğe',
-              value: 'price_asc',
-              groupValue: current,
-              onChanged: (v) => Navigator.pop(context, v),
-            ),
-            _SortTile(
-              label: 'Fiyat: Yüksekten Düşüğe',
-              value: 'price_desc',
-              groupValue: current,
-              onChanged: (v) => Navigator.pop(context, v),
+              onChanged: (v) => Navigator.pop(context, v ?? '__newest__'),
+              child: const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _SortTile(label: 'En Yeni', value: null),
+                  _SortTile(label: 'Fiyat: Düşükten Yükseğe', value: 'price_asc'),
+                  _SortTile(label: 'Fiyat: Yüksekten Düşüğe', value: 'price_desc'),
+                ],
+              ),
             ),
             const SizedBox(height: 8),
           ],
@@ -374,23 +366,14 @@ class _CategoryFilterBar extends StatelessWidget {
 class _SortTile extends StatelessWidget {
   final String label;
   final String? value;
-  final String? groupValue;
-  final ValueChanged<String?> onChanged;
 
-  const _SortTile({
-    required this.label,
-    required this.value,
-    required this.groupValue,
-    required this.onChanged,
-  });
+  const _SortTile({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
     return RadioListTile<String?>(
       title: Text(label),
       value: value,
-      groupValue: groupValue,
-      onChanged: onChanged,
     );
   }
 }

@@ -18,6 +18,7 @@ type Config struct {
 	SMS      SMSConfig
 	N8N      N8NConfig
 	FCM      FCMConfig
+	DeepLink DeepLinkConfig
 }
 
 type AppConfig struct {
@@ -77,6 +78,12 @@ type FCMConfig struct {
 	ServiceAccountJSON string
 }
 
+type DeepLinkConfig struct {
+	AndroidPackage     string
+	AndroidSHA256Certs []string
+	AppleAppID         string // "<TeamID>.<BundleID>" — boşken AASA endpoint'i 404 döner
+}
+
 func Load() (*Config, error) {
 	jwtExpiry, err := time.ParseDuration(getEnv("JWT_ACCESS_TOKEN_EXPIRY", "24h"))
 	if err != nil {
@@ -99,6 +106,14 @@ func Load() (*Config, error) {
 	origins := strings.Split(originsRaw, ",")
 	for i, o := range origins {
 		origins[i] = strings.TrimSpace(o)
+	}
+
+	certsRaw := getEnv("ANDROID_SHA256_CERT_FINGERPRINTS", "")
+	var sha256Certs []string
+	for _, c := range strings.Split(certsRaw, ",") {
+		if c = strings.TrimSpace(c); c != "" {
+			sha256Certs = append(sha256Certs, c)
+		}
 	}
 
 	cfg := &Config{
@@ -149,6 +164,11 @@ func Load() (*Config, error) {
 		FCM: FCMConfig{
 			ProjectID:          getEnv("FCM_PROJECT_ID", ""),
 			ServiceAccountJSON: getEnv("FCM_SERVICE_ACCOUNT_JSON", ""),
+		},
+		DeepLink: DeepLinkConfig{
+			AndroidPackage:     getEnv("ANDROID_PACKAGE_NAME", "com.koydensehire.koyden_sehire"),
+			AndroidSHA256Certs: sha256Certs,
+			AppleAppID:         getEnv("APPLE_APP_ID", ""),
 		},
 	}
 

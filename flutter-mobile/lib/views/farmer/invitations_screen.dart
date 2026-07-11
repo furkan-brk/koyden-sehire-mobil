@@ -72,9 +72,9 @@ class _InviteCard extends StatelessWidget {
 
   String get _shareLink => AppConstants.inviteLink(item.code);
   String get _shareMessage =>
-      "Merhaba, seni Köyden Şehre üretici ağına davet ediyorum. "
-      "Başvuru için: $_shareLink\n"
-      "Davet kodun: ${item.code}";
+      "Merhaba, seni Köyden Şehre üretici ağına davet ediyorum.\n"
+      "Davet kodun: ${item.code}\n"
+      "Başvuru için: $_shareLink";
 
   @override
   Widget build(BuildContext context) {
