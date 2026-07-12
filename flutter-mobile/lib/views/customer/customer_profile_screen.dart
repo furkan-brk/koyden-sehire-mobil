@@ -20,6 +20,7 @@ import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/shared/widgets/customer_bottom_nav.dart';
+import 'package:koyden_sehire/shared/widgets/legal_links_card.dart';
 
 class CustomerProfileScreen extends StatefulWidget {
   const CustomerProfileScreen({super.key});
@@ -243,6 +244,15 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
               onSeeAll: () =>
                   context.push('/customer/notifications'),
             ),
+            const SizedBox(height: 24),
+
+            // ── Yasal ─────────────────────────────────────────────────
+            const _SectionHeader(
+              icon: Icons.gavel_outlined,
+              title: 'Yasal',
+            ),
+            const SizedBox(height: 10),
+            const LegalLinksCard(),
             const SizedBox(height: 24),
 
             // ── Hesap ─────────────────────────────────────────────────

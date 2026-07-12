@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/models/admin/admin_application_model.dart';
 import 'package:koyden_sehire/services/admin_repository.dart';
@@ -789,7 +790,9 @@ class _LinkTile extends StatelessWidget {
       {required this.label, required this.icon, required this.url});
 
   Future<void> _open() async {
-    final uri = Uri.tryParse(url);
+    // Dev'de backend localhost/minio host'lu URL döndürebilir — bunları
+    // uygulamanın konuştuğu host'a çevirir (bkz. AppConstants.formatDevUrl).
+    final uri = Uri.tryParse(AppConstants.formatDevUrl(url));
     if (uri == null) return;
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);

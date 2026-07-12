@@ -10,7 +10,8 @@ type ProductRepository interface {
 	GetByID(id string) (*Product, error)
 	GetByIDAndFarmer(id, farmerID string) (*Product, error)
 	ListByFarmer(farmerID string) ([]FarmerProductDetail, error)
-	ListByFarmerPublic(farmerID string) ([]PublicProduct, error)
+	ListByFarmerPublic(farmerID string, page, limit int) ([]PublicProduct, int, error)
+	RecordView(productID, viewerKey string) error
 	Create(farmerID string, req *CreateProductRequest) (*Product, error)
 	Update(id, farmerID string, req *UpdateProductRequest) (*Product, error)
 	UpdateStatus(id, farmerID, status string) error

@@ -2,9 +2,11 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- Gerçek koydensehire.com domain'i alınıp AASA'sı yayınlanınca
+	     applinks:koydensehire.com buraya geri eklenecek. -->
 	<key>com.apple.developer.associated-domains</key>
 	<array>
-		<string>applinks:koydensehire.com</string>
+		<string>applinks:koydensehire.netlify.app</string>
 	</array>
 </dict>
 </plist>

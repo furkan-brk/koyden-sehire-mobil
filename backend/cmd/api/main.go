@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -38,7 +39,33 @@ import (
 	"github.com/koydensehire/backend/internal/wellknown"
 	"github.com/koydensehire/backend/pkg/sms"
 	pkgstorage "github.com/koydensehire/backend/pkg/storage"
+	"golang.org/x/crypto/bcrypt"
 )
+
+// knownSeedAdminPhone/-Password: bkz. migrations/000012_seed_admin.up.sql.
+// Bu değerler backend/docs/AUTH_FLOW.md ve TESTING.md'de dokümante edilmiş
+// dev kimlik bilgileridir — production'da hâlâ geçerliyse sunucu hiç
+// başlamamalı.
+const knownSeedAdminPhone = "05000000000"
+const knownSeedAdminPassword = "admin123"
+
+// refuseIfSeedAdminPasswordUnchanged prod'da varsayılan admin şifresiyle
+// başlatmayı engeller; aksi halde herkese açık, dokümante edilmiş bir
+// admin hesabı canlıya çıkar.
+func refuseIfSeedAdminPasswordUnchanged(authRepo *auth.Repository) {
+	user, err := authRepo.FindByPhone(knownSeedAdminPhone)
+	if err != nil || user == nil {
+		return
+	}
+	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(knownSeedAdminPassword)) == nil {
+		log.Fatalf(
+			"güvenlik: production ortamında varsayılan admin şifresi (%s / %s) hâlâ geçerli. "+
+				"Önce şifreyi değiştirin, sonra sunucuyu yeniden başlatın: "+
+				"UPDATE users SET password_hash = crypt('yeni-guclu-sifre', gen_salt('bf', 12)) WHERE phone = '%s';",
+			knownSeedAdminPhone, knownSeedAdminPassword, knownSeedAdminPhone,
+		)
+	}
+}
 
 func main() {
 	cfg, err := config.Load()
@@ -135,6 +162,9 @@ func main() {
 	notifHandler := notifications.NewHandler(notifRepo)
 
 	authRepo := auth.NewRepository(db)
+	if cfg.App.Env == "production" {
+		refuseIfSeedAdminPasswordUnchanged(authRepo)
+	}
 	authSvc := auth.NewService(authRepo, rdb, cfg.JWT.Secret, cfg.JWT.AccessTokenExpiry, cfg.JWT.RefreshTokenExpiry)
 	authSvc.SetSMSProvider(smsProvider, cfg.App.Env)
 	authHandler := auth.NewHandler(authSvc)
@@ -171,6 +201,7 @@ func main() {
 	uploadSvc := uploads.NewService(storageProvider, productRepo)
 	uploadHandler := uploads.NewHandler(uploadSvc)
 	productHandler.SetPushNotifier(pushSvc)
+	productHandler.SetViewDeduper(rdb)
 
 	favRepo := favorites.NewRepository(db, cfg.Storage.PublicURL)
 	favSvc := favorites.NewService(favRepo)
@@ -255,16 +286,35 @@ func main() {
 	api.Post("/auth/reset-password", authHandler.ResetPassword)
 	api.Get("/categories", catHandler.List)
 	api.Get("/products", productHandler.List)
-	api.Get("/products/:id", productHandler.GetByID)
+	// OptionalAuth: login'li kullanıcıların görüntülemeleri user ID ile sayılır.
+	api.Get("/products/:id", middleware.OptionalAuth(db, cfg.JWT.Secret), productHandler.GetByID)
 	api.Get("/farmers", farmerHandler.ListPublic)
 	api.Get("/farmers/:id", farmerHandler.GetPublic)
 	api.Get("/farmers/:id/products", func(c *fiber.Ctx) error {
 		id := c.Params("id")
-		prods, err := productSvc.ListByFarmerPublic(id)
+		page, _ := strconv.Atoi(c.Query("page", "1"))
+		limit, _ := strconv.Atoi(c.Query("limit", "20"))
+		if page < 1 {
+			page = 1
+		}
+		if limit < 1 || limit > 100 {
+			limit = 20
+		}
+		prods, total, err := productSvc.ListByFarmerPublic(id, page, limit)
 		if err != nil {
 			return c.Status(404).JSON(fiber.Map{"success": false, "error": fiber.Map{"code": "NOT_FOUND", "message": "Çiftçi bulunamadı"}})
 		}
-		return c.JSON(fiber.Map{"success": true, "data": prods})
+		totalPages := (total + limit - 1) / limit
+		return c.JSON(fiber.Map{
+			"success": true,
+			"data":    prods,
+			"pagination": fiber.Map{
+				"page":        page,
+				"limit":       limit,
+				"total":       total,
+				"total_pages": totalPages,
+			},
+		})
 	})
 	api.Get("/invites/validate", middleware.InviteValidateRateLimit(rdb), inviteHandler.Validate)
 

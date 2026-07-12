@@ -12,9 +12,13 @@ import 'package:koyden_sehire/core/utils/whatsapp_helper.dart';
 import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_loading.dart';
+import 'package:koyden_sehire/shared/utils/responsive.dart';
 import 'package:koyden_sehire/shared/widgets/customer_bottom_nav.dart';
 import 'package:koyden_sehire/shared/widgets/fullscreen_photo_viewer.dart';
+import 'package:koyden_sehire/shared/widgets/product_card.dart';
+import 'package:koyden_sehire/shared/widgets/shimmer_product_card.dart';
 import 'package:koyden_sehire/models/farmer_model.dart';
+import 'package:koyden_sehire/services/farmer_repository.dart';
 import 'package:koyden_sehire/services/product_repository.dart';
 import 'package:koyden_sehire/services/report_repository.dart';
 import 'package:koyden_sehire/models/product_model.dart';
@@ -38,6 +42,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     _ctrl = Get.put(
       ProductDetailController(
         Get.find<ProductRepository>(),
+        Get.find<FarmerRepository>(),
         productId: widget.productId,
       ),
       tag: widget.productId,
@@ -97,8 +102,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               onSelected: (v) {
                 if (v == 'share' && product != null) {
                   Share.share(
-                    '${product.title} - Köyden Şehire\n'
-                    'https://koydensehire.com/products/${product.id}',
+                    '${product.title} - Köyden Şehire\n${AppConstants.productLink(product.id)}',
                   );
                 } else if (v == 'report') {
                   _showReportDialog(context, widget.productId);
@@ -143,7 +147,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         }
         final product = _ctrl.product.value;
         if (product == null) return const AppLoading();
-        return _Body(product: product);
+        return _Body(product: product, controller: _ctrl);
       }),
     );
   }
@@ -151,8 +155,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
 class _Body extends StatelessWidget {
   final ProductModel product;
+  final ProductDetailController controller;
 
-  const _Body({required this.product});
+  const _Body({required this.product, required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -193,9 +198,73 @@ class _Body extends StatelessWidget {
             child: _DescriptionBlock(description: product.description),
           ),
         ],
+        _RelatedProductsSection(controller: controller),
         const SizedBox(height: AppSpacing.xl),
       ],
     );
+  }
+}
+
+/// "Üreticinin Diğer Ürünleri" — horizontal carousel of the farmer's other
+/// active products. Hidden entirely when empty or on error.
+class _RelatedProductsSection extends StatelessWidget {
+  final ProductDetailController controller;
+  const _RelatedProductsSection({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final loading = controller.isLoadingRelated.value;
+      final items = controller.relatedProducts;
+      if (!loading && items.isEmpty) return const SizedBox.shrink();
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: AppSpacing.xl),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            child: Text(
+              'Üreticinin Diğer Ürünleri',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          SizedBox(
+            height: productCardExtent(context, 168, compact: true),
+            child: loading
+                ? ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    physics: const ClampingScrollPhysics(),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                    itemCount: 3,
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(width: AppSpacing.sm + 4),
+                    itemBuilder: (_, __) => const SizedBox(
+                      width: 168,
+                      child: ShimmerProductCard(),
+                    ),
+                  )
+                : ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    physics: const ClampingScrollPhysics(),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                    itemCount: items.length,
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(width: AppSpacing.sm + 4),
+                    itemBuilder: (_, i) => SizedBox(
+                      width: 168,
+                      child: ProductCard(product: items[i], compact: true),
+                    ),
+                  ),
+          ),
+        ],
+      );
+    });
   }
 }
 

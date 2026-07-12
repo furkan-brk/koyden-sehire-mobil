@@ -1,8 +1,5 @@
--- Ensure the system admin user exists before seeding the founder invite code.
-INSERT INTO users (phone, role, is_active)
-VALUES ('05000000000', 'admin', true)
-ON CONFLICT (phone) DO NOTHING;
-
+-- Admin kullanıcısı 000012_seed_admin tarafından oluşturulur; burada yalnızca
+-- founder davet kodu eklenir.
 INSERT INTO invite_codes (
   code,
   owner_user_id,

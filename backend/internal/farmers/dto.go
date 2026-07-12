@@ -8,10 +8,18 @@ import (
 
 // DashboardResponse is the response body for GET /farmer/dashboard.
 type DashboardResponse struct {
-	ProductStats   DashboardProductStats `json:"product_stats"`
-	InviteStats    DashboardInviteStats  `json:"invite_stats"`
-	RecentProducts []RecentProductItem   `json:"recent_products"`
-	WeeklyViews    []DailyCount          `json:"weekly_views"`
+	ProductStats    DashboardProductStats    `json:"product_stats"`
+	InviteStats     DashboardInviteStats     `json:"invite_stats"`
+	EngagementStats DashboardEngagementStats `json:"engagement_stats"`
+	RecentProducts  []RecentProductItem      `json:"recent_products"`
+	WeeklyViews     []DailyCount             `json:"weekly_views"`
+}
+
+// DashboardEngagementStats aggregates views/favourites across all of the
+// farmer's products.
+type DashboardEngagementStats struct {
+	TotalViews     int `json:"total_views"`
+	TotalFavorites int `json:"total_favorites"`
 }
 
 type DashboardProductStats struct {

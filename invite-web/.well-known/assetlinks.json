@@ -5,7 +5,8 @@
       "namespace": "android_app",
       "package_name": "com.koydensehire.koyden_sehire",
       "sha256_cert_fingerprints": [
-        "79:1C:7C:C2:C8:2A:C8:93:90:31:5E:2D:58:15:E4:52:2F:4C:57:ED:E3:36:9A:05:9C:A7:5D:BC:D6:AF:75:9A"
+        "79:1C:7C:C2:C8:2A:C8:93:90:31:5E:2D:58:15:E4:52:2F:4C:57:ED:E3:36:9A:05:9C:A7:5D:BC:D6:AF:75:9A",
+        "3B:3F:71:72:40:3D:F2:08:11:14:F0:D5:D6:6C:3A:6F:4A:A8:83:64:D9:66:38:C9:72:15:E8:EC:3F:52:DA:45"
       ]
     }
   }

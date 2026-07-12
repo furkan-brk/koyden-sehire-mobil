@@ -33,7 +33,11 @@ services:
     env_file:
       - .env
     ports:
-      - "8080:8080"
+      # Yalnızca localhost'a bağlı: dış dünyaya erişim cloudflared tünelinden
+      # geçer (tünel bu servise container ağı üzerinden, servis adıyla
+      # erişir — host portu tünel yönlendirmesi için gerekmez, yalnızca
+      # sunucudan debug amaçlı curl için).
+      - "127.0.0.1:8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
@@ -44,7 +48,8 @@ services:
   nginx:
     image: nginx:alpine
     ports:
-      - "80:80"
+      # Aynı gerekçe: dış trafik cloudflared tünelinden geçer.
+      - "127.0.0.1:80:80"
     volumes:
       - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ./flutter-mobile/build/web:/usr/share/nginx/html:ro

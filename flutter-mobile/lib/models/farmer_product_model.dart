@@ -16,6 +16,8 @@ class FarmerProductModel {
   final String? adminNote;
   final List<String> imageUrls;
   final DateTime? createdAt;
+  final int favoriteCount;
+  final int viewCount;
 
   const FarmerProductModel({
     required this.id,
@@ -33,6 +35,8 @@ class FarmerProductModel {
     this.adminNote,
     this.imageUrls = const [],
     this.createdAt,
+    this.favoriteCount = 0,
+    this.viewCount = 0,
   });
 
   factory FarmerProductModel.fromJson(Map<String, dynamic> json) {
@@ -74,6 +78,8 @@ class FarmerProductModel {
       adminNote: json['admin_note']?.toString(),
       imageUrls: images,
       createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
+      favoriteCount: (json['favorite_count'] as num?)?.toInt() ?? 0,
+      viewCount: (json['view_count'] as num?)?.toInt() ?? 0,
     );
   }
 }

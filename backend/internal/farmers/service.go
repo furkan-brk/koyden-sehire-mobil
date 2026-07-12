@@ -2,7 +2,6 @@ package farmers
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -15,8 +14,8 @@ func NewService(repo *Repository) *Service {
 	return &Service{repo: repo}
 }
 
-// GetDashboard aggregates product stats, invite stats, recent products,
-// and a weekly-views stub (all zeros — real tracking added later).
+// GetDashboard aggregates product stats, invite stats, engagement stats
+// (views + favourites), recent products, and the last-7-days view series.
 func (s *Service) GetDashboard(farmerID uuid.UUID) (*DashboardResponse, error) {
 	active, pending, passive, err := s.repo.GetProductStatsByFarmerID(farmerID)
 	if err != nil {
@@ -33,7 +32,15 @@ func (s *Service) GetDashboard(farmerID uuid.UUID) (*DashboardResponse, error) {
 		return nil, fmt.Errorf("recent products: %w", err)
 	}
 
-	weeklyViews := buildWeeklyViewsStub()
+	totalViews, weeklyViews, err := s.repo.GetViewStatsByFarmerID(farmerID)
+	if err != nil {
+		return nil, fmt.Errorf("view stats: %w", err)
+	}
+
+	totalFavorites, err := s.repo.GetFavoriteTotalByFarmerID(farmerID)
+	if err != nil {
+		return nil, fmt.Errorf("favorite stats: %w", err)
+	}
 
 	return &DashboardResponse{
 		ProductStats: DashboardProductStats{
@@ -47,23 +54,13 @@ func (s *Service) GetDashboard(farmerID uuid.UUID) (*DashboardResponse, error) {
 			UsedQuota:  usedQuota,
 			Remaining:  totalQuota - usedQuota,
 		},
+		EngagementStats: DashboardEngagementStats{
+			TotalViews:     totalViews,
+			TotalFavorites: totalFavorites,
+		},
 		RecentProducts: recent,
 		WeeklyViews:    weeklyViews,
 	}, nil
-}
-
-// buildWeeklyViewsStub returns last 7 days with count = 0.
-// Replace with real view-tracking queries when that feature is implemented.
-func buildWeeklyViewsStub() []DailyCount {
-	now := time.Now().UTC()
-	views := make([]DailyCount, 7)
-	for i := 6; i >= 0; i-- {
-		views[6-i] = DailyCount{
-			Date:  now.AddDate(0, 0, -i).Format("2006-01-02"),
-			Count: 0,
-		}
-	}
-	return views
 }
 
 func (s *Service) GetPublic(id string) (*PublicFarmerDetail, error) {

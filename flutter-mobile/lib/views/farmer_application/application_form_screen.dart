@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:video_compress/video_compress.dart';
 
 import 'package:koyden_sehire/app/constants.dart';
@@ -1445,12 +1446,16 @@ class _StepTermsState extends State<_StepTerms> {
               value: _kvkk,
               onChanged: (v) => setState(() => _kvkk = v),
               text: 'KVKK aydınlatma metnini okudum ve kabul ediyorum.',
+              readMoreLabel: 'KVKK Aydınlatma Metnini Oku',
+              readMoreUrl: AppConstants.kvkkUrl,
             ),
             _CheckTile(
               value: _platform,
               onChanged: (v) => setState(() => _platform = v),
               text:
-                  "Köyden Şehre'nin ödeme, sipariş, kargo veya uygulama içi mesajlaşma yapmadığını anlıyorum.",
+                  "Köyden Şehre'nin ödeme, sipariş, kargo veya uygulama içi mesajlaşma yapmadığını anlıyorum ve kullanım şartlarını kabul ediyorum.",
+              readMoreLabel: 'Kullanım Şartlarını Oku',
+              readMoreUrl: AppConstants.termsUrl,
             ),
             _CheckTile(
               value: _own,
@@ -1514,10 +1519,14 @@ class _CheckTile extends StatelessWidget {
   final bool value;
   final ValueChanged<bool> onChanged;
   final String text;
+  final String? readMoreLabel;
+  final String? readMoreUrl;
   const _CheckTile({
     required this.value,
     required this.onChanged,
     required this.text,
+    this.readMoreLabel,
+    this.readMoreUrl,
   });
 
   @override
@@ -1537,7 +1546,30 @@ class _CheckTile extends StatelessWidget {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.only(top: 12),
-                child: Text(text, style: const TextStyle(height: 1.4)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(text, style: const TextStyle(height: 1.4)),
+                    if (readMoreLabel != null && readMoreUrl != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: InkWell(
+                          onTap: () => launchUrl(
+                            Uri.parse(readMoreUrl!),
+                            mode: LaunchMode.externalApplication,
+                          ),
+                          child: Text(
+                            readMoreLabel!,
+                            style: const TextStyle(
+                              color: AppColors.primary,
+                              decoration: TextDecoration.underline,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ],

@@ -95,7 +95,11 @@
 
     // Uygulama yüklüyse otomatik açmayı dene (App Links doğrulanmışsa
     // tarayıcıya hiç gelinmez; bu satır custom-scheme fallback içindir).
-    if (invite) setTimeout(() => { location.href = deepLink; }, 600);
+    // Yalnızca Android: iOS Safari, uygulama yüklü değilse kullanıcı jesti
+    // olmayan custom-scheme yönlendirmesinde hata popup'ı gösterir.
+    if (invite && /android/i.test(navigator.userAgent)) {
+      setTimeout(() => { location.href = deepLink; }, 600);
+    }
   </script>
 </body>
 </html>

@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "4R4TSA4998.com.koydensehire.koydenSehire",
+        "paths": ["/apply", "/apply/*", "/products/*", "/farmers/*"]
+      }
+    ]
+  }
+}

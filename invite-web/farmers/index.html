@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Köyden Şehre — Üretici Profili</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f4f7f2;
+      color: #1f2a1d;
+      padding: 24px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(31, 42, 29, .08);
+      max-width: 420px;
+      width: 100%;
+      padding: 32px 28px;
+      text-align: center;
+    }
+    .logo { font-size: 40px; margin-bottom: 12px; }
+    h1 { font-size: 20px; margin-bottom: 8px; }
+    p { font-size: 15px; color: #4c5a49; line-height: 1.5; margin-bottom: 20px; }
+    .btn {
+      display: block;
+      width: 100%;
+      background: #3d7434;
+      color: #fff;
+      text-decoration: none;
+      font-size: 16px;
+      font-weight: 600;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+    .hint { font-size: 13px; color: #7c8879; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">🌾</div>
+    <h1>Köyden Şehre</h1>
+    <p>Bu üretici profilini görüntülemek için Köyden Şehre uygulamasını açın.</p>
+    <button class="btn" id="openApp">Uygulamada Aç</button>
+    <p class="hint">Uygulama açılmazsa Köyden Şehre uygulamasını yükleyip
+      pazar yerinde üreticiyi arayabilirsiniz.</p>
+  </div>
+  <script>
+    // Netlify _redirects kuralı /farmers/* isteklerini bu sayfaya rewrite
+    // eder; üretici id'si path'te kalır: /farmers/<id>
+    const match = location.pathname.match(/^\/farmers\/([^\/]+)/);
+    const farmerId = match ? match[1] : '';
+
+    // Host segmenti ('app') şart — hostsuz custom scheme'de path boş kalır
+    // ve go_router ana sayfayı açar.
+    const deepLink = farmerId
+      ? 'koydensehire://app/farmers/' + encodeURIComponent(farmerId)
+      : 'koydensehire://app/';
+
+    document.getElementById('openApp').addEventListener('click', () => {
+      location.href = deepLink;
+    });
+
+    // Otomatik açmayı yalnızca Android'de dene: iOS Safari, uygulama yüklü
+    // değilse kullanıcı jesti olmayan custom-scheme yönlendirmesinde hata
+    // popup'ı gösterir.
+    if (farmerId && /android/i.test(navigator.userAgent)) {
+      setTimeout(() => { location.href = deepLink; }, 600);
+    }
+  </script>
+</body>
+</html>

@@ -4,6 +4,8 @@ import 'package:get/get.dart' hide Trans;
 import 'package:go_router/go_router.dart';
 
 import 'package:koyden_sehire/core/services/auth_service.dart';
+import 'package:koyden_sehire/core/services/onboarding_service.dart';
+import 'package:koyden_sehire/views/onboarding/onboarding_screen.dart';
 import 'package:koyden_sehire/views/admin/admin_application_detail_view.dart';
 import 'package:koyden_sehire/views/admin/admin_applications_view.dart';
 import 'package:koyden_sehire/views/admin/admin_categories_view.dart';
@@ -100,9 +102,20 @@ class AppRouter {
       refreshListenable: refresh,
       redirect: (context, state) {
         final loc = state.matchedLocation;
-        if (loc == '/splash') return null;
+        if (loc == '/splash' || loc == '/onboarding') return null;
 
         final auth = Get.find<AuthService>();
+
+        // İlk kurulum onboarding'i: yalnızca login olmamış kullanıcı ana
+        // sayfaya girerken göster. Dar kapsam sayesinde derin linkle gelen
+        // (ör. paylaşılan ürün) onboarding'e takılmaz.
+        final onboarding = Get.find<OnboardingService>();
+        if (!onboarding.seen &&
+            loc == '/' &&
+            (auth.status.value == AuthStatus.loggedOut ||
+                auth.status.value == AuthStatus.unknown)) {
+          return '/onboarding';
+        }
 
         if (auth.status.value == AuthStatus.admin) {
           if (loc.startsWith('/admin')) return null;
@@ -148,6 +161,10 @@ class AppRouter {
         GoRoute(
           path: '/splash',
           builder: (_, __) => const SplashScreen(),
+        ),
+        GoRoute(
+          path: '/onboarding',
+          builder: (_, __) => const OnboardingScreen(),
         ),
         // ── Public tab routes — NoTransitionPage keeps the AppBar visually
         //    static when the user taps BottomNav items.

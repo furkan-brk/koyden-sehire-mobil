@@ -139,10 +139,12 @@ type AdminProductRow struct {
 	Village     *string         `db:"village"`
 	Status      string          `db:"status"`
 	StockStatus string          `db:"stock_status"`
-	AdminNote   *string         `db:"admin_note"`
-	CreatedAt   time.Time       `db:"created_at"`
-	PublishedAt *time.Time      `db:"published_at"`
-	ImagesJSON  json.RawMessage `db:"images"`
+	AdminNote     *string         `db:"admin_note"`
+	CreatedAt     time.Time       `db:"created_at"`
+	PublishedAt   *time.Time      `db:"published_at"`
+	FavoriteCount int             `db:"favorite_count"`
+	ViewCount     int             `db:"view_count"`
+	ImagesJSON    json.RawMessage `db:"images"`
 	// Farmer (LEFT JOIN — all nullable)
 	FarmerFullName         *string `db:"farmer_full_name"`
 	FarmerPhone            *string `db:"farmer_phone"`
@@ -175,12 +177,14 @@ type AdminProductDetail struct {
 	Village     string                  `json:"village"`
 	Status      string                  `json:"status"`
 	StockStatus string                  `json:"stock_status"`
-	AdminNote   *string                 `json:"admin_note,omitempty"`
-	CreatedAt   time.Time               `json:"created_at"`
-	PublishedAt *time.Time              `json:"published_at,omitempty"`
-	Images      []ImageItem             `json:"images"`
-	Category    *CategoryInfo           `json:"category,omitempty"`
-	Farmer      *AdminProductFarmerInfo `json:"farmer,omitempty"`
+	AdminNote     *string                 `json:"admin_note,omitempty"`
+	CreatedAt     time.Time               `json:"created_at"`
+	PublishedAt   *time.Time              `json:"published_at,omitempty"`
+	FavoriteCount int                     `json:"favorite_count"`
+	ViewCount     int                     `json:"view_count"`
+	Images        []ImageItem             `json:"images"`
+	Category      *CategoryInfo           `json:"category,omitempty"`
+	Farmer        *AdminProductFarmerInfo `json:"farmer,omitempty"`
 }
 
 type FarmerProductDetail struct {
@@ -195,8 +199,10 @@ type FarmerProductDetail struct {
 	CategoryID  *string       `json:"category_id,omitempty"`
 	Status      string        `json:"status"`
 	StockStatus string        `json:"stock_status"`
-	AdminNote   *string       `json:"admin_note,omitempty"`
-	CreatedAt   time.Time     `json:"created_at"`
-	Images      []ImageItem   `json:"images"`
-	Category    *CategoryInfo `json:"category,omitempty"`
+	AdminNote     *string       `json:"admin_note,omitempty"`
+	CreatedAt     time.Time     `json:"created_at"`
+	FavoriteCount int           `json:"favorite_count"`
+	ViewCount     int           `json:"view_count"`
+	Images        []ImageItem   `json:"images"`
+	Category      *CategoryInfo `json:"category,omitempty"`
 }

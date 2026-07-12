@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -8,9 +9,25 @@ import 'package:get/get.dart';
 
 import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/app/keys.dart';
+import 'package:koyden_sehire/app/router.dart';
 import 'package:koyden_sehire/core/services/auth_service.dart';
 import 'package:koyden_sehire/models/auth/auth_state.dart';
 import 'package:koyden_sehire/services/push_token_repository.dart';
+
+/// Bildirim tıklamasında nereye gidileceğine karar verir. customer/farmer
+/// bildirim ekranlarındaki (_handleTap) mantıkla aynı: önce ürün, sonra
+/// üretici; ikisi de yoksa hiçbir şey yapmaz (bildirim zaten görüntülendi).
+void _navigateFromNotificationData(Map<String, dynamic> data) {
+  final productId = data['product_id']?.toString();
+  if (productId != null && productId.isNotEmpty) {
+    AppRouter.router.push('/products/$productId');
+    return;
+  }
+  final farmerId = data['farmer_id']?.toString();
+  if (farmerId != null && farmerId.isNotEmpty) {
+    AppRouter.router.push('/farmers/$farmerId');
+  }
+}
 
 /// Top-level background handler — must be a free function, not a class method.
 @pragma('vm:entry-point')
@@ -44,6 +61,7 @@ class PushNotificationService extends GetxService {
       }
       _listenForeground();
       _listenTokenRefresh();
+      _listenTaps();
       // The OS notification prompt is deferred until the user is actually
       // logged in — guests never receive pushes, so asking at boot only
       // burns the one-shot prompt without context.
@@ -76,6 +94,18 @@ class PushNotificationService extends GetxService {
     }
   }
 
+  /// Explicit, user-initiated permission request (e.g. onboarding'deki
+  /// "İzin Ver" butonu). Marks the one-shot prompt as used so the deferred
+  /// login-time request doesn't fire a second time.
+  Future<void> requestPermissionNow() async {
+    _permissionRequested = true;
+    try {
+      await _requestPermission();
+    } catch (e) {
+      debugPrint('[Push] izin isteği başarısız: $e');
+    }
+  }
+
   @override
   void onClose() {
     _authWorker?.dispose();
@@ -87,6 +117,16 @@ class PushNotificationService extends GetxService {
     const ios = DarwinInitializationSettings();
     await _localNotifications.initialize(
       const InitializationSettings(android: android, iOS: ios),
+      onDidReceiveNotificationResponse: (response) {
+        final payload = response.payload;
+        if (payload == null || payload.isEmpty) return;
+        try {
+          final data = jsonDecode(payload) as Map<String, dynamic>;
+          _navigateFromNotificationData(data);
+        } catch (e) {
+          debugPrint('[Push] bildirim payload çözümlenemedi: $e');
+        }
+      },
     );
 
     if (Platform.isAndroid) {
@@ -171,7 +211,24 @@ class PushNotificationService extends GetxService {
           ),
           iOS: const DarwinNotificationDetails(),
         ),
+        payload: jsonEncode(message.data),
       );
+    });
+  }
+
+  /// Warm start (uygulama arka planda, bildirime dokunuldu) ve cold start
+  /// (uygulama kapalıyken bildirime dokunularak açıldı) navigasyonu.
+  void _listenTaps() {
+    FirebaseMessaging.onMessageOpenedApp.listen((message) {
+      _navigateFromNotificationData(message.data);
+    });
+    FirebaseMessaging.instance.getInitialMessage().then((message) {
+      if (message == null) return;
+      // Router henüz kurulmamış olabilir (cold start main.dart hâlâ
+      // çalışıyor olabilir) — bir sonraki frame'e ertele.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _navigateFromNotificationData(message.data);
+      });
     });
   }
 

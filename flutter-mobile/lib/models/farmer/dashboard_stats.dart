@@ -61,6 +61,29 @@ class FarmerInviteStats {
   );
 }
 
+/// Total engagement (views + favourites) across the farmer's products.
+class FarmerEngagementStats {
+  final int totalViews;
+  final int totalFavorites;
+
+  const FarmerEngagementStats({
+    required this.totalViews,
+    required this.totalFavorites,
+  });
+
+  factory FarmerEngagementStats.fromJson(Map<String, dynamic> json) {
+    return FarmerEngagementStats(
+      totalViews: (json['total_views'] as num?)?.toInt() ?? 0,
+      totalFavorites: (json['total_favorites'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  static const empty = FarmerEngagementStats(
+    totalViews: 0,
+    totalFavorites: 0,
+  );
+}
+
 /// A lightweight summary of one of the farmer's recent products.
 /// We reuse [FarmerProductModel] here since the backend payload is
 /// structurally identical to other product listings.
@@ -88,12 +111,14 @@ class DailyCount {
 class FarmerDashboardStats {
   final FarmerProductStats productStats;
   final FarmerInviteStats inviteStats;
+  final FarmerEngagementStats engagementStats;
   final List<RecentProductItem> recentProducts;
   final List<DailyCount> weeklyViews;
 
   const FarmerDashboardStats({
     required this.productStats,
     required this.inviteStats,
+    this.engagementStats = FarmerEngagementStats.empty,
     required this.recentProducts,
     required this.weeklyViews,
   });
@@ -109,6 +134,11 @@ class FarmerDashboardStats {
             (json['invite_stats'] as Map).cast<String, dynamic>(),
           )
         : FarmerInviteStats.empty;
+    final engagementStats = json['engagement_stats'] is Map
+        ? FarmerEngagementStats.fromJson(
+            (json['engagement_stats'] as Map).cast<String, dynamic>(),
+          )
+        : FarmerEngagementStats.empty;
     final recentRaw = (json['recent_products'] as List?) ?? const [];
     final recent = recentRaw
         .whereType<Map>()
@@ -122,6 +152,7 @@ class FarmerDashboardStats {
     return FarmerDashboardStats(
       productStats: productStats,
       inviteStats: inviteStats,
+      engagementStats: engagementStats,
       recentProducts: recent,
       weeklyViews: weekly,
     );
@@ -130,6 +161,7 @@ class FarmerDashboardStats {
   static const empty = FarmerDashboardStats(
     productStats: FarmerProductStats.empty,
     inviteStats: FarmerInviteStats.empty,
+    engagementStats: FarmerEngagementStats.empty,
     recentProducts: <RecentProductItem>[],
     weeklyViews: <DailyCount>[],
   );

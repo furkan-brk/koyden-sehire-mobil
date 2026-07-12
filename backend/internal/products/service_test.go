@@ -79,8 +79,12 @@ func (m *mockProductRepo) ListByFarmer(farmerID string) ([]FarmerProductDetail, 
 	return out, nil
 }
 
-func (m *mockProductRepo) ListByFarmerPublic(farmerID string) ([]PublicProduct, error) {
-	return []PublicProduct{}, nil
+func (m *mockProductRepo) ListByFarmerPublic(farmerID string, page, limit int) ([]PublicProduct, int, error) {
+	return []PublicProduct{}, 0, nil
+}
+
+func (m *mockProductRepo) RecordView(productID, viewerKey string) error {
+	return nil
 }
 
 func (m *mockProductRepo) Create(farmerID string, req *CreateProductRequest) (*Product, error) {

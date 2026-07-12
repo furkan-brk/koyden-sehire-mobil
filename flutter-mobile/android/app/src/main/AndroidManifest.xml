@@ -52,6 +52,8 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="https" android:host="koydensehire.netlify.app" android:pathPrefix="/apply"/>
+                <data android:scheme="https" android:host="koydensehire.netlify.app" android:pathPrefix="/products"/>
+                <data android:scheme="https" android:host="koydensehire.netlify.app" android:pathPrefix="/farmers"/>
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

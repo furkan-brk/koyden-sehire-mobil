@@ -31,6 +31,7 @@ import 'package:koyden_sehire/core/services/auth_service.dart';
 import 'package:koyden_sehire/core/services/connectivity_service.dart';
 import 'package:koyden_sehire/core/services/draft_service.dart';
 import 'package:koyden_sehire/core/services/favorites_service.dart';
+import 'package:koyden_sehire/core/services/onboarding_service.dart';
 import 'package:koyden_sehire/core/storage/secure_storage_service.dart';
 import 'package:koyden_sehire/services/favorites_repository.dart';
 import 'package:koyden_sehire/services/notification_repository.dart';
@@ -53,6 +54,8 @@ class AppBinding extends Bindings {
     Get.put<ConnectivityService>(ConnectivityService(), permanent: true);
 
     Get.put<DraftService>(DraftService(), permanent: true);
+
+    Get.put<OnboardingService>(OnboardingService(), permanent: true);
 
     final apiClient = ApiClient(
       storage,

@@ -80,8 +80,13 @@ func (s *Service) ListByFarmer(farmerID string) ([]FarmerProductDetail, error) {
 	return s.repo.ListByFarmer(farmerID)
 }
 
-func (s *Service) ListByFarmerPublic(farmerID string) ([]PublicProduct, error) {
-	return s.repo.ListByFarmerPublic(farmerID)
+func (s *Service) ListByFarmerPublic(farmerID string, page, limit int) ([]PublicProduct, int, error) {
+	return s.repo.ListByFarmerPublic(farmerID, page, limit)
+}
+
+// RecordView persists a product view event. Dedup is done by the handler.
+func (s *Service) RecordView(productID, viewerKey string) error {
+	return s.repo.RecordView(productID, viewerKey)
 }
 
 func (s *Service) Create(farmerID string, req *CreateProductRequest) (*Product, error) {

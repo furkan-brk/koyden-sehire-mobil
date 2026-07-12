@@ -51,6 +51,19 @@ class AppConstants {
   /// app via App Links, prefilled with the invite code.
   static String inviteLink(String code) => '$webBaseUrl/apply?invite=$code';
 
+  /// Shareable product link — opens the /products page (web) or the product
+  /// detail screen in the installed app via App Links.
+  static String productLink(String id) => '$webBaseUrl/products/$id';
+
+  /// Shareable farmer profile link — opens the /farmers page (web) or the
+  /// farmer profile screen in the installed app via App Links.
+  static String farmerLink(String id) => '$webBaseUrl/farmers/$id';
+
+  /// KVKK aydınlatma metni ve kullanım şartları — invite-web/ statik
+  /// sitesinde barındırılıyor (taslak metin, hukuki incelemeden geçmedi).
+  static String get kvkkUrl => '$webBaseUrl/kvkk';
+  static String get termsUrl => '$webBaseUrl/sartlar';
+
   static const String appName = 'Köyden Şehre';
   static const String appTagline = 'Yerel üreticilerden taze ürünler';
   static const String appVersion = '1.0.0';

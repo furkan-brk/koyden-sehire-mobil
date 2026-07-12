@@ -110,6 +110,8 @@ func (r *Repository) ListPublic(f *ProductFilter) ([]PublicProduct, int, error) 
 		orderBy = "p.price ASC"
 	case "price_desc":
 		orderBy = "p.price DESC"
+	case "most_viewed":
+		orderBy = "(SELECT COUNT(*) FROM product_views pv WHERE pv.product_id = p.id) DESC, p.published_at DESC NULLS LAST"
 	}
 
 	offset := (f.Page - 1) * f.Limit
@@ -245,6 +247,8 @@ func (r *Repository) ListByFarmer(farmerID string) ([]FarmerProductDetail, error
 			p.id, p.farmer_id, p.title, p.description,
 			p.price, p.unit, p.city, p.district, p.village,
 			p.status, p.stock_status, p.admin_note, p.created_at,
+			(SELECT COUNT(*) FROM favorites f WHERE f.product_id = p.id) AS favorite_count,
+			(SELECT COUNT(*) FROM product_views pv WHERE pv.product_id = p.id) AS view_count,
 			c.id   AS category_id,
 			c.name AS category_name,
 			c.slug AS category_slug,
@@ -293,7 +297,25 @@ func (r *Repository) ListByFarmer(farmerID string) ([]FarmerProductDetail, error
 	return products, nil
 }
 
-func (r *Repository) ListByFarmerPublic(farmerID string) ([]PublicProduct, error) {
+// RecordView inserts a single product view event. Deduplication is handled
+// by the caller (Redis SETNX debounce in the handler).
+func (r *Repository) RecordView(productID, viewerKey string) error {
+	_, err := r.db.Exec(`
+		INSERT INTO product_views (product_id, viewer_key)
+		VALUES ($1, $2)
+	`, productID, viewerKey)
+	return err
+}
+
+func (r *Repository) ListByFarmerPublic(farmerID string, page, limit int) ([]PublicProduct, int, error) {
+	var total int
+	if err := r.db.Get(&total, `
+		SELECT COUNT(*) FROM products WHERE farmer_id = $1 AND status = 'active'
+	`, farmerID); err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * limit
 	query := `
 		SELECT
 			p.id, p.farmer_id, p.category_id, p.title, p.description,
@@ -330,11 +352,12 @@ func (r *Repository) ListByFarmerPublic(farmerID string) ([]PublicProduct, error
 			c.id, c.name, c.slug,
 			pc.id, pc.name, pc.slug
 		ORDER BY p.created_at DESC
+		LIMIT $2 OFFSET $3
 	`
 
-	rows, err := r.db.Queryx(query, farmerID)
+	rows, err := r.db.Queryx(query, farmerID, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -342,14 +365,14 @@ func (r *Repository) ListByFarmerPublic(farmerID string) ([]PublicProduct, error
 	for rows.Next() {
 		var row PublicProductRow
 		if err := rows.StructScan(&row); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		products = append(products, mapRowToPublicProduct(row, r.publicURL))
 	}
 	if products == nil {
 		products = []PublicProduct{}
 	}
-	return products, nil
+	return products, total, nil
 }
 
 func (r *Repository) Create(farmerID string, req *CreateProductRequest) (*Product, error) {
@@ -566,6 +589,8 @@ func (r *Repository) GetAdminProductByID(id string) (*AdminProductDetail, error)
 			p.id, p.farmer_id, p.title, p.description,
 			p.price, p.unit, p.city, p.district, p.village,
 			p.status, p.stock_status, p.admin_note, p.created_at, p.published_at,
+			(SELECT COUNT(*) FROM favorites f WHERE f.product_id = p.id) AS favorite_count,
+			(SELECT COUNT(*) FROM product_views pv WHERE pv.product_id = p.id) AS view_count,
 			u.full_name AS farmer_full_name,
 			u.phone    AS farmer_phone,
 			u.status   AS farmer_status,
@@ -625,6 +650,8 @@ func (r *Repository) ListAdminProducts(page, limit int) ([]AdminProductDetail, i
 			p.id, p.farmer_id, p.title, p.description,
 			p.price, p.unit, p.city, p.district, p.village,
 			p.status, p.stock_status, p.admin_note, p.created_at, p.published_at,
+			(SELECT COUNT(*) FROM favorites f WHERE f.product_id = p.id) AS favorite_count,
+			(SELECT COUNT(*) FROM product_views pv WHERE pv.product_id = p.id) AS view_count,
 			u.full_name AS farmer_full_name,
 			u.phone    AS farmer_phone,
 			u.status   AS farmer_status,
@@ -744,12 +771,14 @@ func mapAdminRowToDetail(row AdminProductRow, publicURL string) AdminProductDeta
 		Village:     derefStr(row.Village),
 		Status:      row.Status,
 		StockStatus: row.StockStatus,
-		AdminNote:   row.AdminNote,
-		CreatedAt:   row.CreatedAt,
-		PublishedAt: row.PublishedAt,
-		Images:      images,
-		Category:    cat,
-		Farmer:      farmer,
+		AdminNote:     row.AdminNote,
+		CreatedAt:     row.CreatedAt,
+		PublishedAt:   row.PublishedAt,
+		FavoriteCount: row.FavoriteCount,
+		ViewCount:     row.ViewCount,
+		Images:        images,
+		Category:      cat,
+		Farmer:        farmer,
 	}
 }
 
@@ -882,10 +911,12 @@ func mapRowToFarmerDetail(row AdminProductRow, publicURL string) FarmerProductDe
 		CategoryID:  row.CategoryID,
 		Status:      row.Status,
 		StockStatus: row.StockStatus,
-		AdminNote:   row.AdminNote,
-		CreatedAt:   row.CreatedAt,
-		Images:      images,
-		Category:    cat,
+		AdminNote:     row.AdminNote,
+		CreatedAt:     row.CreatedAt,
+		FavoriteCount: row.FavoriteCount,
+		ViewCount:     row.ViewCount,
+		Images:        images,
+		Category:      cat,
 	}
 }
 

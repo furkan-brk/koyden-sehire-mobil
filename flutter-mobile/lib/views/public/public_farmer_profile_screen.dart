@@ -4,9 +4,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/core/services/auth_service.dart';
 import 'package:koyden_sehire/core/services/recent_views_service.dart';
@@ -23,6 +25,7 @@ import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/shared/widgets/customer_bottom_nav.dart';
 import 'package:koyden_sehire/shared/widgets/founding_badge.dart';
 import 'package:koyden_sehire/shared/widgets/product_card.dart';
+import 'package:koyden_sehire/shared/widgets/shimmer_product_card.dart';
 import 'package:koyden_sehire/shared/widgets/verified_badge.dart';
 import 'package:koyden_sehire/services/farmer_repository.dart';
 import 'package:koyden_sehire/models/farmer_model.dart';
@@ -51,6 +54,7 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
       ),
       tag: widget.farmerId,
     );
+    _scrollController.addListener(_onScroll);
     ever<FarmerProfile?>(_ctrl.profile, (p) {
       if (p != null) {
         Get.find<RecentViewsService>().addFarmer(
@@ -65,8 +69,16 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
   @override
   void dispose() {
     Get.delete<FarmerController>(tag: widget.farmerId);
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      _ctrl.loadMore();
+    }
   }
 
   Future<void> _call(String phone) async {
@@ -121,7 +133,10 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
         }
         final p = _ctrl.profile.value;
         if (p == null) return const Scaffold(body: AppLoading());
-        return _ProfileBody(
+        return RefreshIndicator(
+          onRefresh: _ctrl.refreshAll,
+          edgeOffset: kToolbarHeight,
+          child: _ProfileBody(
           profile: p,
           ctrl: _ctrl,
           scrollController: _scrollController,
@@ -129,7 +144,8 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
           onRevealPhone: () => setState(() => _phoneRevealed = true),
           onCall: _call,
           onCopy: _copy,
-          onWhatsApp: () => _openWhatsApp(p.publicPhone),
+            onWhatsApp: () => _openWhatsApp(p.publicPhone),
+          ),
         );
       }),
     );
@@ -164,6 +180,7 @@ class _ProfileBody extends StatelessWidget {
 
     return CustomScrollView(
       controller: scrollController,
+      physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
         // ── Hero SliverAppBar ──────────────────────────────────────────
         SliverAppBar(
@@ -171,7 +188,17 @@ class _ProfileBody extends StatelessWidget {
           pinned: true,
           stretch: true,
           leading: const BackButton(),
-          actions: const [FarmerModeChip()],
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.share_outlined),
+              tooltip: 'Paylaş',
+              onPressed: () => Share.share(
+                '${profile.displayName} - Köyden Şehire\n'
+                '${AppConstants.farmerLink(profile.id)}',
+              ),
+            ),
+            const FarmerModeChip(),
+          ],
           flexibleSpace: FlexibleSpaceBar(
             stretchModes: const [StretchMode.zoomBackground],
             background: Stack(
@@ -357,10 +384,17 @@ class _ProfileBody extends StatelessWidget {
 
         Obx(() {
           if (ctrl.isLoadingProducts.value) {
-            return const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: AppLoading(),
+            return SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              sliver: SliverGrid(
+                gridDelegate: productGridDelegate(
+                  context,
+                  context.screenWidth - AppSpacing.md * 2,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (_, __) => const ShimmerProductCard(),
+                  childCount: 4,
+                ),
               ),
             );
           }
@@ -377,6 +411,7 @@ class _ProfileBody extends StatelessWidget {
               child: AppEmptyWidget(message: 'Bu üreticinin aktif ürünü yok.'),
             );
           }
+          final loadingMore = ctrl.isLoadingMore.value;
           return SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
             sliver: SliverGrid(
@@ -385,8 +420,10 @@ class _ProfileBody extends StatelessWidget {
                 context.screenWidth - AppSpacing.md * 2,
               ),
               delegate: SliverChildBuilderDelegate(
-                (_, i) => ProductCard(product: ctrl.products[i]),
-                childCount: ctrl.products.length,
+                (_, i) => i >= ctrl.products.length
+                    ? const ShimmerProductCard()
+                    : ProductCard(product: ctrl.products[i]),
+                childCount: ctrl.products.length + (loadingMore ? 2 : 0),
               ),
             ),
           );

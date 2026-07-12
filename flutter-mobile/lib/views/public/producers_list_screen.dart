@@ -7,9 +7,9 @@ import 'package:koyden_sehire/shared/utils/responsive.dart';
 import 'package:koyden_sehire/shared/widgets/location_filter_sheet.dart';
 import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
-import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/shared/widgets/customer_bottom_nav.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_card.dart';
+import 'package:koyden_sehire/shared/widgets/shimmer_farmer_card.dart';
 import 'package:koyden_sehire/shared/widgets/search_field.dart';
 import 'package:koyden_sehire/controllers/public/producers_list_controller.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_mode_chip.dart';
@@ -110,7 +110,16 @@ class _ProducersListScreenState extends State<ProducersListScreen> {
           Expanded(
             child: Obx(() {
               if (_ctrl.isLoading.value && _ctrl.items.isEmpty) {
-                return const AppLoading();
+                return GridView.builder(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: farmerGridDelegate(
+                    context,
+                    context.screenWidth - AppSpacing.md * 2,
+                  ),
+                  itemCount: 6,
+                  itemBuilder: (_, __) => const ShimmerFarmerCard(),
+                );
               }
               if (_ctrl.errorMessage.value != null && _ctrl.items.isEmpty) {
                 return AppErrorWidget(
@@ -136,7 +145,7 @@ class _ProducersListScreenState extends State<ProducersListScreen> {
                       (_ctrl.isLoadingMore.value ? 2 : 0),
                   itemBuilder: (_, i) {
                     if (i >= _ctrl.items.length) {
-                      return const AppLoading();
+                      return const ShimmerFarmerCard();
                     }
                     return FarmerCard(farmer: _ctrl.items[i]);
                   },

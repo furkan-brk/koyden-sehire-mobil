@@ -134,6 +134,18 @@ class _Body extends StatelessWidget {
               color: AppColors.primary,
               icon: Icons.card_giftcard_outlined,
             ),
+            _StatCard(
+              label: 'Görüntülenme',
+              value: data.engagementStats.totalViews,
+              color: AppColors.secondary,
+              icon: Icons.visibility_outlined,
+            ),
+            _StatCard(
+              label: 'Favorilenme',
+              value: data.engagementStats.totalFavorites,
+              color: AppColors.error,
+              icon: Icons.favorite_border,
+            ),
           ],
         ),
         const SizedBox(height: 16),

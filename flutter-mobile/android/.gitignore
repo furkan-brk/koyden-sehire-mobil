@@ -12,3 +12,4 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+RELEASE_KEYSTORE_SECRETS.txt

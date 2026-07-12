@@ -13,10 +13,14 @@ func NewNotifRepository(db *sqlx.DB) *NotifRepository {
 }
 
 func (r *NotifRepository) Create(n Notification) error {
+	data := string(n.Data)
+	if data == "" {
+		data = "{}"
+	}
 	_, err := r.db.Exec(
-		`INSERT INTO notifications (user_id, type, title, body)
-		 VALUES ($1, $2, $3, $4)`,
-		n.UserID, n.Type, n.Title, n.Body,
+		`INSERT INTO notifications (user_id, type, title, body, data)
+		 VALUES ($1, $2, $3, $4, $5::jsonb)`,
+		n.UserID, n.Type, n.Title, n.Body, data,
 	)
 	return err
 }
@@ -40,7 +44,7 @@ func (r *NotifRepository) ListByUser(userID string, page, limit int) ([]Notifica
 
 	var items []Notification
 	if err := r.db.Select(&items,
-		`SELECT id, user_id, type, title, body, is_read, created_at
+		`SELECT id, user_id, type, title, body, data, is_read, created_at
 		 FROM notifications
 		 WHERE user_id = $1
 		 ORDER BY created_at DESC

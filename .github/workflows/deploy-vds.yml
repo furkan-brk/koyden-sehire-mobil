@@ -59,9 +59,14 @@ jobs:
 
       - name: Build Flutter Web
         working-directory: flutter-mobile
+        # VAPID_KEY: Firebase Console → Project Settings → Cloud Messaging →
+        # Web configuration → Web Push certificates. Repo secret olarak
+        # tanımlanmazsa web push token kaydı sessizce başarısız olur (mobil
+        # FCM etkilenmez).
         run: |
           flutter build web --release \
-            --dart-define=BASE_URL=/api/v1
+            --dart-define=BASE_URL=/api/v1 \
+            --dart-define=VAPID_KEY=${{ secrets.VAPID_KEY }}
 
       - name: Deploy to VDS via SCP
         uses: appleboy/scp-action@v0.1.7

@@ -10,6 +10,7 @@ import 'package:koyden_sehire/app/app.dart';
 import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/core/bindings/app_binding.dart';
 import 'package:koyden_sehire/core/services/auth_service.dart';
+import 'package:koyden_sehire/core/services/onboarding_service.dart';
 import 'package:koyden_sehire/core/services/push_notification_service.dart';
 import 'firebase_options.dart';
 
@@ -56,5 +57,8 @@ Future<void> main() async {
   // Auth durumu router kurulmadan önce kesinleşmeli: deep link ile açılışta
   // splash hiç mount olmaz, bootstrap yalnızca burada garanti çalışır.
   await Get.find<AuthService>().bootstrap();
+  // Onboarding "seen" bayrağı router redirect'inde senkron okunur; runApp
+  // öncesinde belleğe alınmalı.
+  await Get.find<OnboardingService>().bootstrap();
   runApp(const KoydenSehireApp());
 }

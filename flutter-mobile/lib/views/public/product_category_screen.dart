@@ -6,8 +6,8 @@ import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/controllers/public/category_controller.dart';
 import 'package:koyden_sehire/models/category_model.dart';
 import 'package:koyden_sehire/shared/utils/responsive.dart';
-import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/shared/widgets/customer_bottom_nav.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_mode_chip.dart';
 
 const _kLabels = <String, String>{
@@ -78,7 +78,7 @@ class ProductCategoryScreen extends StatelessWidget {
       body: SafeArea(
         child: Obx(() {
           if (catCtrl.isLoading.value) {
-            return const AppLoading();
+            return const _CategoryGridShimmer();
           }
           final roots = catCtrl.categories.where((c) => c.isRoot).toList();
           return Padding(
@@ -129,6 +129,39 @@ class ProductCategoryScreen extends StatelessWidget {
             ),
           );
         }),
+      ),
+    );
+  }
+}
+
+/// Skeleton grid mimicking the category tiles while loading.
+class _CategoryGridShimmer extends StatelessWidget {
+  const _CategoryGridShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Shimmer.fromColors(
+        baseColor: cs.surfaceContainerLow,
+        highlightColor: cs.surfaceContainerHigh,
+        child: GridView.builder(
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: AppGridTokens.categoryTileMax,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            mainAxisExtent: 104 * textScaleOf(context),
+          ),
+          itemCount: 9,
+          itemBuilder: (_, __) => Container(
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -355,6 +355,67 @@ func (r *Repository) GetProductStatsByFarmerID(farmerID uuid.UUID) (active, pend
 	return
 }
 
+// GetViewStatsByFarmerID returns the total view count across the farmer's
+// products plus a per-day series for the last 7 days (zero-filled).
+func (r *Repository) GetViewStatsByFarmerID(farmerID uuid.UUID) (int, []DailyCount, error) {
+	var total int
+	err := r.db.QueryRow(`
+		SELECT COUNT(*)
+		FROM product_views pv
+		JOIN products p ON p.id = pv.product_id
+		WHERE p.farmer_id = $1
+	`, farmerID).Scan(&total)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	rows, err := r.db.Query(`
+		SELECT to_char(date_trunc('day', pv.viewed_at), 'YYYY-MM-DD') AS day, COUNT(*) AS cnt
+		FROM product_views pv
+		JOIN products p ON p.id = pv.product_id
+		WHERE p.farmer_id = $1 AND pv.viewed_at >= NOW() - INTERVAL '7 days'
+		GROUP BY day
+	`, farmerID)
+	if err != nil {
+		return 0, nil, err
+	}
+	defer rows.Close()
+
+	counts := map[string]int{}
+	for rows.Next() {
+		var day string
+		var cnt int
+		if err := rows.Scan(&day, &cnt); err != nil {
+			return 0, nil, err
+		}
+		counts[day] = cnt
+	}
+	if err := rows.Err(); err != nil {
+		return 0, nil, err
+	}
+
+	now := time.Now().UTC()
+	daily := make([]DailyCount, 7)
+	for i := 6; i >= 0; i-- {
+		date := now.AddDate(0, 0, -i).Format("2006-01-02")
+		daily[6-i] = DailyCount{Date: date, Count: counts[date]}
+	}
+	return total, daily, nil
+}
+
+// GetFavoriteTotalByFarmerID returns how many times the farmer's products
+// have been favourited in total.
+func (r *Repository) GetFavoriteTotalByFarmerID(farmerID uuid.UUID) (int, error) {
+	var total int
+	err := r.db.QueryRow(`
+		SELECT COUNT(*)
+		FROM favorites f
+		JOIN products p ON p.id = f.product_id
+		WHERE p.farmer_id = $1
+	`, farmerID).Scan(&total)
+	return total, err
+}
+
 // GetInviteStatsByFarmerID returns total quota and used count from the farmer's invite code.
 // A farmer has at most one invite code; if none exists the quota values are zero.
 func (r *Repository) GetInviteStatsByFarmerID(farmerID uuid.UUID) (totalQuota, usedQuota int, err error) {

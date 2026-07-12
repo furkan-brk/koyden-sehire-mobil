@@ -375,6 +375,13 @@ class _MyProductCard extends StatelessWidget {
                               _StockBadge(stockStatus: product.stockStatus),
                           ],
                         ),
+                        if (product.status == 'active') ...[
+                          const SizedBox(height: 6),
+                          _EngagementRow(
+                            viewCount: product.viewCount,
+                            favoriteCount: product.favoriteCount,
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -529,6 +536,38 @@ class _IconBtn extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _EngagementRow extends StatelessWidget {
+  final int viewCount;
+  final int favoriteCount;
+  const _EngagementRow({
+    required this.viewCount,
+    required this.favoriteCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const style = TextStyle(
+      fontSize: 12,
+      color: AppColors.onSurfaceVariant,
+      fontWeight: FontWeight.w500,
+    );
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.visibility_outlined,
+            size: 14, color: AppColors.onSurfaceVariant),
+        const SizedBox(width: 3),
+        Text('$viewCount', style: style),
+        const SizedBox(width: 10),
+        const Icon(Icons.favorite_border,
+            size: 14, color: AppColors.onSurfaceVariant),
+        const SizedBox(width: 3),
+        Text('$favoriteCount', style: style),
+      ],
     );
   }
 }

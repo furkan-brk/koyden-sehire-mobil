@@ -2,6 +2,7 @@ package notifications
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"time"
 
@@ -32,33 +33,33 @@ func isQuietHour() bool {
 }
 
 // ProductApproved notifies the farmer and all customers who favorited that farmer.
-func (s *PushService) ProductApproved(farmerID, productTitle string) {
+func (s *PushService) ProductApproved(farmerID, productID, productTitle string) {
 	s.sendToUser(farmerID,
 		TypeProductApproved,
 		"Ürününüz Onaylandı",
 		productTitle+" artık alıcılara görünüyor.",
-		map[string]string{"type": TypeProductApproved},
+		map[string]string{"type": TypeProductApproved, "product_id": productID},
 	)
 	s.sendToFarmerFans(farmerID,
 		"Yeni Ürün",
 		"Takip ettiğiniz üretici yeni ürün ekledi: "+productTitle,
-		map[string]string{"type": TypeNewProduct, "farmer_id": farmerID},
+		map[string]string{"type": TypeNewProduct, "farmer_id": farmerID, "product_id": productID},
 	)
 }
 
 // ProductRejected notifies only the farmer.
-func (s *PushService) ProductRejected(farmerID, productTitle string) {
+func (s *PushService) ProductRejected(farmerID, productID, productTitle string) {
 	s.sendToUser(farmerID,
 		TypeProductRejected,
 		"Ürün İncelemesi",
 		productTitle+" onaylanmadı. Detaylar için uygulamayı açın.",
-		map[string]string{"type": TypeProductRejected},
+		map[string]string{"type": TypeProductRejected, "product_id": productID},
 	)
 }
 
 func (s *PushService) sendToUser(userID, notifType, title, body string, data map[string]string) {
 	// Persist notification regardless of FCM state
-	s.saveNotif(userID, notifType, title, body)
+	s.saveNotif(userID, notifType, title, body, data)
 
 	if s.fcm == nil {
 		log.Printf("[PUSH-DEV] user=%s title=%q body=%q", userID, title, body)
@@ -158,19 +159,25 @@ func (s *PushService) CustomerRegistered(_ context.Context, userID, name string)
 		TypeNewCustomer,
 		"Hoş Geldiniz!",
 		"Merhaba "+name+"! Yerel üreticileri keşfetmeye başlayabilirsiniz.",
+		map[string]string{"type": TypeNewCustomer},
 	)
 	return nil
 }
 
-func (s *PushService) saveNotif(userID, notifType, title, body string) {
+func (s *PushService) saveNotif(userID, notifType, title, body string, data map[string]string) {
 	if s.notifRepo == nil {
 		return
+	}
+	dataJSON, err := json.Marshal(data)
+	if err != nil {
+		dataJSON = []byte("{}")
 	}
 	if err := s.notifRepo.Create(Notification{
 		UserID: userID,
 		Type:   notifType,
 		Title:  title,
 		Body:   body,
+		Data:   dataJSON,
 	}); err != nil {
 		log.Printf("[PUSH] failed to persist notification for user=%s: %v", userID, err)
 	}

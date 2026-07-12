@@ -1,25 +1,31 @@
 package products
 
 import (
+	"context"
+	"fmt"
+	"log"
 	"math"
 	"strconv"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/koydensehire/backend/internal/middleware"
 	"github.com/koydensehire/backend/pkg/response"
 	"github.com/koydensehire/backend/pkg/validator"
+	"github.com/redis/go-redis/v9"
 )
 
 // PushNotifier is implemented by notifications.PushService.
 // Nil value is safe — all calls are no-ops when push is disabled.
 type PushNotifier interface {
-	ProductApproved(farmerID, productTitle string)
-	ProductRejected(farmerID, productTitle string)
+	ProductApproved(farmerID, productID, productTitle string)
+	ProductRejected(farmerID, productID, productTitle string)
 }
 
 type Handler struct {
 	svc  *Service
 	push PushNotifier
+	rdb  *redis.Client
 }
 
 func NewHandler(svc *Service) *Handler {
@@ -28,6 +34,12 @@ func NewHandler(svc *Service) *Handler {
 
 func (h *Handler) SetPushNotifier(n PushNotifier) {
 	h.push = n
+}
+
+// SetViewDeduper injects the Redis client used to debounce repeat product
+// views (same viewer counted at most once per 30 minutes).
+func (h *Handler) SetViewDeduper(rdb *redis.Client) {
+	h.rdb = rdb
 }
 
 func (h *Handler) List(c *fiber.Ctx) error {
@@ -53,7 +65,39 @@ func (h *Handler) GetByID(c *fiber.Ctx) error {
 	if err != nil {
 		return response.Error(c, err)
 	}
+
+	h.recordView(c, p)
+
 	return response.Success(c, p, "")
+}
+
+// recordView counts a product detail view: debounced per viewer via Redis
+// SETNX, skipped for the product's own farmer, persisted asynchronously.
+func (h *Handler) recordView(c *fiber.Ctx, p *PublicProduct) {
+	if h.rdb == nil {
+		return
+	}
+
+	viewerKey, _ := c.Locals(middleware.UserIDKey).(string)
+	if viewerKey == p.Farmer.ID {
+		return
+	}
+	if viewerKey == "" {
+		viewerKey = c.IP()
+	}
+
+	dedupKey := fmt.Sprintf("view:%s:%s", p.ID, viewerKey)
+	ok, err := h.rdb.SetNX(context.Background(), dedupKey, "1", 30*time.Minute).Result()
+	if err != nil || !ok {
+		return
+	}
+
+	productID := p.ID
+	go func() {
+		if err := h.svc.RecordView(productID, viewerKey); err != nil {
+			log.Printf("[products] failed to record view for %s: %v", productID, err)
+		}
+	}()
 }
 
 func (h *Handler) FarmerList(c *fiber.Ctx) error {
@@ -208,7 +252,7 @@ func (h *Handler) AdminApprove(c *fiber.Ctx) error {
 		if p.Title != nil {
 			title = *p.Title
 		}
-		go h.push.ProductApproved(p.FarmerID, title)
+		go h.push.ProductApproved(p.FarmerID, p.ID, title)
 	}
 	return response.Success(c, nil, "Ürün onaylandı")
 }
@@ -228,7 +272,7 @@ func (h *Handler) AdminReject(c *fiber.Ctx) error {
 		if p.Title != nil {
 			title = *p.Title
 		}
-		go h.push.ProductRejected(p.FarmerID, title)
+		go h.push.ProductRejected(p.FarmerID, p.ID, title)
 	}
 	return response.Success(c, nil, "Ürün reddedildi")
 }
@@ -261,7 +305,7 @@ func parseFilter(c *fiber.Ctx) *ProductFilter {
 
 	sort := c.Query("sort", "newest")
 	switch sort {
-	case "newest", "price_asc", "price_desc":
+	case "newest", "price_asc", "price_desc", "most_viewed":
 	default:
 		sort = "newest"
 	}

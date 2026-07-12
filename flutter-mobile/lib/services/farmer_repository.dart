@@ -59,15 +59,33 @@ class FarmerRepository {
     );
   }
 
-  Future<List<ProductModel>> getProducts(String farmerId) {
+  Future<Paginated<ProductModel>> getProducts(
+    String farmerId, {
+    int page = 1,
+    int limit = 20,
+  }) {
     return _api.get(
       ApiEndpoints.farmerProducts(farmerId),
+      query: {'page': page, 'limit': limit},
       parse: (env) {
-        final list = ((env as Map)['data'] as List?) ?? const [];
-        return list
+        final map = (env as Map);
+        final list = (map['data'] as List?) ?? const [];
+        final items = list
             .whereType<Map>()
             .map((m) => ProductModel.fromJson(m.cast<String, dynamic>()))
             .toList();
+        final pag = (map['pagination'] as Map?)?.cast<String, dynamic>();
+        return Paginated(
+          items: items,
+          pagination: pag == null
+              ? Pagination(
+                  page: page,
+                  limit: limit,
+                  total: items.length,
+                  totalPages: 1,
+                )
+              : Pagination.fromJson(pag),
+        );
       },
     );
   }

@@ -9,6 +9,7 @@ import 'package:koyden_sehire/models/farmer/dashboard_stats.dart';
 class DashboardData {
   final FarmerProductStats productStats;
   final FarmerInviteStats inviteStats;
+  final FarmerEngagementStats engagementStats;
   final List<FarmerProductModel> recentProducts;
   final List<DailyCount> weeklyViews;
 
@@ -20,6 +21,7 @@ class DashboardData {
   const DashboardData({
     required this.productStats,
     required this.inviteStats,
+    this.engagementStats = FarmerEngagementStats.empty,
     required this.recentProducts,
     required this.weeklyViews,
     this.rejectedCount = 0,
@@ -32,6 +34,7 @@ class DashboardData {
     return DashboardData(
       productStats: stats.productStats,
       inviteStats: stats.inviteStats,
+      engagementStats: stats.engagementStats,
       recentProducts: stats.recentProducts,
       weeklyViews: stats.weeklyViews,
       rejectedCount: rejectedCount,

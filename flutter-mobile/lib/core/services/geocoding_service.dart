@@ -23,11 +23,26 @@ class GeocodedAddress {
 class GeocodingService {
   static const String _reverseUrl = 'https://nominatim.openstreetmap.org/reverse';
   static const String _searchUrl = 'https://nominatim.openstreetmap.org/search';
-  static const String _userAgent = 'KoydenSehire/1.0 (koydensehire.com)';
+  static const String _userAgent = 'KoydenSehire/1.0 (koydensehire.netlify.app)';
+  static const Duration _minInterval = Duration(seconds: 1);
 
   final Dio _dio;
+  DateTime? _lastRequestAt;
 
   GeocodingService({Dio? dio}) : _dio = dio ?? Dio();
+
+  /// Nominatim adil kullanım politikası: en fazla 1 istek/sn. Art arda hızlı
+  /// çağrılarda (ör. haritayı hızlı sürükleme) 403/IP banı riskini önler.
+  Future<void> _throttle() async {
+    final last = _lastRequestAt;
+    if (last != null) {
+      final elapsed = DateTime.now().difference(last);
+      if (elapsed < _minInterval) {
+        await Future.delayed(_minInterval - elapsed);
+      }
+    }
+    _lastRequestAt = DateTime.now();
+  }
 
   Options get _options => Options(
         headers: {'User-Agent': _userAgent},
@@ -38,6 +53,7 @@ class GeocodingService {
   /// Türkiye OSM hiyerarşisinde il `province` (nadiren `state`/`city`),
   /// ilçe `town` (büyükşehir dahil; nadiren `county`/`district`) olarak gelir.
   Future<GeocodedAddress?> reverseGeocode(double lat, double lng) async {
+    await _throttle();
     try {
       final response = await _dio.get<Map<String, dynamic>>(
         _reverseUrl,
@@ -103,6 +119,7 @@ class GeocodingService {
   }
 
   Future<LatLng?> searchAddress(String searchQuery) async {
+    await _throttle();
     try {
       final response = await _dio.get<List<dynamic>>(
         _searchUrl,

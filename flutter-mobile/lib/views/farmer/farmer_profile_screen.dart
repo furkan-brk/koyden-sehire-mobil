@@ -12,6 +12,7 @@ import 'package:koyden_sehire/shared/utils/confirm_dialog.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
 import 'package:koyden_sehire/shared/widgets/app_loading.dart';
 import 'package:koyden_sehire/shared/widgets/farmer_bottom_nav.dart';
+import 'package:koyden_sehire/shared/widgets/legal_links_card.dart';
 import 'package:koyden_sehire/controllers/farmer/farmer_profile_controller.dart';
 import 'package:koyden_sehire/controllers/farmer/dashboard_controller.dart';
 import 'package:koyden_sehire/controllers/farmer/farmer_notifications_controller.dart';
@@ -108,6 +109,15 @@ class FarmerProfileMainScreen extends StatelessWidget {
               ctrl: notifsCtrl,
               onSeeAll: () => context.push('/farmer/notifications'),
             ),
+            const SizedBox(height: 24),
+
+            // ── Yasal ───────────────────────────────────────────────────
+            const _SectionHeader(
+              icon: Icons.gavel_outlined,
+              title: 'Yasal',
+            ),
+            const SizedBox(height: 10),
+            const LegalLinksCard(),
             const SizedBox(height: 24),
 
             // ── Hesap ───────────────────────────────────────────────────

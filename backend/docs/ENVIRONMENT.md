@@ -11,8 +11,8 @@ Copy `.env.example` to `.env` and fill in values before running.
 | `APP_ENV` | `development` | `development` or `production`. Controls debug logs, SMS provider |
 | `APP_PORT` | `8080` | HTTP listen port |
 | `APP_BASE_URL` | `http://localhost:8080` | Used in generated URLs |
-| `APP_AUTO_MIGRATE` | `true` | Run DB migrations on startup |
-| `APP_CORS_ORIGINS` | `*` | Comma-separated allowed origins |
+| `AUTO_MIGRATE` | `true` | Run DB migrations on startup |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:3000,http://localhost:8080` | Comma-separated allowed origins |
 
 ## Database
 
@@ -46,23 +46,26 @@ Copy `.env.example` to `.env` and fill in values before running.
 
 ## SMS (Netgsm)
 
-Only used when `APP_ENV=production`. In development, OTP is logged to stdout.
+Real SMS is only sent when `APP_ENV=production` **and** these are set; otherwise
+OTP is logged to stdout (dev fallback also applies if left empty in prod-like
+setups, so double-check `APP_ENV` and these three together before go-live).
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `SMS_USERNAME` | prod only | Netgsm account username |
-| `SMS_PASSWORD` | prod only | Netgsm account password |
-| `SMS_HEADER` | prod only | Approved SMS sender name |
+| `NETGSM_USERNAME` | prod only | Netgsm account username |
+| `NETGSM_PASSWORD` | prod only | Netgsm account password |
+| `NETGSM_HEADER` | | Approved SMS sender name (default: `KOYDENSEHRE`) |
 
 ## Storage (Cloudflare R2 / S3-compatible)
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `STORAGE_ENDPOINT` | ✅ | R2/S3 endpoint URL |
-| `STORAGE_BUCKET` | ✅ | Bucket name |
-| `STORAGE_ACCESS_KEY` | ✅ | Access key ID |
-| `STORAGE_SECRET_KEY` | ✅ | Secret access key |
-| `STORAGE_PUBLIC_URL` | ✅ | Public CDN URL for serving images |
+| `S3_ENDPOINT` | ✅ | R2/S3 endpoint URL |
+| `S3_PRESIGN_ENDPOINT` | | Public-facing endpoint for presigned URLs, if different from `S3_ENDPOINT` |
+| `S3_BUCKET` | ✅ | Bucket name |
+| `S3_ACCESS_KEY` | ✅ | Access key ID |
+| `S3_SECRET_KEY` | ✅ | Secret access key |
+| `S3_PUBLIC_URL` | ✅ | Public CDN URL for serving images |
 
 ## n8n Webhooks
 
@@ -80,9 +83,11 @@ The `api` service passes them as environment variables to the container.
 
 ## Production Checklist
 
-- [ ] `APP_ENV=production`
+- [ ] `APP_ENV=production` — required for real SMS delivery (otherwise OTP only logs to stdout and login is broken for real users)
 - [ ] Strong `JWT_SECRET` (32+ chars)
 - [ ] `DATABASE_URL` points to prod DB with SSL
-- [ ] SMS credentials set
-- [ ] `APP_CORS_ORIGINS` restricted to actual frontend domain
-- [ ] Storage credentials set
+- [ ] `NETGSM_USERNAME` / `NETGSM_PASSWORD` set
+- [ ] `CORS_ALLOWED_ORIGINS` restricted to the actual frontend domain(s), e.g. `https://koydensehire.netlify.app` (never leave the localhost defaults in prod)
+- [ ] `S3_*` storage credentials set
+- [ ] Default seed admin (`05000000000` / `admin123`, see `migrations/000012_seed_admin.up.sql`) password changed — the server refuses to start in production while it's unchanged (see `cmd/api/main.go`)
+- [ ] Set `AUTO_MIGRATE=false` after the first successful production migration, to avoid every restart re-running migrate
