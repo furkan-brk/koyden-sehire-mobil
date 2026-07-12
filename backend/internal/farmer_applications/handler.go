@@ -94,7 +94,7 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 	verifiedKey := fmt.Sprintf("otp_verified:%s", req.Phone)
 	exists, err := h.rdb.Exists(ctx, verifiedKey).Result()
 	if err != nil || exists == 0 {
-		return response.BadRequest(c, "Telefon numarası doğrulanmamış")
+		return response.Error(c, apperrors.New("PHONE_NOT_VERIFIED", "Telefon numarası doğrulanmamış", 400))
 	}
 
 	phoneInUsers, _ := h.repo.PhoneExistsInUsers(req.Phone)
@@ -209,7 +209,7 @@ func (h *Handler) VideoPresign(c *fiber.Ctx) error {
 	verifiedKey := fmt.Sprintf("otp_verified:%s", req.Phone)
 	exists, err := h.rdb.Exists(ctx, verifiedKey).Result()
 	if err != nil || exists == 0 {
-		return response.BadRequest(c, "Telefon numarası doğrulanmamış")
+		return response.Error(c, apperrors.New("PHONE_NOT_VERIFIED", "Telefon numarası doğrulanmamış", 400))
 	}
 
 	timestamp := time.Now().Unix()

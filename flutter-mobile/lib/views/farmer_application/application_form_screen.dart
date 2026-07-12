@@ -47,6 +47,11 @@ class ApplicationFormScreen extends StatefulWidget {
 }
 
 class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
+  /// Bumped after a draft restore so the step widgets are recreated and
+  /// re-read the restored controller data in their initState (their text
+  /// controllers are seeded there, before the resume dialog resolves).
+  int _formEpoch = 0;
+
   @override
   void initState() {
     super.initState();
@@ -85,7 +90,12 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
       ),
     );
     if (resume == true) {
-      await ctrl.restoreDraft();
+      final restored = await ctrl.restoreDraft();
+      if (restored && mounted) {
+        // Recreate the step widgets so their text fields pick up the
+        // restored values.
+        setState(() => _formEpoch++);
+      }
     } else {
       await ctrl.clearDraft();
     }
@@ -132,6 +142,7 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
           if (!confirm) return;
           if (!mounted) return;
           if (!context.mounted) return;
+          await ctrl.clearDraft();
           ctrl.reset();
           if (!context.mounted) return;
           context.go('/');
@@ -145,6 +156,7 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
                 final confirm = await _confirmExit();
                 if (!confirm) return;
                 if (!context.mounted) return;
+                await ctrl.clearDraft();
                 ctrl.reset();
                 if (!context.mounted) return;
                 context.go('/');
@@ -162,11 +174,23 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
                 Expanded(
                   child: IndexedStack(
                     index: ctrl.currentStep.value,
-                    children: const [
-                      _StepPhone(),
-                      _StepPersonalFarm(),
-                      _StepProductionVideo(),
-                      _StepTerms(),
+                    children: [
+                      KeyedSubtree(
+                        key: ValueKey('step0_$_formEpoch'),
+                        child: const _StepPhone(),
+                      ),
+                      KeyedSubtree(
+                        key: ValueKey('step1_$_formEpoch'),
+                        child: const _StepPersonalFarm(),
+                      ),
+                      KeyedSubtree(
+                        key: ValueKey('step2_$_formEpoch'),
+                        child: const _StepProductionVideo(),
+                      ),
+                      KeyedSubtree(
+                        key: ValueKey('step3_$_formEpoch'),
+                        child: const _StepTerms(),
+                      ),
                     ],
                   ),
                 ),
@@ -498,6 +522,10 @@ class _StepPersonalFarmState extends State<_StepPersonalFarm> {
     _name.text = d.fullName;
     _email.text = d.email ?? '';
     _password.text = d.password;
+    // The password came from the local draft the user typed themselves, so
+    // pre-fill the confirmation too — otherwise a restored draft always
+    // fails validation with an empty "Şifre Tekrar".
+    _passwordConfirm.text = d.password;
     _businessName.text = d.businessName;
     _bio.text = d.bio;
     _producerType = d.producerType;
@@ -509,8 +537,8 @@ class _StepPersonalFarmState extends State<_StepPersonalFarm> {
         formattedAddress: (d.address != null && d.address!.isNotEmpty)
             ? d.address!
             : [d.district, d.city].where((s) => s.isNotEmpty).join(', '),
-        lat: 0,
-        lng: 0,
+        lat: d.lat,
+        lng: d.lng,
       );
     }
   }
@@ -538,6 +566,8 @@ class _StepPersonalFarmState extends State<_StepPersonalFarm> {
         district: _selectedLocation?.district ?? '',
         village: _selectedLocation?.village ?? '',
         address: _selectedLocation?.formattedAddress,
+        lat: _selectedLocation?.lat ?? 0,
+        lng: _selectedLocation?.lng ?? 0,
         bio: _bio.text.trim(),
       ),
     );

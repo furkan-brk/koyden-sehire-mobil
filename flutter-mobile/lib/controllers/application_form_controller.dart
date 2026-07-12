@@ -15,6 +15,14 @@ class ApplicationFormController extends GetxController {
   final Rx<ApplicationFormData> data = const ApplicationFormData().obs;
   final RxInt currentStep = 0.obs; // 0..4
   final RxBool phoneVerified = false.obs;
+
+  /// When the OTP verification succeeded. The server keeps the verified
+  /// marker for 30 minutes; older drafts must re-verify.
+  DateTime? phoneVerifiedAt;
+
+  /// Stay under the server's 30-minute `otp_verified` TTL with some margin
+  /// for filling in the rest of the form.
+  static const Duration _phoneVerificationMaxAge = Duration(minutes: 25);
   final RxBool isUploading = false.obs;
   final RxDouble uploadProgress = 0.0.obs;
   final RxBool isSubmitting = false.obs;
@@ -36,6 +44,7 @@ class ApplicationFormController extends GetxController {
 
   void setPhoneVerified(bool verified) {
     phoneVerified.value = verified;
+    phoneVerifiedAt = verified ? DateTime.now() : null;
     _persistDraft();
   }
 
@@ -59,6 +68,7 @@ class ApplicationFormController extends GetxController {
     data.value = const ApplicationFormData();
     currentStep.value = 0;
     phoneVerified.value = false;
+    phoneVerifiedAt = null;
     isUploading.value = false;
     uploadProgress.value = 0;
     isSubmitting.value = false;
@@ -71,11 +81,15 @@ class ApplicationFormController extends GetxController {
   void _persistDraft() {
     final svc = _drafts;
     if (svc == null) return;
+    // Never persist an empty wizard — an empty draft would make the resume
+    // dialog appear on next launch and restore a blank form.
+    if (!data.value.hasUserContent && !phoneVerified.value) return;
     // ignore: discarded_futures
     svc.saveDraft({
       'data': data.value.toDraftJson(),
       'step': currentStep.value,
       'phone_verified': phoneVerified.value,
+      'phone_verified_at': phoneVerifiedAt?.toIso8601String(),
       'invite_code': invite.value?.code,
       'invite_inviter_name': invite.value?.inviterName,
       'invite_max_uses': invite.value?.maxUses,
@@ -83,8 +97,27 @@ class ApplicationFormController extends GetxController {
     });
   }
 
-  /// Returns whether a draft exists in local storage.
-  Future<bool> hasDraft() async => (await _drafts?.hasDraft()) ?? false;
+  /// Returns whether a *meaningful* draft exists in local storage.
+  /// Drafts without any user-entered content are treated as absent (and
+  /// cleaned up) so the resume dialog never restores a blank form.
+  Future<bool> hasDraft() async {
+    final svc = _drafts;
+    if (svc == null) return false;
+    final raw = await svc.loadDraft();
+    if (raw == null) return false;
+    final dataMap = raw['data'];
+    final parsed = dataMap is Map
+        ? ApplicationFormData.fromDraftJson(
+            Map<String, dynamic>.from(
+              dataMap.map((k, v) => MapEntry(k.toString(), v)),
+            ),
+          )
+        : const ApplicationFormData();
+    if (parsed.hasUserContent || raw['phone_verified'] == true) return true;
+    // Stale empty draft from an older app version — remove it.
+    await svc.clearDraft();
+    return false;
+  }
 
   /// Loads an existing draft into the controller. Returns false if none
   /// existed or the draft was unreadable.
@@ -103,7 +136,21 @@ class ApplicationFormController extends GetxController {
     }
     final step = raw['step'];
     if (step is int) currentStep.value = step.clamp(0, 3);
-    phoneVerified.value = raw['phone_verified'] == true;
+    // The server-side OTP marker expires after 30 minutes. Only trust a
+    // persisted "verified" flag if it is fresh enough; otherwise force the
+    // user back to the phone step to re-verify (their data stays intact).
+    final verifiedAt =
+        DateTime.tryParse(raw['phone_verified_at']?.toString() ?? '');
+    final verificationFresh = verifiedAt != null &&
+        DateTime.now().difference(verifiedAt) < _phoneVerificationMaxAge;
+    if (raw['phone_verified'] == true && verificationFresh) {
+      phoneVerified.value = true;
+      phoneVerifiedAt = verifiedAt;
+    } else {
+      phoneVerified.value = false;
+      phoneVerifiedAt = null;
+      currentStep.value = 0;
+    }
     final code = raw['invite_code']?.toString();
     if (code != null && code.isNotEmpty && invite.value == null) {
       invite.value = InviteInfo(
@@ -119,6 +166,24 @@ class ApplicationFormController extends GetxController {
   Future<void> clearDraft() async => _drafts?.clearDraft();
 
   // ── Network ────────────────────────────────────────────────────────
+
+  /// True when the backend rejected the request because the server-side OTP
+  /// verification window (30 min) expired. Older backends return a generic
+  /// BAD_REQUEST, so the message is matched as a fallback.
+  bool _isPhoneVerificationError(AppException e) =>
+      e.code == 'PHONE_NOT_VERIFIED' ||
+      (e.code == 'BAD_REQUEST' && e.message.contains('doğrulanmamış'));
+
+  /// Sends the user back to the phone step so they can re-verify quickly;
+  /// everything else they entered is preserved.
+  void _onPhoneVerificationExpired() {
+    phoneVerified.value = false;
+    phoneVerifiedAt = null;
+    currentStep.value = 0;
+    errorMessage.value =
+        'Telefon doğrulamanızın süresi doldu. Lütfen numaranızı yeniden doğrulayın.';
+    _persistDraft();
+  }
 
   Future<bool> uploadVideo(File file, {String contentType = 'video/mp4'}) async {
     final inv = invite.value;
@@ -154,7 +219,11 @@ class ApplicationFormController extends GetxController {
       isUploading.value = false;
       return true;
     } on AppException catch (e) {
-      errorMessage.value = e.message;
+      if (_isPhoneVerificationError(e)) {
+        _onPhoneVerificationExpired();
+      } else {
+        errorMessage.value = e.message;
+      }
       isUploading.value = false;
       return false;
     } catch (_) {
@@ -178,6 +247,11 @@ class ApplicationFormController extends GetxController {
       await clearDraft();
       return true;
     } on AppException catch (e) {
+      if (_isPhoneVerificationError(e)) {
+        _onPhoneVerificationExpired();
+        isSubmitting.value = false;
+        return false;
+      }
       String msg = e.message;
       if (e.code == 'CONFLICT') {
         msg =

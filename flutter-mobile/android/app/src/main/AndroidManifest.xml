@@ -29,21 +29,29 @@
             <meta-data
                 android:name="flutter_deeplinking_enabled"
                 android:value="true" />
-            <!-- Custom scheme fallback: koydensehire://apply?invite=KYS-XXXXXX -->
+            <!-- Custom scheme fallback: koydensehire://app/apply?invite=KYS-XXXXXX
+                 ('app' host segmenti şart — hostsuz yazılırsa path boş kalır
+                 ve go_router ana sayfayı açar) -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="koydensehire"/>
             </intent-filter>
-            <!-- App Links: https://koydensehire.com/apply?invite=... opens the app.
-                 Requires https://koydensehire.com/.well-known/assetlinks.json with
-                 this app's package name + SHA-256 signing fingerprint. -->
+            <!-- App Links: https://koydensehire.netlify.app/apply?invite=... opens
+                 the app. assetlinks.json is served from the invite-web/ site
+                 deployed to Netlify (see repo root invite-web/.well-known/).
+                 Not Cloudflare: *.pages.dev and *.workers.dev are access-blocked
+                 in Türkiye (TFF/BTK), so links on them never load for users here.
+                 When the real koydensehire.com domain is purchased, host its
+                 assetlinks.json and add it here as a second <data> host.
+                 On Android <12 every host in an autoVerify filter must verify,
+                 so don't add a host before its assetlinks.json is live. -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="https" android:host="koydensehire.com" android:pathPrefix="/apply"/>
+                <data android:scheme="https" android:host="koydensehire.netlify.app" android:pathPrefix="/apply"/>
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

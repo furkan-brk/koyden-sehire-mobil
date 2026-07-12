@@ -7,7 +7,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 
 import 'package:koyden_sehire/app/theme.dart';
-import 'package:koyden_sehire/core/services/google_geocoding_service.dart';
+import 'package:koyden_sehire/core/services/geocoding_service.dart';
 import 'package:koyden_sehire/models/selected_location.dart';
 import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
@@ -28,7 +28,7 @@ class _SelectLocationScreenState extends State<SelectLocationScreen>
   late final AnimationController _pinAnimCtrl;
   late final Animation<double> _pinOffset;
 
-  final _geocoding = GoogleGeocodingService();
+  final _geocoding = GeocodingService();
 
   Timer? _debounce;
   LatLng _center = _turkeyCenter;
@@ -84,8 +84,9 @@ class _SelectLocationScreenState extends State<SelectLocationScreen>
     _debounce?.cancel();
     if (!_isGeocodingLoading) setState(() => _isGeocodingLoading = true);
     
+    // Nominatim adil kullanım limiti 1 istek/sn — debounce onun üzerinde kalmalı.
     _debounce = Timer(
-      const Duration(milliseconds: 600),
+      const Duration(milliseconds: 1000),
       () => _reverseGeocode(center),
     );
   }

@@ -289,6 +289,9 @@ class AppRouter {
         GoRoute(
           path: '/apply',
           builder: (_, state) => InviteEntryScreen(
+            // Key: /apply açıkken farklı kodlu ikinci bir link gelirse State
+            // yeniden kurulup yeni kod alana dolsun.
+            key: ValueKey(state.uri.queryParameters['invite']),
             prefillCode: state.uri.queryParameters['invite'],
           ),
         ),

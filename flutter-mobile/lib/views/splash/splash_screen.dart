@@ -22,14 +22,17 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _bootstrap() async {
+    // auth.bootstrap() main()'de router kurulmadan önce çalıştı; splash
+    // yalnızca minimum marka gösterim süresini bekler.
     final auth = Get.find<AuthService>();
-    final start = DateTime.now();
-    await auth.bootstrap();
-    final elapsed = DateTime.now().difference(start);
-    if (elapsed < const Duration(milliseconds: 1200)) {
-      await Future.delayed(const Duration(milliseconds: 1200) - elapsed);
-    }
+    await Future.delayed(const Duration(milliseconds: 1200));
     if (!mounted) return;
+    // Bekleme sırasında bir deep link geldiyse (warm start) kullanıcının
+    // gittiği yeri ezme.
+    if (GoRouter.of(context).routerDelegate.currentConfiguration.uri.path !=
+        '/splash') {
+      return;
+    }
     switch (auth.status.value) {
       case AuthStatus.farmerActive:
         context.go('/farmer/dashboard');

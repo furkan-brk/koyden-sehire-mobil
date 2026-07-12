@@ -111,8 +111,8 @@ class _OtpInputState extends State<OtpInput>
   String get _value => _controllers.map((c) => c.text).join();
 
   void _handleChanged(int index, String value) {
-    if (value.length > 1) {
-      // Paste support: distribute digits.
+    if (value.length > 2) {
+      // Paste: distribute the digits across all cells starting from the first.
       final digits = value.replaceAll(RegExp(r'\D'), '');
       for (var i = 0; i < widget.length; i++) {
         _controllers[i].text =
@@ -123,6 +123,14 @@ class _OtpInputState extends State<OtpInput>
         _focusNodes[filled].requestFocus();
       } else {
         _focusNodes.last.unfocus();
+      }
+    } else if (value.length == 2) {
+      // Typing into an already-filled cell: keep only the newest digit.
+      _controllers[index].text = value[value.length - 1];
+      if (index < widget.length - 1) {
+        _focusNodes[index + 1].requestFocus();
+      } else {
+        _focusNodes[index].unfocus();
       }
     } else if (value.isNotEmpty) {
       if (index < widget.length - 1) {
@@ -190,8 +198,11 @@ class _OtpInputState extends State<OtpInput>
                         focusNode: _focusNodes[i],
                         enabled: widget.enabled,
                         textAlign: TextAlign.center,
+                        textAlignVertical: TextAlignVertical.center,
                         keyboardType: TextInputType.number,
-                        maxLength: 1,
+                        // No maxLength: pasted codes must reach onChanged in
+                        // full so _handleChanged can distribute the digits.
+                        autofillHints: const [AutofillHints.oneTimeCode],
                         style: TextStyle(
                           fontSize: cellWidth < 40 ? 18 : 22,
                           fontWeight: FontWeight.w600,
@@ -201,6 +212,11 @@ class _OtpInputState extends State<OtpInput>
                         ],
                         decoration: const InputDecoration(
                           counterText: '',
+                          // The app-wide InputDecorationTheme adds 16px
+                          // horizontal padding, which clips a digit inside
+                          // these ~44px cells — zero it out here.
+                          contentPadding:
+                              EdgeInsets.symmetric(horizontal: 0, vertical: 14),
                         ),
                         onChanged: (v) => _handleChanged(i, v),
                       ),

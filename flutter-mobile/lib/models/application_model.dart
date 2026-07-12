@@ -40,6 +40,11 @@ class ApplicationFormData {
   final String? address;
   final String bio;
 
+  // Map pin of the selected farm location. Not sent to the backend; kept so
+  // a resumed draft re-opens the location picker at the right spot.
+  final double lat;
+  final double lng;
+
   // Step 3
   final List<String> productCategorySlugs;
   final String productExamples;
@@ -68,6 +73,8 @@ class ApplicationFormData {
     this.village = '',
     this.address,
     this.bio = '',
+    this.lat = 0,
+    this.lng = 0,
     this.productCategorySlugs = const [],
     this.productExamples = '',
     this.productionPlaceType,
@@ -92,6 +99,8 @@ class ApplicationFormData {
     String? village,
     String? address,
     String? bio,
+    double? lat,
+    double? lng,
     List<String>? productCategorySlugs,
     String? productExamples,
     String? productionPlaceType,
@@ -116,6 +125,8 @@ class ApplicationFormData {
         village: village ?? this.village,
         address: address ?? this.address,
         bio: bio ?? this.bio,
+        lat: lat ?? this.lat,
+        lng: lng ?? this.lng,
         productCategorySlugs:
             productCategorySlugs ?? this.productCategorySlugs,
         productExamples: productExamples ?? this.productExamples,
@@ -135,6 +146,18 @@ class ApplicationFormData {
             declaresNotIntermediary ?? this.declaresNotIntermediary,
       );
 
+  /// True when the user has actually entered something worth resuming.
+  /// Used to avoid persisting/offering empty drafts.
+  bool get hasUserContent =>
+      phone.isNotEmpty ||
+      fullName.isNotEmpty ||
+      password.isNotEmpty ||
+      businessName.isNotEmpty ||
+      bio.isNotEmpty ||
+      productCategorySlugs.isNotEmpty ||
+      productExamples.isNotEmpty ||
+      applicationVideoKey != null;
+
   /// Lightweight serializer used for local draft persistence. Unlike
   /// [toJson], it does not require an invite code and includes only fields
   /// the wizard captures from the user (passwords intentionally included so
@@ -151,6 +174,8 @@ class ApplicationFormData {
         'village': village,
         'address': address,
         'bio': bio,
+        'lat': lat,
+        'lng': lng,
         'product_category_slugs': productCategorySlugs,
         'product_examples': productExamples,
         'production_place_type': productionPlaceType,
@@ -177,6 +202,8 @@ class ApplicationFormData {
       village: json['village']?.toString() ?? '',
       address: json['address']?.toString(),
       bio: json['bio']?.toString() ?? '',
+      lat: (json['lat'] as num?)?.toDouble() ?? 0,
+      lng: (json['lng'] as num?)?.toDouble() ?? 0,
       productCategorySlugs: slugs is List
           ? slugs.map((e) => e.toString()).toList()
           : const [],

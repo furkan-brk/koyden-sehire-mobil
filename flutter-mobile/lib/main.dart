@@ -2,12 +2,14 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 
 import 'package:koyden_sehire/app/app.dart';
 import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/core/bindings/app_binding.dart';
+import 'package:koyden_sehire/core/services/auth_service.dart';
 import 'package:koyden_sehire/core/services/push_notification_service.dart';
 import 'firebase_options.dart';
 
@@ -51,5 +53,8 @@ Future<void> main() async {
   // Register all global services/repositories before runApp so screens can
   // resolve them synchronously via Get.find().
   AppBinding().dependencies();
+  // Auth durumu router kurulmadan önce kesinleşmeli: deep link ile açılışta
+  // splash hiç mount olmaz, bootstrap yalnızca burada garanti çalışır.
+  await Get.find<AuthService>().bootstrap();
   runApp(const KoydenSehireApp());
 }
