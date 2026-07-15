@@ -675,7 +675,7 @@ class _StepPersonalFarmState extends State<_StepPersonalFarm> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              initialValue: _producerType,
+              value: _producerType,
               isExpanded: true,
               decoration: const InputDecoration(labelText: 'Üretici Tipi'),
               items: producerTypeLabels.entries
@@ -1018,7 +1018,7 @@ class _StepProductionVideoState extends State<_StepProductionVideo> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                initialValue: _placeType,
+                value: _placeType,
                 isExpanded: true,
                 decoration: const InputDecoration(
                     labelText: 'Üretim Yeri (isteğe bağlı)'),

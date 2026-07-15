@@ -482,7 +482,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                         const SizedBox(width: AppSpacing.sm + 4),
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            initialValue: data.unit,
+                            value: data.unit,
                             decoration: const InputDecoration(labelText: 'Birim'),
                             items: productUnits.map((u) => DropdownMenuItem(value: u, child: Text(u))).toList(),
                             onChanged: (v) {
@@ -692,7 +692,7 @@ class _ImagePickerSection extends StatelessWidget {
                   scrollDirection: Axis.horizontal,
                   buildDefaultDragHandles: false,
                   itemCount: imageUrls.length,
-                  onReorderItem: onReorder,
+                  onReorder: onReorder,
                   proxyDecorator: (child, index, animation) => Material(
                     color: Colors.transparent,
                     elevation: 6,
@@ -890,7 +890,7 @@ class _CategorySelectorState extends State<_CategorySelector> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         DropdownButtonFormField<String>(
-          initialValue: _mainId,
+          value: _mainId,
           decoration: const InputDecoration(labelText: 'Ana Kategori'),
           items: roots.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))).toList(),
           onChanged: (v) {
@@ -903,7 +903,7 @@ class _CategorySelectorState extends State<_CategorySelector> {
         if (subs.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.sm + 4),
           DropdownButtonFormField<String>(
-            initialValue: subs.any((s) => s.id == widget.selected.categoryId) ? widget.selected.categoryId : null,
+            value: subs.any((s) => s.id == widget.selected.categoryId) ? widget.selected.categoryId : null,
             decoration: const InputDecoration(labelText: 'Alt Kategori'),
             items: subs.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))).toList(),
             onChanged: (v) {

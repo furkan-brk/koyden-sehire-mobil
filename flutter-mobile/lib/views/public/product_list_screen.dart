@@ -79,17 +79,28 @@ class _ProductListScreenState extends State<ProductListScreen> {
               padding: EdgeInsets.all(16),
               child: Text('Sıralama', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
             ),
-            RadioGroup<String?>(
-              groupValue: current,
-              onChanged: (v) => Navigator.pop(context, v ?? '__newest__'),
-              child: const Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _SortTile(label: 'En Yeni', value: null),
-                  _SortTile(label: 'Fiyat: Düşükten Yükseğe', value: 'price_asc'),
-                  _SortTile(label: 'Fiyat: Yüksekten Düşüğe', value: 'price_desc'),
-                ],
-              ),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _SortTile(
+                  label: 'En Yeni',
+                  value: null,
+                  groupValue: current,
+                  onChanged: (v) => Navigator.pop(context, v ?? '__newest__'),
+                ),
+                _SortTile(
+                  label: 'Fiyat: Düşükten Yükseğe',
+                  value: 'price_asc',
+                  groupValue: current,
+                  onChanged: (v) => Navigator.pop(context, v ?? '__newest__'),
+                ),
+                _SortTile(
+                  label: 'Fiyat: Yüksekten Düşüğe',
+                  value: 'price_desc',
+                  groupValue: current,
+                  onChanged: (v) => Navigator.pop(context, v ?? '__newest__'),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
           ],
@@ -366,14 +377,23 @@ class _CategoryFilterBar extends StatelessWidget {
 class _SortTile extends StatelessWidget {
   final String label;
   final String? value;
+  final String? groupValue;
+  final ValueChanged<String?> onChanged;
 
-  const _SortTile({required this.label, required this.value});
+  const _SortTile({
+    required this.label,
+    required this.value,
+    required this.groupValue,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     return RadioListTile<String?>(
       title: Text(label),
       value: value,
+      groupValue: groupValue,
+      onChanged: onChanged,
     );
   }
 }
