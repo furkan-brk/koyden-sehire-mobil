@@ -34,6 +34,7 @@ type UpdateProductRequest struct {
 	City        string   `json:"city" validate:"required"`
 	District    string   `json:"district" validate:"required"`
 	Village     string   `json:"village" validate:"required"`
+	StockStatus string   `json:"stock_status"`
 	ImageURLs   []string `json:"image_urls"`
 }
 

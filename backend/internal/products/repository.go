@@ -415,14 +415,19 @@ func (r *Repository) Update(id, farmerID string, req *UpdateProductRequest) (*Pr
 	defer tx.Rollback()
 
 	var p Product
+	stockStatus := req.StockStatus
+	if stockStatus == "" {
+		stockStatus = "available"
+	}
 	err = tx.Get(&p, `
 		UPDATE products
 		SET category_id = $1, title = $2, description = $3, price = $4,
-		    unit = $5, city = $6, district = $7, village = $8, updated_at = NOW()
-		WHERE id = $9 AND farmer_id = $10
+		    unit = $5, city = $6, district = $7, village = $8,
+		    stock_status = $9, updated_at = NOW()
+		WHERE id = $10 AND farmer_id = $11
 		RETURNING *
 	`, req.CategoryID, req.Title, req.Description, req.Price, req.Unit,
-		req.City, req.District, req.Village, id, farmerID)
+		req.City, req.District, req.Village, stockStatus, id, farmerID)
 	if err != nil {
 		return nil, apperrors.ErrNotFound
 	}
@@ -449,6 +454,35 @@ func (r *Repository) UpdateStatus(id, farmerID, status string) error {
 		UPDATE products SET status = $1, updated_at = NOW()
 		WHERE id = $2 AND farmer_id = $3
 	`, status, id, farmerID)
+	if err != nil {
+		return err
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return apperrors.ErrNotFound
+	}
+	return nil
+}
+
+func (r *Repository) UpdateStockStatus(id, farmerID, stockStatus string) error {
+	result, err := r.db.Exec(`
+		UPDATE products SET stock_status = $1, updated_at = NOW()
+		WHERE id = $2 AND farmer_id = $3
+	`, stockStatus, id, farmerID)
+	if err != nil {
+		return err
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return apperrors.ErrNotFound
+	}
+	return nil
+}
+
+func (r *Repository) Delete(id, farmerID string) error {
+	result, err := r.db.Exec(`
+		DELETE FROM products WHERE id = $1 AND farmer_id = $2
+	`, id, farmerID)
 	if err != nil {
 		return err
 	}

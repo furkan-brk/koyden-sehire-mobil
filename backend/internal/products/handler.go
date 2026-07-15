@@ -2,6 +2,7 @@ package products
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math"
@@ -192,7 +193,6 @@ func (h *Handler) FarmerComplete(c *fiber.Ctx) error {
 	return response.Success(c, p, "Ürün başarıyla oluşturuldu ve onay bekliyor")
 }
 
-
 func (h *Handler) FarmerUpdateStatus(c *fiber.Ctx) error {
 	farmerID, _ := c.Locals(middleware.UserIDKey).(string)
 	if farmerID == "" {
@@ -200,15 +200,35 @@ func (h *Handler) FarmerUpdateStatus(c *fiber.Ctx) error {
 	}
 	id := c.Params("id")
 
-	var req UpdateStatusRequest
-	if err := c.BodyParser(&req); err != nil {
+	var body map[string]string
+	if err := json.Unmarshal(c.Body(), &body); err != nil {
 		return response.BadRequest(c, "Geçersiz istek gövdesi")
 	}
 
-	if err := h.svc.UpdateStatus(id, farmerID, req.Status); err != nil {
+	if stockStatus, ok := body["stock_status"]; ok {
+		if err := h.svc.UpdateStockStatus(id, farmerID, stockStatus); err != nil {
+			return response.Error(c, err)
+		}
+		return response.Success(c, nil, "Stok durumu güncellendi")
+	}
+
+	status := body["status"]
+	if err := h.svc.UpdateStatus(id, farmerID, status); err != nil {
 		return response.Error(c, err)
 	}
 	return response.Success(c, nil, "Ürün durumu güncellendi")
+}
+
+func (h *Handler) FarmerDelete(c *fiber.Ctx) error {
+	farmerID, _ := c.Locals(middleware.UserIDKey).(string)
+	if farmerID == "" {
+		return response.Unauthorized(c, "Kimlik doğrulama gerekli")
+	}
+	id := c.Params("id")
+	if err := h.svc.Delete(id, farmerID); err != nil {
+		return response.Error(c, err)
+	}
+	return response.Success(c, nil, "Ürün silindi")
 }
 
 func (h *Handler) AdminList(c *fiber.Ctx) error {

@@ -15,6 +15,8 @@ type ProductRepository interface {
 	Create(farmerID string, req *CreateProductRequest) (*Product, error)
 	Update(id, farmerID string, req *UpdateProductRequest) (*Product, error)
 	UpdateStatus(id, farmerID, status string) error
+	UpdateStockStatus(id, farmerID, stockStatus string) error
+	Delete(id, farmerID string) error
 	AdminApprove(id string) error
 	AdminReject(id, note string) error
 	AdminHide(id string) error

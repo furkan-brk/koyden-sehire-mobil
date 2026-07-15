@@ -19,8 +19,16 @@ class FavoritesService extends GetxService {
   @override
   void onInit() {
     super.onInit();
-    ever<AuthStatus>(Get.find<AuthService>().status, (status) {
+    final auth = Get.find<AuthService>();
+    ever<AuthStatus>(auth.status, (status) {
       if (status == AuthStatus.customerActive) {
+        refresh();
+      } else if (status != AuthStatus.farmerActive) {
+        clear();
+      }
+    });
+    ever<bool>(auth.isBrowsingAsCustomer, (browsing) {
+      if (browsing) {
         refresh();
       } else {
         clear();

@@ -333,6 +333,7 @@ func main() {
 	farmer.Post("/products", append(fm, productHandler.FarmerCreate)...)
 	farmer.Get("/products/:id", append(fm, productHandler.FarmerGetByID)...)
 	farmer.Put("/products/:id", append(fm, productHandler.FarmerUpdate)...)
+	farmer.Delete("/products/:id", append(fm, productHandler.FarmerDelete)...)
 	farmer.Post("/products/:id/complete", append(fm, productHandler.FarmerComplete)...)
 	farmer.Patch("/products/:id/status", append(fm, productHandler.FarmerUpdateStatus)...)
 	farmer.Get("/invites", append(fm, inviteHandler.FarmerInvites)...)

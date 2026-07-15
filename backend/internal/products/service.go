@@ -143,6 +143,18 @@ func (s *Service) UpdateStatus(id, farmerID, status string) error {
 	return s.repo.UpdateStatus(id, farmerID, status)
 }
 
+func (s *Service) UpdateStockStatus(id, farmerID, stockStatus string) error {
+	allowed := map[string]bool{"available": true, "limited": true, "out_of_stock": true}
+	if !allowed[stockStatus] {
+		return apperrors.New("INVALID_STOCK_STATUS", "Geçersiz stok durumu", 400)
+	}
+	return s.repo.UpdateStockStatus(id, farmerID, stockStatus)
+}
+
+func (s *Service) Delete(id, farmerID string) error {
+	return s.repo.Delete(id, farmerID)
+}
+
 func (s *Service) AdminApprove(id string) error {
 	p, err := s.repo.GetByID(id)
 	if err != nil {
