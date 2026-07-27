@@ -387,7 +387,7 @@ categories
 | `url_launcher` | ^6.2.5 | Harici link / telefon açma |
 | `permission_handler` | ^11.3.0 | Kamera, galeri izin yönetimi |
 | `connectivity_plus` | ^6.0.3 | Ağ bağlantısı kontrolü |
-| `share_plus` | ^9.0.0 | İçerik paylaşma |
+| `share_plus` | ^10.1.4 | İçerik paylaşma |
 
 #### Dev Bağımlılıkları
 

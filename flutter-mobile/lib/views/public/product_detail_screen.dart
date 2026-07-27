@@ -2,12 +2,12 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:shimmer/shimmer.dart';
 
 import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/core/services/favorites_service.dart';
+import 'package:koyden_sehire/core/utils/share_helper.dart';
 import 'package:koyden_sehire/core/utils/whatsapp_helper.dart';
 import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
 import 'package:koyden_sehire/shared/widgets/app_error_widget.dart';
@@ -101,7 +101,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               tooltip: 'Diğer',
               onSelected: (v) {
                 if (v == 'share' && product != null) {
-                  Share.share(
+                  ShareHelper.shareText(
+                    context,
                     '${product.title} - Köyden Şehire\n${AppConstants.productLink(product.id)}',
                   );
                 } else if (v == 'report') {

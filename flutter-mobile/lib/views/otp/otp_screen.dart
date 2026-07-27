@@ -84,7 +84,15 @@ class _OtpScreenState extends State<OtpScreen> {
     const totalCooldown = AppConstants.otpResendCooldownSeconds;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Telefon Doğrulama')),
+      appBar: AppBar(
+        title: const Text('Telefon Doğrulama'),
+        leading: context.canPop()
+            ? const BackButton()
+            : IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => context.go('/'),
+              ),
+      ),
       body: SafeArea(
         // Kısa ekranlarda klavye açıldığında taşmayı scroll absorbe eder.
         child: SingleChildScrollView(

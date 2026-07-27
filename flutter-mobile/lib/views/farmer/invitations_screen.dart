@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:share_plus/share_plus.dart';
 
 import 'package:koyden_sehire/app/constants.dart';
 import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/core/utils/date_formatter.dart';
+import 'package:koyden_sehire/core/utils/share_helper.dart';
 import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
 import 'package:koyden_sehire/shared/widgets/app_button.dart';
 import 'package:koyden_sehire/shared/widgets/app_empty_widget.dart';
@@ -117,6 +117,7 @@ class _InviteCard extends StatelessWidget {
                 child: AppButton(
                   label: 'Kodu Kopyala',
                   variant: AppButtonVariant.secondary,
+                  onDark: true,
                   onPressed: () async {
                     await Clipboard.setData(ClipboardData(text: item.code));
                     if (context.mounted) {
@@ -130,7 +131,7 @@ class _InviteCard extends StatelessWidget {
                 child: AppButton(
                   label: 'Paylaş',
                   icon: const Icon(Icons.share, color: Colors.white),
-                  onPressed: () => Share.share(_shareMessage),
+                  onPressed: () => ShareHelper.shareText(context, _shareMessage),
                 ),
               ),
             ],
@@ -272,7 +273,7 @@ class _InviteQrSheet extends StatelessWidget {
               child: AppButton(
                 label: 'Paylaş',
                 icon: const Icon(Icons.share, color: Colors.white),
-                onPressed: () => Share.share(shareMessage),
+                onPressed: () => ShareHelper.shareText(context, shareMessage),
               ),
             ),
           ],

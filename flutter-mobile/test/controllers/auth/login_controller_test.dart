@@ -77,6 +77,7 @@ void main() {
     mockStorage = MockSecureStorageService();
 
     // Stub storage methods used by _applyLoginResponse
+    when(() => mockStorage.saveRememberMe(any())).thenAnswer((_) async {});
     when(() => mockStorage.saveToken(any())).thenAnswer((_) async {});
     when(() => mockStorage.saveRefreshToken(any())).thenAnswer((_) async {});
     when(() => mockStorage.saveUserInfo(

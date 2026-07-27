@@ -13,8 +13,8 @@ The platform uses two-stage auth:
 ```
 1. POST /otp/send          {"phone": "05XXXXXXXXX"}
    → Redis: otp:{phone} = "CODE:0"  (TTL: 300s)
-   → Dev: code logged to stdout
-   → Prod: code sent via Netgsm SMS
+   → Dev: code logged to stdout (also sent via Twilio if SMS_FORCE_SEND=true)
+   → Prod: code sent via Twilio SMS
 
 2. POST /otp/verify        {"phone": "...", "code": "123456"}
    → Redis: otp_verified:{phone} = "1"  (TTL: 1800s)

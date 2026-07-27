@@ -73,7 +73,7 @@
 | Veritabanı | PostgreSQL 16 | ACID uyumluluk, güçlü ilişkisel model |
 | Cache / OTP depolama | Redis 7 | Hızlı key-value, TTL destekli OTP ve token yönetimi |
 | Medya depolama | Cloudflare R2 (prod) / MinIO (dev) | S3 uyumlu, düşük egress maliyeti |
-| SMS | Netgsm | Türkiye'de yaygın SMS sağlayıcısı |
+| SMS | Twilio (Messages API) | Global sağlayıcı; kimlik bilgileri `.env`'den okunur |
 | Bildirim akışı | n8n (webhook) | Kodsuz otomasyon; admin bildirimleri |
 | Mobil / Web | Flutter (Dart) | Tek kod tabanı: Android, iOS, Web |
 | State yönetimi | GetX | Reaktif state + DI + navigasyon |
@@ -109,7 +109,7 @@ backend/
 ├── pkg/
 │   ├── errors/                  ← Uygulama hata tipleri
 │   ├── response/                ← Fiber response yardımcıları
-│   ├── sms/                     ← Netgsm + DevProvider
+│   ├── sms/                     ← Twilio + DevProvider
 │   └── storage/                 ← R2/S3 + DevProvider
 └── migrations/                  ← golang-migrate SQL dosyaları (000001…000015)
 ```
@@ -280,7 +280,7 @@ POST /otp/send
   → Cooldown kontrolü (Redis)
   → 6 haneli kod üret
   → Redis'e kaydet (TTL 5 dk, deneme sayısı: 0)
-  → dev: stdout'a yaz | prod: Netgsm'e gönder
+  → dev: stdout'a yaz (SMS_FORCE_SEND=true ise ayrıca gönder) | prod: Twilio'ya gönder
 
 POST /otp/verify
   → otp:{phone} Redis'ten oku
@@ -567,7 +567,7 @@ Hata kodları makine tarafından işlenebilir sabitlerdir:
 | OTP doğrulama penceresi | 30 dk | Müşteri kaydı veya başvuru bu sürede tamamlanmalı |
 | Mobil depolama | flutter_secure_storage | Cihazın güvenli enclave'ı (Keychain/Keystore) |
 | Medya erişimi | Public / Presigned | Görseller CDN'den public; videolar 1h presigned GET |
-| CORS | Yapılandırılabilir | `APP_CORS_ORIGINS` env; production'da kısıtlı |
+| CORS | Yapılandırılabilir | `CORS_ALLOWED_ORIGINS` env; production'da kısıtlı |
 | Rate limiting | Redis tabanlı | Çift kapsam (IP + telefon); tablo §4.3'te |
 | Middleware derinliği | Defense in depth | `exp` claim hem jwt kütüphanesi hem elle doğrulanır; kullanıcı her istekte DB'den çekilir |
 
@@ -601,12 +601,12 @@ cd flutter-mobile && flutter run
 | Veritabanı | Yönetilen PostgreSQL (Supabase, RDS vb.) |
 | Cache | Yönetilen Redis |
 | Medya | Cloudflare R2 |
-| SMS | Netgsm (Türkiye) |
+| SMS | Twilio |
 | Flutter derleme | `--dart-define=BASE_URL=https://api.koydensehire.com/api/v1` |
 
 Production gereksinimler (`ENVIRONMENT.md`'den):
 - `JWT_SECRET` → minimum 32 karakter rastgele string
-- `APP_CORS_ORIGINS` → yalnızca izin verilen origin'ler
+- `CORS_ALLOWED_ORIGINS` → yalnızca izin verilen origin'ler
 - `APP_ENV=production` → hassas veri log'lanmaz
 - Gerçek `STORAGE_*` ve `SMS_*` yapılandırmaları zorunludur
 

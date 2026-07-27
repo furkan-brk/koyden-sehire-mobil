@@ -8,7 +8,7 @@ Copy `.env.example` to `.env` and fill in values before running.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `APP_ENV` | `development` | `development` or `production`. Controls debug logs, SMS provider |
+| `APP_ENV` | `development` | `development` or `production`. Controls debug logs and whether OTP SMS is really sent (see `SMS_FORCE_SEND`) |
 | `APP_PORT` | `8080` | HTTP listen port |
 | `APP_BASE_URL` | `http://localhost:8080` | Used in generated URLs |
 | `AUTO_MIGRATE` | `true` | Run DB migrations on startup |
@@ -44,17 +44,33 @@ Copy `.env.example` to `.env` and fill in values before running.
 | `OTP_MAX_ATTEMPTS` | `3` | Wrong attempts before invalidation |
 | `OTP_RESEND_COOLDOWN_SECONDS` | `60` | Seconds between resend requests |
 
-## SMS (Netgsm)
+## SMS (Twilio)
 
-Real SMS is only sent when `APP_ENV=production` **and** these are set; otherwise
-OTP is logged to stdout (dev fallback also applies if left empty in prod-like
-setups, so double-check `APP_ENV` and these three together before go-live).
+Provider selection (`cmd/api/main.go`): if the Twilio credentials below are set,
+the Twilio Messages API is used. If they are empty, `APP_ENV=development` falls
+back to `DevProvider` (messages logged to stdout only) and any other env makes
+the server **exit** at startup.
+
+Delivery is additionally gated by env: with `APP_ENV=development` the OTP is
+logged and returned in the API response as `dev_code`, and no SMS is sent unless
+`SMS_FORCE_SEND=true`. In `production` SMS is always sent.
+
+Phone numbers are stored as `05xxxxxxxxx` and normalized to E.164 (`+905xxxxxxxxx`)
+by `sms.ToE164` before being handed to Twilio.
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `NETGSM_USERNAME` | prod only | Netgsm account username |
-| `NETGSM_PASSWORD` | prod only | Netgsm account password |
-| `NETGSM_HEADER` | | Approved SMS sender name (default: `KOYDENSEHRE`) |
+| `TWILIO_ACCOUNT_SID` | prod only | Twilio Account SID (Console → Account Info) |
+| `TWILIO_AUTH_TOKEN` | prod only | Twilio Auth Token |
+| `TWILIO_FROM_NUMBER` | prod only¹ | Sender number in E.164, e.g. `+15551234567` |
+| `TWILIO_MESSAGING_SERVICE_SID` | | Messaging Service SID — used instead of `TWILIO_FROM_NUMBER` when set |
+| `SMS_FORCE_SEND` | | Default `false`. `true` sends real SMS in `development` too (real-device testing). While on, OTP resend cooldown is enforced in dev as well, to avoid unbounded paid sends. |
+
+¹ Either `TWILIO_FROM_NUMBER` or `TWILIO_MESSAGING_SERVICE_SID` must be set.
+
+> Twilio trial accounts can only send to **verified** numbers. Turkish OTP texts
+> contain non-ASCII characters, so Twilio bills them as UCS-2 (70 chars/segment);
+> the current OTP message stays within one segment.
 
 ## Storage (Cloudflare R2 / S3-compatible)
 
@@ -86,7 +102,7 @@ The `api` service passes them as environment variables to the container.
 - [ ] `APP_ENV=production` — required for real SMS delivery (otherwise OTP only logs to stdout and login is broken for real users)
 - [ ] Strong `JWT_SECRET` (32+ chars)
 - [ ] `DATABASE_URL` points to prod DB with SSL
-- [ ] `NETGSM_USERNAME` / `NETGSM_PASSWORD` set
+- [ ] `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` set, plus `TWILIO_FROM_NUMBER` or `TWILIO_MESSAGING_SERVICE_SID` (the server refuses to start in production without them)
 - [ ] `CORS_ALLOWED_ORIGINS` restricted to the actual frontend domain(s), e.g. `https://koydensehire.netlify.app` (never leave the localhost defaults in prod)
 - [ ] `S3_*` storage credentials set
 - [ ] Default seed admin (`05000000000` / `admin123`, see `migrations/000012_seed_admin.up.sql`) password changed — the server refuses to start in production while it's unchanged (see `cmd/api/main.go`)

@@ -1,20 +1,35 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 class AppConstants {
+  /// Raw --dart-define=BASE_URL value, empty when the build didn't pass one.
+  static const String _rawBaseUrl = String.fromEnvironment('BASE_URL');
+
+  /// Dev fallback for native builds — the Android emulator's host loopback.
+  static const String _devDefaultNative = 'http://10.0.2.2:8080/api/v1';
+
+  /// Dev fallback for web builds. 10.0.2.2 only resolves inside the Android
+  /// emulator; a browser cannot reach it, so `flutter run -d chrome` without
+  /// --dart-define would otherwise hang until the connect timeout.
+  static const String _devDefaultWeb = 'http://localhost:8080/api/v1';
+
   /// API base URL. Provided at build time via --dart-define=BASE_URL=...
   ///
-  /// The default value targets the Android emulator's host loopback
-  /// (10.0.2.2) on port 8080 for local development. **Release builds MUST
-  /// override BASE_URL via --dart-define** — otherwise the production app
-  /// would attempt cleartext HTTP to a non-routable address and silently
-  /// fail. Use `assertReleaseBaseUrl()` at app startup to enforce this.
+  /// When no BASE_URL is given we fall back to a per-platform local dev URL.
+  /// **Release builds MUST override BASE_URL via --dart-define** — otherwise
+  /// the production app would attempt cleartext HTTP to a local address and
+  /// silently fail. `isDevDefaultBaseUrl` is checked in `main()` to enforce it.
   static String get baseUrl {
-    String url = const String.fromEnvironment(
-      'BASE_URL',
-      defaultValue: 'http://10.0.2.2:8080/api/v1',
-    );
-    
-    // Protokol eksikse (örn: Sadece localhost veya 192.168.1.5 yazılmışsa) http:// ekle
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      url = 'http://$url';
+    String url = _rawBaseUrl.isNotEmpty
+        ? _rawBaseUrl
+        : (kIsWeb ? _devDefaultWeb : _devDefaultNative);
+
+    // Origin-relative URL (örn: /api/v1) — same-origin web deploy'da geçerli,
+    // protokol eklenmemeli yoksa http:///api/v1 gibi bozuk bir değer çıkar.
+    if (!url.startsWith('/')) {
+      // Protokol eksikse (örn: Sadece localhost veya 192.168.1.5 yazılmışsa) http:// ekle
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'http://$url';
+      }
     }
 
     if (url.endsWith('/api/v1') || url.endsWith('/api/v1/')) {
@@ -26,9 +41,9 @@ class AppConstants {
     return url.endsWith('/') ? '${url}api/v1' : '$url/api/v1';
   }
 
-  /// Returns true when the baseUrl is still the development default.
+  /// Returns true when the baseUrl is still a development default.
   /// Call this in `main()` and abort the release build if true.
-  static bool get isDevDefaultBaseUrl => baseUrl == 'http://10.0.2.2:8080/api/v1';
+  static bool get isDevDefaultBaseUrl => _rawBaseUrl.isEmpty;
 
   /// FCM Web VAPID key — Firebase Console → Project Settings →
   /// Cloud Messaging → Web configuration → Web Push certificates.

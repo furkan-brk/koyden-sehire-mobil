@@ -29,6 +29,8 @@ type Service struct {
 	userRepo           PasswordUpdater
 	smsProvider        sms.Provider
 	appEnv             string
+	// smsForceSend true ise development ortamında da gerçek SMS gönderilir.
+	smsForceSend bool
 }
 
 func NewService(repo *Repository, rdb *redis.Client, jwtSecret string, jwtExpiry, refreshTokenExpiry time.Duration) *Service {
@@ -62,6 +64,11 @@ func (s *Service) SetUserRepo(r PasswordUpdater) {
 func (s *Service) SetSMSProvider(p sms.Provider, appEnv string) {
 	s.smsProvider = p
 	s.appEnv = appEnv
+}
+
+// SetSMSForceSend development ortamında gerçek SMS gönderimini açar (SMS_FORCE_SEND).
+func (s *Service) SetSMSForceSend(v bool) {
+	s.smsForceSend = v
 }
 
 func (s *Service) Login(req *LoginRequest) (*LoginResponse, error) {
@@ -262,7 +269,8 @@ func (s *Service) ForgotPassword(phone string) error {
 
 	if s.appEnv == "development" {
 		log.Printf("[RESET OTP] %s -> %s", phone, code)
-	} else if s.smsProvider != nil {
+	}
+	if (s.appEnv != "development" || s.smsForceSend) && s.smsProvider != nil {
 		msg := fmt.Sprintf("Köyden Şehire şifre sıfırlama kodunuz: %s. Bu kod 5 dakika geçerlidir.", code)
 		go func() {
 			if err := s.smsProvider.Send(phone, msg); err != nil {

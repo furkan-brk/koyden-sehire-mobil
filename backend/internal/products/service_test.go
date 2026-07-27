@@ -126,6 +126,26 @@ func (m *mockProductRepo) UpdateStatus(id, farmerID, status string) error {
 	return nil
 }
 
+func (m *mockProductRepo) UpdateStockStatus(id, farmerID, stockStatus string) error {
+	p, ok := m.products[id]
+	if !ok || p.FarmerID != farmerID {
+		return apperrors.ErrNotFound
+	}
+	p.StockStatus = stockStatus
+	return nil
+}
+
+// Delete gerçek repo gibi sahiplik kontrolü yapar: farmerID eşleşmezse
+// (SQL'de 0 satır etkilenir) ErrNotFound döner.
+func (m *mockProductRepo) Delete(id, farmerID string) error {
+	p, ok := m.products[id]
+	if !ok || p.FarmerID != farmerID {
+		return apperrors.ErrNotFound
+	}
+	delete(m.products, id)
+	return nil
+}
+
 func (m *mockProductRepo) AdminApprove(id string) error {
 	p, ok := m.products[id]
 	if !ok {
@@ -344,5 +364,82 @@ func TestCreateProduct_InvalidCategory_ParentNotAllowed(t *testing.T) {
 	}
 	if appErr.Code != "INVALID_CATEGORY" {
 		t.Errorf("expected INVALID_CATEGORY, got %q", appErr.Code)
+	}
+}
+
+func TestDeleteProduct_OnlyOwnerCanDelete(t *testing.T) {
+	svc, repo := newTestProductService(t)
+
+	req := &CreateProductRequest{
+		CategoryID:  "cat-sub-001",
+		Title:       "Silinecek Ürün",
+		Description: "Açıklama",
+		Price:       10.0,
+		Unit:        "kg",
+		City:        "İzmir",
+		District:    "Bornova",
+		Village:     "Test",
+	}
+	p, err := svc.Create("farmer-001", req)
+	if err != nil {
+		t.Fatalf("setup failed: %v", err)
+	}
+
+	// Başka bir üretici silemez; ürün yerinde kalır.
+	if err := svc.Delete(p.ID, "farmer-999"); err == nil {
+		t.Error("expected error when a different farmer deletes the product")
+	}
+	if _, ok := repo.products[p.ID]; !ok {
+		t.Fatal("product must survive a foreign delete attempt")
+	}
+
+	if err := svc.Delete(p.ID, "farmer-001"); err != nil {
+		t.Fatalf("owner delete failed: %v", err)
+	}
+	if _, ok := repo.products[p.ID]; ok {
+		t.Error("product should be gone after the owner deleted it")
+	}
+}
+
+func TestUpdateStockStatus(t *testing.T) {
+	svc, repo := newTestProductService(t)
+
+	req := &CreateProductRequest{
+		CategoryID:  "cat-sub-001",
+		Title:       "Stok Ürünü",
+		Description: "Açıklama",
+		Price:       10.0,
+		Unit:        "kg",
+		City:        "İzmir",
+		District:    "Bornova",
+		Village:     "Test",
+	}
+	p, err := svc.Create("farmer-001", req)
+	if err != nil {
+		t.Fatalf("setup failed: %v", err)
+	}
+
+	if err := svc.UpdateStockStatus(p.ID, "farmer-001", "out_of_stock"); err != nil {
+		t.Fatalf("expected success, got: %v", err)
+	}
+	if got := repo.products[p.ID].StockStatus; got != "out_of_stock" {
+		t.Errorf("stock_status = %q, want out_of_stock", got)
+	}
+
+	err = svc.UpdateStockStatus(p.ID, "farmer-001", "bol_bol")
+	if err == nil {
+		t.Fatal("expected error for an invalid stock status")
+	}
+	appErr, ok := err.(*apperrors.AppError)
+	if !ok {
+		t.Fatalf("expected *AppError, got %T", err)
+	}
+	if appErr.Code != "INVALID_STOCK_STATUS" {
+		t.Errorf("expected INVALID_STOCK_STATUS, got %q", appErr.Code)
+	}
+
+	// Sahibi olmayan üretici stok durumunu değiştiremez.
+	if err := svc.UpdateStockStatus(p.ID, "farmer-999", "limited"); err == nil {
+		t.Error("expected error when a different farmer updates stock status")
 	}
 }

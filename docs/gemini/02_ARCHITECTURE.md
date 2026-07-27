@@ -89,7 +89,7 @@ Proje, istemci-sunucu (Client-Server) modeline dayanır ve tamamen **stateless (
 │   ├── pkg/                    # Harici/Paylaşılan paketler (Providers)
 │   │   ├── errors/             # Uygulama hata yapıları
 │   │   ├── response/           # HTTP yanıt şablonları
-│   │   ├── sms/                # Netgsm SMS servisi & DevProvider stub
+│   │   ├── sms/                # Twilio SMS servisi & DevProvider stub
 │   │   └── storage/            # S3/R2 depolama servisi & DevProvider stub
 │   ├── migrations/             # golang-migrate SQL şemaları (000001 - 000016)
 │   └── docs/                   # Detaylı backend teknik dokümanları

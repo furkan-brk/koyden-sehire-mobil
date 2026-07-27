@@ -103,7 +103,8 @@ class CustomerBottomNav extends StatelessWidget {
         } else if (isCustomer) {
           context.go('/customer/profile');
         } else {
-          context.go('/login');
+          // push: giriş ekranında geri okunun çıkması için yığın korunur
+          context.push('/login');
         }
     }
   }

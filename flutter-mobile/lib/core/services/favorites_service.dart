@@ -63,7 +63,7 @@ class FavoritesService extends GetxService {
         'Favori eklemek için giriş yapmanız gerekiyor',
         snackPosition: SnackPosition.BOTTOM,
       );
-      if (context.mounted) context.go('/login');
+      if (context.mounted) context.push('/login');
       return;
     }
 

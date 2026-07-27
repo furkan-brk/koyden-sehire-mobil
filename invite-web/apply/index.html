@@ -57,6 +57,16 @@
     }
     .btn.secondary { background: #eaf2e6; color: #2e5928; }
     .hint { font-size: 13px; color: #7c8879; margin-top: 12px; }
+    .notice {
+      font-size: 13px;
+      line-height: 1.5;
+      color: #7a4a12;
+      background: #fdf3e3;
+      border: 1px solid #f0d8ae;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-top: 12px;
+    }
   </style>
 </head>
 <body>
@@ -67,21 +77,29 @@
     <div class="code" id="code">—</div>
     <button class="btn" id="openApp">Uygulamada Aç</button>
     <button class="btn secondary" id="copyCode">Kodu Kopyala</button>
+    <p class="notice" id="notice" hidden></p>
     <p class="hint">Uygulama açılmazsa Köyden Şehre uygulamasını yükleyin ve
       başvuru ekranında davet kodunu elle girin.</p>
   </div>
+  <script src="/open-app.js"></script>
   <script>
     const params = new URLSearchParams(location.search);
     const invite = (params.get('invite') || '').toUpperCase();
     const codeEl = document.getElementById('code');
     codeEl.textContent = invite || 'Kod bulunamadı';
 
-    // Host segmenti ('app') şart: 'koydensehire://apply' yazılırsa 'apply'
-    // host olarak parse edilir, path boş kalır ve go_router ana sayfayı açar.
-    const deepLink = 'koydensehire://app/apply' + (invite ? '?invite=' + encodeURIComponent(invite) : '');
-
-    document.getElementById('openApp').addEventListener('click', () => {
-      location.href = deepLink;
+    initOpenApp({
+      path: 'apply',
+      query: invite ? '?invite=' + encodeURIComponent(invite) : '',
+      button: document.getElementById('openApp'),
+      notice: document.getElementById('notice'),
+      autoOpen: !!invite,
+      desktopMessage:
+        'Uygulamada açma yalnızca telefonda çalışır. Davet kodunu kopyalayıp ' +
+        'telefonunuzdaki Köyden Şehre uygulamasının başvuru ekranına elle girin.',
+      notInstalledMessage:
+        'Uygulama bulunamadı. Köyden Şehre uygulamasını yükleyip davet kodunu ' +
+        'başvuru ekranında elle girebilirsiniz.',
     });
 
     document.getElementById('copyCode').addEventListener('click', async (e) => {
@@ -92,14 +110,6 @@
         setTimeout(() => { e.target.textContent = 'Kodu Kopyala'; }, 2000);
       } catch (_) {}
     });
-
-    // Uygulama yüklüyse otomatik açmayı dene (App Links doğrulanmışsa
-    // tarayıcıya hiç gelinmez; bu satır custom-scheme fallback içindir).
-    // Yalnızca Android: iOS Safari, uygulama yüklü değilse kullanıcı jesti
-    // olmayan custom-scheme yönlendirmesinde hata popup'ı gösterir.
-    if (invite && /android/i.test(navigator.userAgent)) {
-      setTimeout(() => { location.href = deepLink; }, 600);
-    }
   </script>
 </body>
 </html>

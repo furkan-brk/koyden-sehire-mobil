@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
@@ -83,7 +84,7 @@ class HomeScreen extends StatelessWidget {
               return const SizedBox.shrink();
             } else {
               return TextButton.icon(
-                onPressed: () => context.go('/login'),
+                onPressed: () => context.push('/login'),
                 icon: const Icon(Icons.login_outlined, size: 18),
                 label: const Text('Giriş'),
               );
@@ -123,14 +124,10 @@ class HomeScreen extends StatelessWidget {
                   return const _CategoryShimmer();
                 }
                 if (catCtrl.error.value != null) {
-                  return SizedBox(
-                    height: 48,
-                    child: Center(
-                      child: Text(
-                        'Kategoriler yüklenemedi',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ),
+                  return _SectionError(
+                    message: 'Kategoriler yüklenemedi',
+                    detail: catCtrl.error.value,
+                    onRetry: catCtrl.load,
                   );
                 }
                 return _CategoryRow(categories: catCtrl.categories);
@@ -155,9 +152,10 @@ class HomeScreen extends StatelessWidget {
                   );
                 }
                 if (homeCtrl.error.value != null) {
-                  return const SizedBox(
-                    height: 160,
-                    child: AppEmptyWidget(message: 'Ürünler yüklenemedi'),
+                  return _SectionError(
+                    message: 'Ürünler yüklenemedi',
+                    detail: homeCtrl.error.value,
+                    onRetry: homeCtrl.load,
                   );
                 }
                 final items = homeCtrl.newProducts;
@@ -213,14 +211,10 @@ class HomeScreen extends StatelessWidget {
                         ),
                       )
                     else if (hasError)
-                      SizedBox(
-                        height: 48,
-                        child: Center(
-                          child: Text(
-                            'Üreticiler yüklenemedi',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ),
+                      _SectionError(
+                        message: 'Üreticiler yüklenemedi',
+                        detail: homeCtrl.error.value,
+                        onRetry: homeCtrl.load,
                       )
                     else
                       SizedBox(
@@ -389,6 +383,60 @@ class _CategoryRow extends StatelessWidget {
             onTap: () => context.push('/products?category_id=${c.id}'),
           );
         },
+      ),
+    );
+  }
+}
+
+/// Inline failure state for a home section: short message, a retry button and
+/// — in debug builds only — the underlying error so misconfigured BASE_URL /
+/// unreachable backend is diagnosable without opening the console.
+class _SectionError extends StatelessWidget {
+  const _SectionError({
+    required this.message,
+    required this.onRetry,
+    this.detail,
+  });
+
+  final String message;
+  final String? detail;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall,
+          ),
+          if (kDebugMode && detail != null && detail!.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              detail!,
+              textAlign: TextAlign.center,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
+          ],
+          const SizedBox(height: AppSpacing.xs),
+          TextButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh, size: 18),
+            label: const Text('Tekrar dene'),
+          ),
+        ],
       ),
     );
   }
@@ -576,7 +624,7 @@ class _GuestCtaCard extends StatelessWidget {
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => context.go('/login'),
+                    onPressed: () => context.push('/login'),
                     icon: const Icon(Icons.login_outlined, size: 18),
                     label: const Text('Üretici Girişi'),
                   ),

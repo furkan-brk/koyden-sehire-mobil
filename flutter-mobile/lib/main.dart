@@ -31,6 +31,15 @@ Future<void> main() async {
     );
   }
 
+  if (!kReleaseMode && AppConstants.isDevDefaultBaseUrl) {
+    debugPrint(
+      '[BASE_URL] --dart-define=BASE_URL verilmedi, varsayılan kullanılıyor: '
+      '${AppConstants.baseUrl}\n'
+      '           Backend başka bir adresteyse: '
+      'flutter run --dart-define=BASE_URL=http://<host>:8080/api/v1',
+    );
+  }
+
   // Firebase must be initialised before AppBinding so PushNotificationService
   // can call FirebaseMessaging.instance inside onInit().
   // Web'de FCM background handler desteklenmez, sadece init yapılır.

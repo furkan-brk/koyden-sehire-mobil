@@ -246,7 +246,9 @@ curl -s "http://localhost:8080/api/v1/products?city=Bursa&sort=price_asc&limit=1
 | `DATABASE_URL` | PostgreSQL bağlantı stringi |
 | `REDIS_URL` | Redis bağlantı stringi |
 | `JWT_SECRET` | JWT imzalama anahtarı |
-| `SMS_USERNAME` | Netgsm kullanıcı adı (prod) |
-| `SMS_PASSWORD` | Netgsm şifre (prod) |
+| `TWILIO_ACCOUNT_SID` | Twilio Account SID (prod) |
+| `TWILIO_AUTH_TOKEN` | Twilio Auth Token (prod) |
+| `TWILIO_FROM_NUMBER` | Gönderici numarası, E.164 (prod) — veya `TWILIO_MESSAGING_SERVICE_SID` |
+| `SMS_FORCE_SEND` | `true` → development'ta da gerçek SMS gönderilir |
 
 Tüm değişkenler için: [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)

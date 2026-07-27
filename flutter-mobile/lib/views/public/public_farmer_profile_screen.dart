@@ -4,7 +4,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -13,6 +12,7 @@ import 'package:koyden_sehire/app/theme.dart';
 import 'package:koyden_sehire/core/services/auth_service.dart';
 import 'package:koyden_sehire/core/services/recent_views_service.dart';
 import 'package:koyden_sehire/core/utils/phone_formatter.dart';
+import 'package:koyden_sehire/core/utils/share_helper.dart';
 import 'package:koyden_sehire/core/utils/whatsapp_helper.dart';
 import 'package:koyden_sehire/models/auth/auth_state.dart';
 import 'package:koyden_sehire/shared/extensions/context_extensions.dart';
@@ -192,7 +192,8 @@ class _ProfileBody extends StatelessWidget {
             IconButton(
               icon: const Icon(Icons.share_outlined),
               tooltip: 'Paylaş',
-              onPressed: () => Share.share(
+              onPressed: () => ShareHelper.shareText(
+                context,
                 '${profile.displayName} - Köyden Şehire\n'
                 '${AppConstants.farmerLink(profile.id)}',
               ),

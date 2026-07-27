@@ -85,5 +85,11 @@
         <intent>
             <action android:name="android.media.action.ACTION_VIDEO_CAPTURE" />
         </intent>
+        <!-- Paylaş (share_plus): chooser için zorunlu değil ama bazı OEM
+             ROM'larında hedef uygulamaların çözümlenmesini düzeltir. -->
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+            <data android:mimeType="text/plain" />
+        </intent>
     </queries>
 </manifest>

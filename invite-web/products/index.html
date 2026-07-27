@@ -43,6 +43,16 @@
       margin-bottom: 10px;
     }
     .hint { font-size: 13px; color: #7c8879; margin-top: 12px; }
+    .notice {
+      font-size: 13px;
+      line-height: 1.5;
+      color: #7a4a12;
+      background: #fdf3e3;
+      border: 1px solid #f0d8ae;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-top: 12px;
+    }
   </style>
 </head>
 <body>
@@ -51,31 +61,26 @@
     <h1>Köyden Şehre</h1>
     <p>Bu ürünü görüntülemek için Köyden Şehre uygulamasını açın.</p>
     <button class="btn" id="openApp">Uygulamada Aç</button>
+    <p class="notice" id="notice" hidden></p>
     <p class="hint">Uygulama açılmazsa Köyden Şehre uygulamasını yükleyip
       pazar yerinde ürünü arayabilirsiniz.</p>
   </div>
+  <script src="/open-app.js"></script>
   <script>
     // Netlify _redirects kuralı /products/* isteklerini bu sayfaya rewrite
     // eder; ürün id'si path'te kalır: /products/<id>
     const match = location.pathname.match(/^\/products\/([^\/]+)/);
     const productId = match ? match[1] : '';
 
-    // Host segmenti ('app') şart — hostsuz custom scheme'de path boş kalır
-    // ve go_router ana sayfayı açar.
-    const deepLink = productId
-      ? 'koydensehire://app/products/' + encodeURIComponent(productId)
-      : 'koydensehire://app/';
-
-    document.getElementById('openApp').addEventListener('click', () => {
-      location.href = deepLink;
+    initOpenApp({
+      path: productId ? 'products/' + encodeURIComponent(productId) : '',
+      button: document.getElementById('openApp'),
+      notice: document.getElementById('notice'),
+      autoOpen: !!productId,
+      notInstalledMessage:
+        'Uygulama bulunamadı. Köyden Şehre uygulamasını yükleyip ürünü ' +
+        'pazar yerinde arayabilirsiniz.',
     });
-
-    // Otomatik açmayı yalnızca Android'de dene: iOS Safari, uygulama yüklü
-    // değilse kullanıcı jesti olmayan custom-scheme yönlendirmesinde hata
-    // popup'ı gösterir.
-    if (productId && /android/i.test(navigator.userAgent)) {
-      setTimeout(() => { location.href = deepLink; }, 600);
-    }
   </script>
 </body>
 </html>

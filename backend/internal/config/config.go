@@ -63,9 +63,13 @@ type StorageConfig struct {
 }
 
 type SMSConfig struct {
-	Username string
-	Password string
-	Header   string
+	TwilioAccountSID   string
+	TwilioAuthToken    string
+	TwilioFromNumber   string
+	TwilioMessagingSID string
+	// ForceSend true ise development ortamında da gerçek SMS gönderilir
+	// (gerçek cihaz testi için). Bu durumda OTP cooldown'ı da devreye girer.
+	ForceSend bool
 }
 
 type N8NConfig struct {
@@ -101,6 +105,7 @@ func Load() (*Config, error) {
 	dbMaxConn, _ := strconv.Atoi(getEnv("DATABASE_MAX_CONNECTIONS", "25"))
 	dbMaxIdle, _ := strconv.Atoi(getEnv("DATABASE_MAX_IDLE", "5"))
 	autoMigrate, _ := strconv.ParseBool(getEnv("AUTO_MIGRATE", "true"))
+	smsForceSend, _ := strconv.ParseBool(getEnv("SMS_FORCE_SEND", "false"))
 
 	originsRaw := getEnv("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:8080")
 	origins := strings.Split(originsRaw, ",")
@@ -153,9 +158,11 @@ func Load() (*Config, error) {
 			PublicURL:       getEnv("S3_PUBLIC_URL", ""),
 		},
 		SMS: SMSConfig{
-			Username: getEnv("NETGSM_USERNAME", ""),
-			Password: getEnv("NETGSM_PASSWORD", ""),
-			Header:   getEnv("NETGSM_HEADER", "KOYDENSEHRE"),
+			TwilioAccountSID:   getEnv("TWILIO_ACCOUNT_SID", ""),
+			TwilioAuthToken:    getEnv("TWILIO_AUTH_TOKEN", ""),
+			TwilioFromNumber:   getEnv("TWILIO_FROM_NUMBER", ""),
+			TwilioMessagingSID: getEnv("TWILIO_MESSAGING_SERVICE_SID", ""),
+			ForceSend:          smsForceSend,
 		},
 		N8N: N8NConfig{
 			WebhookURL:    getEnv("N8N_WEBHOOK_URL", ""),

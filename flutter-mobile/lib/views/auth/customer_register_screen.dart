@@ -139,7 +139,12 @@ class _CustomerRegisterScreenState extends State<CustomerRegisterScreen> {
         elevation: 0,
         backgroundColor: Colors.transparent,
         leading: _step == _Step.phone
-            ? null
+            ? (context.canPop()
+                ? const BackButton()
+                : IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => context.go('/'),
+                  ))
             : IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () => setState(() {

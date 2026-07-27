@@ -96,6 +96,14 @@ class _LoginScreenState extends State<LoginScreen> {
         title: null,
         elevation: 0,
         backgroundColor: Colors.transparent,
+        // Yığın boşken (splash/guard yönlendirmesi) pop edilecek sayfa
+        // olmadığı için ana ekrana dönen bir kapat ikonu gösterilir.
+        leading: context.canPop()
+            ? const BackButton()
+            : IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => context.go('/'),
+              ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(

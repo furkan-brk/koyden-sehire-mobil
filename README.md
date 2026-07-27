@@ -195,7 +195,7 @@ backend/
 ├── pkg/
 │   ├── errors/                  ← Uygulama hata tipleri
 │   ├── response/                ← Fiber yanıt yardımcıları
-│   ├── sms/                     ← Netgsm + DevProvider (dev'de stdout)
+│   ├── sms/                     ← Twilio + DevProvider (dev'de stdout)
 │   └── storage/                 ← Cloudflare R2/S3 + DevProvider
 └── migrations/                  ← 000001…000016 golang-migrate SQL
 ```

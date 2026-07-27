@@ -145,10 +145,25 @@ func main() {
 	}
 
 	var smsProvider sms.Provider
-	if cfg.App.Env == "development" && (cfg.SMS.Username == "" || cfg.SMS.Password == "") {
+	twilioConfigured := cfg.SMS.TwilioAccountSID != "" && cfg.SMS.TwilioAuthToken != "" &&
+		(cfg.SMS.TwilioFromNumber != "" || cfg.SMS.TwilioMessagingSID != "")
+	switch {
+	case twilioConfigured:
+		smsProvider = sms.NewTwilioProvider(
+			cfg.SMS.TwilioAccountSID,
+			cfg.SMS.TwilioAuthToken,
+			cfg.SMS.TwilioFromNumber,
+			cfg.SMS.TwilioMessagingSID,
+		)
+		log.Println("SMS provider: twilio")
+	case cfg.App.Env == "development":
+		log.Println("warning: Twilio credentials not configured — using dev SMS provider (stdout)")
 		smsProvider = &sms.DevProvider{}
-	} else {
-		smsProvider = sms.NewNetgsmProvider(cfg.SMS.Username, cfg.SMS.Password, cfg.SMS.Header)
+	default:
+		log.Fatalf("Twilio credentials not configured (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN and TWILIO_FROM_NUMBER or TWILIO_MESSAGING_SERVICE_SID are required in production)")
+	}
+	if cfg.SMS.ForceSend && !twilioConfigured {
+		log.Println("warning: SMS_FORCE_SEND=true but no real SMS provider configured — messages will only be logged")
 	}
 
 	webhookSvc := notifications.NewWebhookService(cfg.N8N.WebhookURL, cfg.N8N.WebhookSecret)
@@ -167,11 +182,13 @@ func main() {
 	}
 	authSvc := auth.NewService(authRepo, rdb, cfg.JWT.Secret, cfg.JWT.AccessTokenExpiry, cfg.JWT.RefreshTokenExpiry)
 	authSvc.SetSMSProvider(smsProvider, cfg.App.Env)
+	authSvc.SetSMSForceSend(cfg.SMS.ForceSend)
 	authHandler := auth.NewHandler(authSvc)
 	authHandler.SetPushNotifier(pushSvc)
 
 	otpRepo := otp.NewRepository(db)
 	otpSvc := otp.NewService(otpRepo, rdb, smsProvider, cfg.OTP.ExpirySeconds, cfg.OTP.MaxAttempts, cfg.OTP.ResendCooldownSeconds, cfg.App.Env)
+	otpSvc.SetSMSForceSend(cfg.SMS.ForceSend)
 	otpHandler := otp.NewHandler(otpSvc)
 
 	userRepo := users.NewRepository(db)

@@ -21,6 +21,12 @@ class RegisterChoiceScreen extends StatelessWidget {
         title: null,
         elevation: 0,
         backgroundColor: Colors.transparent,
+        leading: context.canPop()
+            ? const BackButton()
+            : IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => context.go('/'),
+              ),
       ),
       body: SafeArea(
         child: ListView(
@@ -70,7 +76,8 @@ class RegisterChoiceScreen extends StatelessWidget {
             const SizedBox(height: AppSpacing.xl),
             Center(
               child: TextButton(
-                onPressed: () => context.go('/login'),
+                onPressed: () =>
+                    context.canPop() ? context.pop() : context.go('/login'),
                 child: const Text('Zaten hesabınız var mı? Giriş yapın'),
               ),
             ),

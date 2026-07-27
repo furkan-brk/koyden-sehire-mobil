@@ -85,7 +85,7 @@ sequenceDiagram
     Farmer->>API: POST /otp/send { phone }
     Note over API: Cooldown ve Rate-limit kontrolü.<br/>Kod üret (Örn: 541928)
     API->>Redis: SET otp:05XXXXXXXXX -> "541928:0" (TTL 5 dk)
-    Note over API: dev ortamında kodu terminale yazdırır,<br/>prod ortamında Netgsm ile SMS gönderir
+    Note over API: dev ortamında kodu terminale yazdırır,<br/>prod ortamında (veya SMS_FORCE_SEND=true ise) Twilio ile SMS gönderir
     API-->>Farmer: OTP Gönderildi
 
     Farmer->>API: POST /otp/verify { phone, code: "541928" }

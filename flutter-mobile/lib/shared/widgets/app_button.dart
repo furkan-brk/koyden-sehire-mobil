@@ -12,6 +12,11 @@ class AppButton extends StatelessWidget {
   final bool fullWidth;
   final Widget? icon;
 
+  /// Set when the button sits on a dark surface (ör. AppColors.primary zemin).
+  /// Varsayılan tema renkleri (primaryContainer) böyle bir zeminde neredeyse
+  /// okunmuyor; bu bayrak secondary/text varyantlarını beyaza çevirir.
+  final bool onDark;
+
   const AppButton({
     super.key,
     required this.label,
@@ -20,6 +25,7 @@ class AppButton extends StatelessWidget {
     this.variant = AppButtonVariant.primary,
     this.fullWidth = true,
     this.icon,
+    this.onDark = false,
   });
 
   @override
@@ -54,6 +60,12 @@ class AppButton extends StatelessWidget {
       case AppButtonVariant.secondary:
         button = OutlinedButton(
           onPressed: disabled ? null : onPressed,
+          style: onDark
+              ? OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  side: const BorderSide(color: Colors.white, width: 1.5),
+                )
+              : null,
           child: child,
         );
         break;
@@ -71,6 +83,9 @@ class AppButton extends StatelessWidget {
       case AppButtonVariant.text:
         button = TextButton(
           onPressed: disabled ? null : onPressed,
+          style: onDark
+              ? TextButton.styleFrom(foregroundColor: Colors.white)
+              : null,
           child: child,
         );
         break;

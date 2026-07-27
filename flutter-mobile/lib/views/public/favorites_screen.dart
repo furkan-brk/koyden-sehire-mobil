@@ -105,7 +105,7 @@ class _GuestPlaceholder extends StatelessWidget {
             AppButton(
               label: 'Giriş Yap',
               fullWidth: false,
-              onPressed: () => context.go('/login'),
+              onPressed: () => context.push('/login'),
             ),
           ],
         ),

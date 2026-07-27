@@ -35,6 +35,18 @@ type Service struct {
 	maxAttempts     int
 	cooldownSeconds int
 	appEnv          string
+	// smsForceSend true ise development ortamında da gerçek SMS gönderilir.
+	smsForceSend bool
+}
+
+// SetSMSForceSend development ortamında gerçek SMS gönderimini açar (SMS_FORCE_SEND).
+func (s *Service) SetSMSForceSend(v bool) {
+	s.smsForceSend = v
+}
+
+// smsEnabled gerçek SMS gönderiminin yapılıp yapılmayacağını söyler.
+func (s *Service) smsEnabled() bool {
+	return s.appEnv != "development" || s.smsForceSend
 }
 
 func NewService(repo *Repository, rdb *redis.Client, smsProv sms.Provider, expiry, maxAttempts, cooldown int, appEnv string) *Service {
@@ -70,7 +82,7 @@ func (s *Service) Send(phone, ip, userAgent string) (*SendResponse, error) {
 	ctx := context.Background()
 	cooldownKey := fmt.Sprintf("otp_cooldown:%s", phone)
 
-	if !isOtpWhitelisted(phone) && s.appEnv != "development" {
+	if !isOtpWhitelisted(phone) && s.smsEnabled() {
 		exists, err := s.rdb.Exists(ctx, cooldownKey).Result()
 		if err != nil {
 			return nil, errors.ErrInternal
@@ -89,7 +101,7 @@ func (s *Service) Send(phone, ip, userAgent string) (*SendResponse, error) {
 		return nil, errors.ErrInternal
 	}
 
-	if !isOtpWhitelisted(phone) && s.appEnv != "development" {
+	if !isOtpWhitelisted(phone) && s.smsEnabled() {
 		if err := s.rdb.Set(ctx, cooldownKey, "1", time.Duration(s.cooldownSeconds)*time.Second).Err(); err != nil {
 			log.Printf("failed to set OTP cooldown: %v", err)
 		}
@@ -100,8 +112,9 @@ func (s *Service) Send(phone, ip, userAgent string) (*SendResponse, error) {
 		masked := maskPhone(phone)
 		log.Printf("OTP for %s: %s", masked, code)
 		devCode = &code
-	} else {
-		msg := fmt.Sprintf("Köyden Şehre doğrulama kodunuz: %s. Bu kod 5 dakika geçerlidir.", code)
+	}
+	if s.smsEnabled() {
+		msg := fmt.Sprintf("Köyden Şehire doğrulama kodunuz: %s. Bu kod 5 dakika geçerlidir.", code)
 		go func() {
 			if err := s.smsProvider.Send(phone, msg); err != nil {
 				log.Printf("SMS send failed for masked phone: %v", err)

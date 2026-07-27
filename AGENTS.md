@@ -80,7 +80,7 @@ Global wiring (dependency injection, routes, middleware) is in `cmd/api/main.go`
 - `internal/config/` — reads env vars into a typed `Config` struct
 - `internal/middleware/` — `RequireAuth` (JWT validation), `RequireRole`, `RequireActiveUser`, rate limiters
 - `pkg/storage/` — S3/R2 provider + `DevProvider` stub
-- `pkg/sms/` — Netgsm provider + `DevProvider` stub
+- `pkg/sms/` — Twilio provider + `DevProvider` stub (`SMS_FORCE_SEND=true` ile dev'de de gerçek gönderim)
 - `internal/notifications/` — n8n webhook calls
 
 **All API routes** are prefixed `/api/v1`. Route groups: public, `/farmer` (requireAuth + requireFarmer + requireActive), `/admin` (requireAuth + requireAdmin).

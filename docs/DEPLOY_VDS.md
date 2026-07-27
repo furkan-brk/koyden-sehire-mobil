@@ -66,6 +66,10 @@ Eğer GitHub Actions kullanmadan manuel olarak derleyip çalıştırmak istersen
 ```bash
 cd flutter-mobile
 flutter build web --release --dart-define=BASE_URL=/api/v1
+# BASE_URL=/api/v1 origin-göreli (same-origin) bir adrestir: web build'i API ile
+# aynı domain'den servis edildiğinde nginx zaten /api/v1'i backend'e proxyler.
+# Farklı bir domain kullanıyorsanız tam adres verin:
+#   --dart-define=BASE_URL=https://api.koydensehire.com/api/v1
 # Çıkan build/web klasörünü VDS'de /opt/koydensehire/flutter-mobile/build/web/ içine kopyalayın
 ```
 
