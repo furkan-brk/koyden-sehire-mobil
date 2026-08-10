@@ -30,6 +30,29 @@ services:
       timeout: 5s
       retries: 5
 
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
+      MINIO_API_CORS_ALLOW_ORIGIN: "*"
+    volumes:
+      - minio_data:/data
+    ports:
+      # Yalnızca localhost'a bağlı debug erişimi için (konsol). Dış dünyaya
+      # erişim cloudflared tünelinden, container ağı üzerinden servis
+      # adıyla (minio:9000) geçer.
+      - "127.0.0.1:19000:9000"
+      - "127.0.0.1:19001:9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
   api:
     build:
       context: ./backend
@@ -48,6 +71,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     restart: unless-stopped
 
@@ -81,3 +106,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  minio_data:
